@@ -48,6 +48,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigationContext } from "@/contexts/NavigationContext";
 import { LogoMappr } from "./icons";
+import { RadixIconsDashboard, SiDashboardCustomizeLine } from "./icons/icons";
 
 interface SidebarProps {
   className?: string;
@@ -89,7 +90,7 @@ const navigationItems: MenuItem[] = [
   {
     label: "Dashboard",
     href: "/dashboard",
-    icon: <LayoutDashboard className="w-5 h-5" />,
+    icon: <RadixIconsDashboard className="w-5 h-5" />,
     accent: "from-blue-500 to-cyan-500",
   },
   {
@@ -308,20 +309,20 @@ export function Sidebar({
 
       {/* Sidebar */}
       <aside className={clsx(
-        "fixed z-50 flex flex-col  backdrop-blur-xl border-r border-default-200/50",
+        "fixed md:sticky top-0 h-screen z-50 flex flex-col transition-all duration-200 bg-content1 backdrop-blur-xl border-r border-default-200/50",
         isMobile ? [
           "fixed inset-y-0 left-0 shadow-2xl",
           isSidebarVisible ? "translate-x-0" : "-translate-x-full"
         ] : [
           "relative",
-          isSidebarCollapsed ? "w-16" : "w-64"
+          isSidebarCollapsed ? "w-16" : "w-52"
         ],
         className
       )}>
         
         {/* Header Section */}
         <header className={clsx(
-          "flex items-center justify-between h-16 px-4 border-b border-default-200/50",
+          "flex items-center justify-between h-16 px-4 ",
           isSidebarCollapsed && !isMobile && "px-2"
         )}>
           {!isSidebarCollapsed || isMobile ? (
@@ -349,7 +350,7 @@ export function Sidebar({
               isIconOnly
               variant="flat"
               size="sm"
-              className="w-9 h-9"
+              className="w-9 h-9 bg-transparent"
               as={NextLink}
               href="/dashboard"
             >
@@ -430,11 +431,11 @@ export function Sidebar({
             {/* Main Navigation */}
             <div>
               {(!isSidebarCollapsed || isMobile) && (
-                <div className="text-xs font-semibold text-default-400 uppercase tracking-wider mb-3 px-2">
+                <div className="text-xs font-semibold text-default-500 uppercase tracking-wider mb-3 px-2">
                   Main
                 </div>
               )}
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 {navigationItems.map((item) => (
                   <div key={item.href}>
                     {/* Main Menu Item */}
@@ -462,32 +463,33 @@ export function Sidebar({
 
                       {item.submenu && (!isSidebarCollapsed || isMobile) ? (
                         <Button
-                          variant="light"
+                          variant="bordered"
                      
                           className={clsx(
-                            "w-full justify-start  p-2 h-auto transition-all duration-200 group",
+                            "w-full justify-start  p-2 h-auto transition-all duration-200 group border",
                             isActive(item.href)
-                              ? "bg-primary-500/10 text-primary-600 shadow-sm"
-                              : "hover:bg-default-100/50 text-default-600"
+                            
+                            ? "bg-primary-500/25 text-primary-600 border-primary-500/20 shadow-sm"
+                            : "hover:bg-primary-500/20 hover:border-primary-500/20 hover:text-primary-600 "
                           )}
                           onPress={() => toggleMenu(item.href)}
                         >
                           <div className="flex items-center gap-3 flex-1">
                             <span className={clsx(
                               "transition-colors",
-                              isActive(item.href) ? "text-primary-600" : "text-default-500"
+                              isActive(item.href) ? "text-primary-600 hover:text-primary-600" : " hover:text-primary-600"
                             )}>
                               {item.icon}
                             </span>
                             <span className="text-xs font-medium">{item.label}</span>
                             {item.badge && (
-                              <Badge size="sm" color="primary" variant="flat">
+                              <Chip size="sm" color="primary" variant="flat">
                                 {item.badge}
-                              </Badge>
+                              </Chip>
                             )}
                             {item.isNew && (
-                              <Chip size="sm" color="success" variant="flat">
-                                New
+                              <Chip size="sm" color="success" content="New" variant="flat">
+                               
                               </Chip>
                             )}
                           </div>
@@ -504,13 +506,14 @@ export function Sidebar({
                           href={item.href}
                           size="sm"
                           isIconOnly={isSidebarCollapsed && !isMobile}
-                          variant="light"
+                          variant="bordered"
+                          radius="md"
                           className={clsx(
-                            "w-full h-auto transition-all duration-100 group nav-item",
+                            "w-full h-auto transition-all duration-100 group nav-item border ",
                             isSidebarCollapsed && !isMobile ? "justify-center p-2" : "justify-start p-2",
                             isActive(item.href)
-                              ? "bg-primary-500/10 text-primary-600 shadow-sm"
-                              : "hover:bg-default-100/50 text-default-600"
+                              ? "bg-primary-500/25 text-primary-600 border-primary-500/20 shadow-sm"
+                              : "hover:bg-primary-500/20 hover:border-primary-500/20 hover:text-primary-600 "
                           )}
                         >
                           <div className={clsx(
@@ -519,7 +522,7 @@ export function Sidebar({
                           )}>
                             <span className={clsx(
                               "transition-colors",
-                              isActive(item.href) ? "text-primary-600" : "text-default-500"
+                              isActive(item.href) ? "text-primary-600" : "text-default-500 group-hover:text-primary-600"
                             )}>
                               {item.icon}
                             </span>
@@ -587,7 +590,7 @@ export function Sidebar({
               </div>
             </div>
 
-            {/* Settings Navigation */}
+            {/* Settings Navigation
             <div>
               {(!isSidebarCollapsed || isMobile) && (
                 <div className="text-xs font-semibold text-default-400 uppercase tracking-wider mb-3 px-2">
@@ -602,7 +605,7 @@ export function Sidebar({
                     onMouseEnter={() => isSidebarCollapsed && !isMobile && setHoveredItem(item.href)}
                     onMouseLeave={() => setHoveredItem(null)}
                   >
-                    {/* Tooltip for collapsed mode */}
+                
                     {isSidebarCollapsed && !isMobile && hoveredItem === item.href && (
                       <div className="absolute left-full top-0 ml-3 z-50 px-3 py-2 bg-background border border-default-200 shadow-lg rounded-lg text-sm font-medium whitespace-nowrap">
                         {item.label}
@@ -616,12 +619,13 @@ export function Sidebar({
                       variant="light"
                       size="sm"
                       isIconOnly={isSidebarCollapsed && !isMobile}
+                      radius="md"
                       className={clsx(
                         "w-full h-auto transition-all text-xs duration-200 nav-item",
-                        isSidebarCollapsed && !isMobile ? "justify-center p-3" : "justify-start p-2",
+                        isSidebarCollapsed && !isMobile ? "justify-center p-2" : "justify-start p-2",
                         isActive(item.href)
                           ? "bg-primary-500/10 text-primary-600 shadow-sm"
-                          : "hover:bg-default-100/50 text-default-600"
+                          : "hover:bg-primary-500/50 text-default-600"
                       )}
                     >
                       <div className={clsx(
@@ -642,21 +646,22 @@ export function Sidebar({
                   </div>
                 ))}
               </div>
-            </div>
+            </div> */}
 
           </div>
         </nav>
 
         {/* User Profile Section */}
         {user && profile && (
-          <footer className="border-t border-default-200/50 p-3">
+          <footer className=" p-2">
             <Dropdown placement="top-start">
               <DropdownTrigger>
                 <Button
-                  variant="flat"
+                  variant="light"
+                  isIconOnly={isSidebarCollapsed && !isMobile}
                   className={clsx(
-                    "w-full h-auto p-3 hover:bg-default-100/50 transition-colors",
-                    isSidebarCollapsed && !isMobile ? "justify-center" : "justify-start"
+                    " hover:bg-default-100/50 transition-colors",
+                    isSidebarCollapsed && !isMobile ? "justify-center w-8 h-8 rounded-full" : "justify-start w-full h-auto p-2 rounded-2xl"
                   )}
                 >
                   {isSidebarCollapsed && !isMobile ? (

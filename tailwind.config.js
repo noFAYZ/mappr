@@ -53,10 +53,10 @@ const config = {
         }
       },
       animation: {
-        'fade-in': 'fadeIn 0.5s ease-in-out',
-        'slide-in-from-bottom': 'slideInFromBottom 0.5s ease-out',
-        'slide-in-from-right': 'slideInFromRight 0.3s ease-out',
-        'bounce-subtle': 'bounceSubtle 2s infinite',
+        'fade-in': 'fadeIn 0.2s ease-in-out',
+        'slide-in-from-bottom': 'slideInFromBottom 0.2s ease-out',
+        'slide-in-from-right': 'slideInFromRight 0.1s ease-out',
+        'bounce-subtle': 'bounceSubtle 1s infinite',
       },
       keyframes: {
         fadeIn: {
@@ -82,50 +82,16 @@ const config = {
   darkMode: "class",
   plugins: [
     heroui({
-      themes: {
-        light: {
-          colors: {
-            background: "#FFFFFF",
-            foreground: "#11181C",
-            primary: {
-              50: "#F0F9FF",
-              100: "#E0F2FE",
-              200: "#BAE6FD",
-              300: "#7DD3FC",
-              400: "#38BDF8",
-              500: "#0EA5E9",
-              600: "#0284C7",
-              700: "#0369A1",
-              800: "#075985",
-              900: "#0C4A6E",
-              DEFAULT: "#0EA5E9",
-              foreground: "#FFFFFF",
-            },
-            focus: "#0EA5E9",
-          },
-        },
-        dark: {
-          colors: {
-            background: "#0D1117",
-            foreground: "#E6EDF3",
-            primary: {
-              50: "#082F49",
-              100: "#0C4A6E",
-              200: "#075985",
-              300: "#0369A1",
-              400: "#0284C7",
-              500: "#0EA5E9",
-              600: "#38BDF8",
-              700: "#7DD3FC",
-              800: "#BAE6FD",
-              900: "#E0F2FE",
-              DEFAULT: "#0EA5E9",
-              foreground: "#FFFFFF",
-            },
-            focus: "#0EA5E9",
-          },
+      layout: {
+        disabledOpacity: "0.3", // opacity-[0.3]
+     
+        borderWidth: {
+          small: "1px", // border-small
+          medium: "1px", // border-medium
+          large: "2px", // border-large
         },
       },
+     
     }),
   ],
 };

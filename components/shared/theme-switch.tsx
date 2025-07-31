@@ -5,15 +5,41 @@ import { motion } from "framer-motion"
 import { Sun, Moon, Stars } from "lucide-react"
 import { Button } from "@heroui/button"
 import { cn } from "@heroui/react"
+import { useEffect, useState } from "react"
 
 
 export default function ThemeSwitcher( ) {
+  const [mounted, setMounted] = useState(false)
   const { theme, setTheme } = useTheme()
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark')
   }
+// Show a neutral state during SSR/initial load
+if (!mounted) {
+  return (
+    <Button
+      isIconOnly
+      variant="ghost"
+      size="sm"
+      className={cn(
+        "shadow-md rounded-full",
+        "border border-divider",
+        "group relative"
+      )}
+      disabled
+    >
+      <Sun className="w-4 h-4 text-default-500" />
+    </Button>
+  )
+}
 
+const isDark = theme === 'dark'
   return (
     <Button
     isIconOnly

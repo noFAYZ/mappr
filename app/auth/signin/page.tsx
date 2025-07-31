@@ -217,7 +217,7 @@ export default function SignInPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-primary-500/10 via-transparent to-secondary-500/10 relative">
+    <div className="min-h-screen flex items-center justify-center  bg-gradient-to-br from-primary-500/10 via-transparent to-secondary-500/10 relative">
       
       {/* Background Effects */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">

@@ -1,116 +1,204 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import {
   Navbar as HeroUINavbar,
-  NavbarBrand,
   NavbarContent,
   NavbarItem,
   NavbarMenuToggle,
   NavbarMenu,
   NavbarMenuItem,
 } from "@heroui/navbar";
+import { Modal, ModalContent, ModalHeader, ModalBody } from "@heroui/modal";
 import { Button } from "@heroui/button";
-import { Input } from "@heroui/input";
 import { Badge } from "@heroui/badge";
 import { Avatar } from "@heroui/avatar";
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@heroui/dropdown";
-import { Kbd } from "@heroui/kbd";
 import { Chip } from "@heroui/chip";
-import { Breadcrumbs, BreadcrumbItem } from "@heroui/breadcrumbs";
+import { Input } from "@heroui/input";
 import NextLink from "next/link";
-import { useTheme } from "next-themes";
 import clsx from "clsx";
 import {
-  Search,
   Bell,
   Settings,
   HelpCircle,
   LogOut,
-  Moon,
-  Sun,
-  Monitor,
-  ChevronDown,
   Plus,
-  Zap,
   Crown,
   Shield,
   Star,
-  Menu,
-  X,
-  Command,
-  Activity,
-  TrendingUp,
-  ArrowUpRight,
-  Globe,
   Home,
   Building2,
   Users,
   BarChart3,
   Sparkles,
-  Compass,
-  Puzzle
+  Puzzle,
+  Zap,
+  Bot,
+  FileText,
+  CreditCard,
+  TrendingUp,
+  Wallet,
+  Upload,
+  Download,
+  Share2,
+  Calculator,
+  PieChart,
+  LayoutDashboard,
+  Search,
+  X,
+  ArrowRight,
+  Layers,
+  Database,
+  Code,
+  Activity,
+  Lock
 } from "lucide-react";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigationContext } from "@/contexts/NavigationContext";
 import { useUIStore } from "@/stores";
 import ThemeSwitcher from "./shared/theme-switch";
+import { SearchInput } from "./shared/search-input";
+import { 
+  HugeiconsAiBrain01, 
+  SystemUiconsWindowCollapseLeft, 
+  SystemUiconsWindowCollapseRight,
+  SiDashboardCustomizeLine, 
+  PhUser,
+  CuidaNotificationBellOutline,
+  SolarLoginBoldDuotone,
+  LetsIconsLockDuotone
+} from "./icons/icons";
+import { LogoMappr } from "./icons";
 
 interface NavbarProps {
   className?: string;
-  showBreadcrumbs?: boolean;
-  showQuickActions?: boolean;
 }
 
-const SearchIcon = ({ className }: { className?: string }) => (
-  <Search className={clsx("w-4 h-4", className)} />
-);
+// All available actions organized by category with enhanced styling info
+const actionsByCategory = {
+  "Quick Actions": [
+    {
+      label: "Add Extension",
+      href: "/extensions/add",
+      icon: <Plus className="w-5 h-5" />,
+      description: "Connect new data sources instantly",
+      gradient: "from-blue-500 to-cyan-500",
+      featured: true
+    },
+    {
+      label: "Create Portfolio",
+      href: "/portfolios/create",
+      icon: <SiDashboardCustomizeLine className="w-5 h-5" />,
+      description: "Build a new investment portfolio",
+      gradient: "from-purple-500 to-pink-500",
+      featured: true
+    },
+    {
+      label: "AI Assistant",
+      href: "/ai",
+      icon: <HugeiconsAiBrain01 className="w-5 h-5" />,
+      description: "Get AI-powered insights",
+      gradient: "from-emerald-500 to-teal-500",
+      badge: "New",
+      featured: true
+    }
+  ],
+  "Extensions": [
+    {
+      label: "Connect Wallet",
+      href: "/extensions/crypto/connect",
+      icon: <Wallet className="w-5 h-5" />,
+      description: "Link your crypto wallets",
+      gradient: "from-orange-500 to-red-500"
+    },
+    {
+      label: "Connect Bank",
+      href: "/extensions/banking/connect",
+      icon: <Building2 className="w-5 h-5" />,
+      description: "Link bank accounts securely",
+      gradient: "from-green-500 to-emerald-500"
+    },
+    {
+      label: "Browse Extensions",
+      href: "/extensions",
+      icon: <Puzzle className="w-5 h-5" />,
+      description: "Explore all available integrations",
+      gradient: "from-indigo-500 to-purple-500"
+    }
+  ],
+  "Data & Analytics": [
+    {
+      label: "Import Data",
+      href: "/data/import",
+      icon: <Upload className="w-5 h-5" />,
+      description: "Upload CSV, Excel files",
+      gradient: "from-amber-500 to-orange-500"
+    },
+    {
+      label: "Export Data",
+      href: "/data/export",
+      icon: <Download className="w-5 h-5" />,
+      description: "Download your data",
+      gradient: "from-slate-500 to-gray-500"
+    },
+    {
+      label: "Analytics Dashboard",
+      href: "/analytics",
+      icon: <TrendingUp className="w-5 h-5" />,
+      description: "View detailed analytics",
+      gradient: "from-cyan-500 to-blue-500"
+    },
+    {
+      label: "Generate Reports",
+      href: "/reports",
+      icon: <FileText className="w-5 h-5" />,
+      description: "Create custom reports",
+      gradient: "from-rose-500 to-pink-500"
+    }
+  ],
+  "Tools": [
+    {
+      label: "Calculator",
+      href: "/tools/calculator",
+      icon: <Calculator className="w-5 h-5" />,
+      description: "Financial calculator",
+      gradient: "from-violet-500 to-purple-500"
+    },
+    {
+      label: "Share Portfolio",
+      href: "/portfolios/share",
+      icon: <Share2 className="w-5 h-5" />,
+      description: "Share with others",
+      gradient: "from-teal-500 to-cyan-500"
+    },
+    {
+      label: "Team Settings",
+      href: "/team",
+      icon: <Users className="w-5 h-5" />,
+      description: "Manage team members",
+      gradient: "from-blue-500 to-indigo-500"
+    }
+  ]
+};
 
-const quickActions = [
-  {
-    label: "Add Extension",
-    href: "/extensions/add",
-    icon: <Plus className="w-3 h-3" />,
-    color: "primary" as const,
-  },
-  {
-    label: "Create Portfolio",
-    href: "/portfolios/create",
-    icon: <BarChart3 className="w-3 h-3" />,
-    color: "secondary" as const,
-  },
-  {
-    label: "AI Assistant",
-    href: "/ai",
-    icon: <Sparkles className="w-3 h-3" />,
-    color: "success" as const,
-    badge: "New",
-  },
-];
-
-export function Navbar({ 
-  className, 
-  showBreadcrumbs = true,
-  showQuickActions = true 
-}: NavbarProps) {
+export function Navbar({ className }: NavbarProps) {
   const pathname = usePathname();
   const { user, profile, signOut } = useAuth();
-  const { theme, setTheme } = useTheme();
   const { 
     isSidebarVisible, 
     toggleSidebar,
-    breadcrumbs,
-    pageTitle 
+    pageTitle,
+    isSidebarCollapsed
   } = useNavigationContext();
-  const { notifications, removeNotification, addNotification } = useUIStore();
+  const { notifications, removeNotification } = useUIStore();
   
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [searchFocused, setSearchFocused] = useState(false);
+  const [isActionsModalOpen, setIsActionsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Handle scroll detection for navbar styling
   useEffect(() => {
@@ -122,27 +210,21 @@ export function Navbar({
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Global search shortcut (Cmd/Ctrl + K)
+  // Global shortcut for actions modal (Cmd/Ctrl + J)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'j') {
         e.preventDefault();
-        searchInputRef.current?.focus();
+        setIsActionsModalOpen(true);
+      }
+      if (e.key === 'Escape' && isActionsModalOpen) {
+        setIsActionsModalOpen(false);
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
-
-  const handleThemeChange = (newTheme: string) => {
-    setTheme(newTheme);
-    addNotification({
-      type: 'success',
-      title: 'Theme Changed',
-      message: `Switched to ${newTheme} theme`,
-    });
-  };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isActionsModalOpen]);
 
   const getTierBadge = (tier: string) => {
     switch (tier?.toLowerCase()) {
@@ -156,96 +238,34 @@ export function Navbar({
     }
   };
 
-  const getThemeIcon = () => {
-    switch (theme) {
-      case 'light':
-        return <Sun className="w-4 h-4" />;
-      case 'dark':
-        return <Moon className="w-4 h-4" />;
-      default:
-        return <Monitor className="w-4 h-4" />;
-    }
-  };
-
   const unreadNotifications = notifications.filter(n => !n.read).length;
 
-  const handleSearchFocus = () => setSearchFocused(true);
-  const handleSearchBlur = () => setSearchFocused(false);
-
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      // Navigate to search results or trigger search
-      console.log('Search query:', searchQuery);
-      // You can implement global search functionality here
+  // Filter actions based on search
+  const filteredActions = Object.entries(actionsByCategory).reduce((acc, [category, actions]) => {
+    const filtered = actions.filter(action => 
+      action.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      action.description.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    if (filtered.length > 0) {
+      acc[category] = filtered;
     }
-  };
+    return acc;
+  }, {} as typeof actionsByCategory);
 
-  const SearchInput = ({ 
-    className, 
-    placeholder = "Search everything...", 
-    variant = "full" 
-  }: { 
-    className?: string;
-    placeholder?: string;
-    variant?: "full" | "compact";
-  }) => (
-    <form onSubmit={handleSearchSubmit} className="w-full">
-      <Input
-        ref={variant === "full" ? searchInputRef : undefined}
-        aria-label="Global search"
-        className={clsx("transition-all duration-300", className)}
-        classNames={{
-          inputWrapper: clsx(
-            "backdrop-blur-md border-0 transition-all duration-300 group",
-            searchFocused 
-              ? "bg-background/90 shadow-lg ring-2 ring-primary-500/20" 
-              : "bg-background/60 hover:bg-background/80"
-          ),
-          input: "text-sm placeholder:text-default-500",
-        }}
-        placeholder={placeholder}
-        size="sm"
-        value={searchQuery}
-        onValueChange={setSearchQuery}
-        startContent={<SearchIcon className="text-default-400 flex-shrink-0" />}
-        endContent={
-          variant === "full" && (
-            <div className="flex items-center gap-1">
-              {searchQuery && (
-                <Button
-                  isIconOnly
-                  size="sm"
-                  variant="flat"
-                  className="w-6 h-6 min-w-6"
-                  onPress={() => setSearchQuery("")}
-                >
-                  <X className="w-3 h-3" />
-                </Button>
-              )}
-              <Kbd className="hidden lg:inline-flex bg-default-200/50 text-xs" keys={["command"]}>
-                K
-              </Kbd>
-            </div>
-          )
-        }
-        type="search"
-        variant="flat"
-        onFocus={handleSearchFocus}
-        onBlur={handleSearchBlur}
-      />
-    </form>
-  );
+  const handleActionClick = (href: string) => {
+    setIsActionsModalOpen(false);
+    setSearchQuery("");
+  };
 
   return (
     <>
       <HeroUINavbar 
         maxWidth="full"
         className={clsx(
-          "transition-all duration-300 backdrop-blur-xl border-b",
+          "transition-all duration-200 border-b",
           isScrolled 
-            ? "bg-background/95 border-default-200/50 shadow-sm" 
-            : "bg-background/80 border-transparent",
+            ? " border-default-200/50 " 
+            : " border-transparent",
           className
         )}
         height="4rem"
@@ -259,20 +279,23 @@ export function Navbar({
           <NavbarItem className="flex items-center gap-3">
             <Button
               isIconOnly
-              variant="flat"
+              variant="light"
               size="sm"
               className="hidden sm:flex bg-transparent hover:bg-default-100 transition-colors"
               onPress={toggleSidebar}
             >
-              <Menu className="w-4 h-4" />
+              {isSidebarCollapsed ? 
+                <SystemUiconsWindowCollapseRight className="w-6 h-6 text-default-500 " /> : 
+                <SystemUiconsWindowCollapseLeft className="w-6 h-6 text-default-500" />
+              }
             </Button>
 
             {/* Logo (when sidebar is hidden) */}
             {!isSidebarVisible && (
               <NextLink href="/dashboard" className="flex items-center gap-2 group">
                 <div className="relative">
-                  <div className="w-7 h-7 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-lg flex items-center justify-center">
-                    <span className="text-white font-bold text-xs">MM</span>
+                  <div className="h-9 flex items-center  gap-1 font-semibold text-sm justify-center">
+                  <LogoMappr /> MoneyMappr
                   </div>
                   <div className="absolute inset-0 bg-primary-500/20 blur-md rounded-lg opacity-0 group-hover:opacity-60 transition-opacity" />
                 </div>
@@ -283,260 +306,199 @@ export function Navbar({
             )}
           </NavbarItem>
 
-          {/* Breadcrumbs */}
-          {showBreadcrumbs && breadcrumbs.length > 0 && (
-            <NavbarItem className="hidden md:flex">
-              <Breadcrumbs
-                separator="/"
-                classNames={{
-                  list: "gap-2",
-                  separator: "text-default-400 mx-1"
-                }}
-              >
-                {breadcrumbs.map((breadcrumb, index) => (
-                  <BreadcrumbItem 
-                    key={index}
-                    href={breadcrumb.href}
-                    className={clsx(
-                      "text-sm transition-colors",
-                      index === breadcrumbs.length - 1 
-                        ? "text-foreground font-medium" 
-                        : "text-default-500 hover:text-foreground"
-                    )}
-                  >
-                    <div className="flex items-center gap-1">
-                      {breadcrumb.icon}
-                      {breadcrumb.label}
-                    </div>
-                  </BreadcrumbItem>
-                ))}
-              </Breadcrumbs>
-            </NavbarItem>
-          )}
-
-          {/* Page Title (mobile) */}
-          <NavbarItem className="md:hidden">
-            <h1 className="text-lg font-semibold">{pageTitle}</h1>
-          </NavbarItem>
+        
 
           {/* Search Bar - Desktop */}
-          <NavbarItem className="hidden lg:flex flex-1 max-w-md ml-auto">
+          <NavbarItem className="hidden lg:flex flex-1 max-w-md ml-8">
             <SearchInput className="w-full" />
           </NavbarItem>
-
         </NavbarContent>
 
         {/* Right Content */}
-        <NavbarContent justify="end" className="gap-2">
+        <NavbarContent justify="end" className="gap-2 flex items-center text-center">
           
-          {/* Quick Actions */}
-          {showQuickActions && (
-            <NavbarItem className="hidden xl:flex">
-              <div className="flex items-center gap-2">
-                {quickActions.map((action) => (
-                  <Button
-                    key={action.href}
-                    as={NextLink}
-                    href={action.href}
-                    size="sm"
-                    color={action.color}
-                    variant="flat"
-                    startContent={action.icon}
-                    endContent={action.badge && (
-                      <Chip size="sm" color="success" variant="flat">
-                        {action.badge}
-                      </Chip>
-                    )}
-                    className="bg-opacity-10 hover:bg-opacity-20"
-                  >
-                    {action.label}
-                  </Button>
-                ))}
-              </div>
-            </NavbarItem>
-          )}
-
-          {/* Activity Indicator */}
-          <NavbarItem className="hidden sm:flex">
-            <Button
-              isIconOnly
-              variant="flat"
-              size="sm"
-              className="relative bg-transparent hover:bg-default-100"
-              as={NextLink}
-              href="/activity"
-            >
-              <Activity className="w-4 h-4" />
-              <div className="absolute top-1 right-1 w-2 h-2 bg-success rounded-full animate-pulse" />
-            </Button>
-          </NavbarItem>
-
-          {/* Notifications */}
-          <NavbarItem>
-            <Dropdown placement="bottom-end">
-              <DropdownTrigger>
-                <Button
-                  isIconOnly
-                  variant="flat"
-                  size="sm"
-                  className="relative bg-transparent hover:bg-default-100"
-                >
-                  <Bell className="w-4 h-4" />
-                  {unreadNotifications > 0 && (
-                    <Badge
-                      content={unreadNotifications}
-                      color="danger"
-                      size="sm"
-                      className="absolute -top-1 -right-1"
-                    />
-                  )}
-                </Button>
-              </DropdownTrigger>
-              <DropdownMenu 
-                aria-label="Notifications" 
-                className="w-80"
-                closeOnSelect={false}
-              >
-                {notifications.length === 0 ? (
-                  <DropdownItem key="empty" className="text-center text-default-500">
-                    <div className="py-4">
-                      <Bell className="w-8 h-8 mx-auto mb-2 text-default-300" />
-                      <p>No notifications</p>
-                    </div>
-                  </DropdownItem>
-                ) : (
-                  notifications.slice(0, 5).map((notification) => (
-                    <DropdownItem
-                      key={notification.id}
-                      className="p-3"
-                      onPress={() => removeNotification(notification.id)}
-                    >
-                      <div className="flex flex-col gap-1">
-                        <div className="flex items-center justify-between">
-                          <span className="font-medium text-sm">{notification.title}</span>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-default-400">
-                              {new Date(notification.timestamp).toLocaleTimeString()}
-                            </span>
-                            {!notification.read && (
-                              <div className="w-2 h-2 bg-primary rounded-full" />
-                            )}
-                          </div>
-                        </div>
-                        {notification.message && (
-                          <span className="text-xs text-default-600">{notification.message}</span>
-                        )}
-                      </div>
-                    </DropdownItem>
-                  ))
-                )}
-                {notifications.length > 0 && (
-                  <DropdownItem key="view-all" className="text-center">
-                    <Button
-                      as={NextLink}
-                      href="/notifications"
-                      variant="flat"
-                      size="sm"
-                      className="w-full"
-                    >
-                      View All Notifications
-                    </Button>
-                  </DropdownItem>
-                )}
-              </DropdownMenu>
-            </Dropdown>
-          </NavbarItem>
 
           {/* Theme Switcher */}
-          <NavbarItem>
+          <NavbarItem className="flex items-center">
             <ThemeSwitcher />
-           
           </NavbarItem>
 
-          {/* User Menu */}
-          {user && profile ? (
-            <NavbarItem>
-              <Dropdown placement="bottom-end">
-                <DropdownTrigger>
-                  <Button
-                    variant="flat"
-                    className="p-2 h-auto bg-transparent hover:bg-default-100 gap-2"
-                  >
-                    <Avatar
-                      src={profile.avatar_url || undefined}
-                      name={profile.full_name || profile.email}
+          {/* Desktop User Area */}
+          <NavbarItem className="flex">
+            {user ? (
+              <div className="flex items-center gap-1 p-1 border border-divider rounded-full">
+                {/* Notifications */}
+                <Dropdown placement="bottom-end">
+                  <DropdownTrigger>
+                    <Button
+                      variant="solid"
+                      isIconOnly
                       size="sm"
-                      className="w-7 h-7"
-                    />
-                    <div className="hidden sm:flex flex-col items-start">
-                      <span className="text-xs font-medium flex items-center gap-1">
-                        {profile.full_name || 'User'}
-                        {getTierBadge(profile.tier)}
-                      </span>
-                      <span className="text-xs text-default-500 capitalize">
-                        {profile.tier} Plan
-                      </span>
-                    </div>
-                    <ChevronDown className="w-3 h-3 text-default-400" />
-                  </Button>
-                </DropdownTrigger>
-                <DropdownMenu aria-label="User menu">
-                  <DropdownItem
-                    key="profile"
-                    href="/profile"
-                    startContent={<Settings className="w-4 h-4" />}
+                      className="h-9 w-9 rounded-full relative"
+                      aria-label="Notifications"
+                    >
+                      <CuidaNotificationBellOutline className="w-4 h-4 text-default-600" />
+                      {unreadNotifications > 0 && (
+                        <Chip
+                          content={unreadNotifications}
+                          color="danger"
+                          size="sm"
+                          className="absolute -top-1 -right-1"
+                        />
+                      )}
+                    </Button>
+                  </DropdownTrigger>
+                  <DropdownMenu 
+                    aria-label="Notifications" 
+                    className="w-80"
+                    closeOnSelect={false}
                   >
-                    Profile Settings
-                  </DropdownItem>
-                  <DropdownItem
-                    key="billing"
-                    href="/billing"
-                    startContent={getTierBadge(profile.tier)}
-                  >
-                    Billing & Usage
-                  </DropdownItem>
-                  <DropdownItem
-                    key="organization"
-                    href="/organization"
-                    startContent={<Building2 className="w-4 h-4" />}
-                  >
-                    Organization
-                  </DropdownItem>
-                  <DropdownItem
-                    key="help"
-                    href="/help"
-                    startContent={<HelpCircle className="w-4 h-4" />}
-                  >
-                    Help & Support
-                  </DropdownItem>
-                  <DropdownItem
-                    key="logout"
-                    color="danger"
-                    startContent={<LogOut className="w-4 h-4" />}
-                    onPress={signOut}
-                  >
-                    Sign Out
-                  </DropdownItem>
-                </DropdownMenu>
-              </Dropdown>
-            </NavbarItem>
-          ) : (
-            <NavbarItem>
+                    {notifications.length === 0 ? (
+                      <DropdownItem key="empty" className="text-center text-default-500" textValue="No notifications">
+                        <div className="py-4">
+                          <Bell className="w-8 h-8 mx-auto mb-2 text-default-300" />
+                          <p>No notifications</p>
+                        </div>
+                      </DropdownItem>
+                    ) : (
+                      notifications.slice(0, 5).map((notification) => (
+                        <DropdownItem
+                          key={notification.id}
+                          className="p-3"
+                          onPress={() => removeNotification(notification.id)}
+                          textValue={notification.title}
+                        >
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center justify-between">
+                              <span className="font-medium text-sm">{notification.title}</span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-default-400">
+                                  {new Date(notification.timestamp).toLocaleTimeString()}
+                                </span>
+                                {!notification.read && (
+                                  <div className="w-2 h-2 bg-primary rounded-full" />
+                                )}
+                              </div>
+                            </div>
+                            {notification.message && (
+                              <span className="text-xs text-default-600">{notification.message}</span>
+                            )}
+                          </div>
+                        </DropdownItem>
+                      ))
+                    )}
+                    {notifications.length > 0 && (
+                      <DropdownItem key="view-all" className="text-center" textValue="View all notifications">
+                        <Button
+                          as={NextLink}
+                          href="/notifications"
+                          variant="flat"
+                          size="sm"
+                          className="w-full"
+                        >
+                          View All Notifications
+                        </Button>
+                      </DropdownItem>
+                    )}
+                  </DropdownMenu>
+                </Dropdown>
+
+                <span className="text-xs text-default-600 inline-block max-w-[100px] truncate">
+                  {user.user_metadata?.full_name?.split(' ')?.[0] || 'User'}
+                </span>
+
+                {/* User Menu */}
+                <Dropdown placement="bottom-end">
+                  <DropdownTrigger>
+                    <Button
+                      variant="light"
+                      className="h-9 w-9 rounded-full p-0"
+                      isIconOnly
+                      size="sm"
+                    >
+                      <Avatar
+                        size="sm"
+                        src={user.user_metadata?.avatar_url}
+                        className="w-9 h-9"
+                        fallback={
+                          <div className="bg-primary text-primary-foreground flex items-center justify-center w-full h-full rounded-full text-xs font-medium">
+                            {user.email?.[0]?.toUpperCase() || 'U'}
+                          </div>
+                        }
+                      />
+                    </Button>
+                  </DropdownTrigger>
+                  <DropdownMenu aria-label="User menu">
+                    <DropdownItem
+                      key="profile-info"
+                      className="h-14 gap-2 opacity-100"
+                      textValue={`${user.user_metadata?.full_name || 'User'} - ${user.email}`}
+                    >
+                      <div className="flex flex-col">
+                        <p className="font-semibold text-sm">
+                          {user.user_metadata?.full_name || 'User'}
+                        </p>
+                        <p className="text-xs text-default-500 truncate">
+                          {user.email}
+                        </p>
+                      </div>
+                    </DropdownItem>
+                    <DropdownItem
+                      key="profile"
+                      startContent={<PhUser className="w-4 h-4" />}
+                      as={NextLink}
+                      href="/profile"
+                      textValue="Profile"
+                    >
+                      Profile
+                    </DropdownItem>
+                    <DropdownItem
+                      key="settings"
+                      startContent={<Settings size={16} />}
+                      as={NextLink}
+                      href="/settings"
+                      textValue="Settings"
+                    >
+                      Settings
+                    </DropdownItem>
+                    <DropdownItem
+                      key="help"
+                      startContent={<HelpCircle size={16} />}
+                      as={NextLink}
+                      href="/help"
+                      textValue="Help & Support"
+                    >
+                      Help & Support
+                    </DropdownItem>
+                    <DropdownItem
+                      key="logout"
+                      color="danger"
+                      startContent={<LogOut className="w-4 h-4" />}
+                      onPress={signOut}
+                      textValue="Sign Out"
+                    >
+                      Sign Out
+                    </DropdownItem>
+                  </DropdownMenu>
+                </Dropdown>
+              </div>
+            ) : (
               <Button
                 as={NextLink}
                 href="/auth/login"
-                color="primary"
+           
                 size="sm"
-                variant="flat"
+                variant="solid"
+                className="rounded-xl bg-primary-500/25 text-primary-600 font-medium"
+              startContent={<LetsIconsLockDuotone className="w-5 h-5" />}
               >
                 Sign In
               </Button>
-            </NavbarItem>
-          )}
+            )}
+          </NavbarItem>
 
           {/* Mobile Menu Toggle */}
           <NavbarMenuToggle className="sm:hidden" />
-
         </NavbarContent>
 
         {/* Mobile Menu */}
@@ -544,42 +506,13 @@ export function Navbar({
           
           {/* Mobile Search */}
           <NavbarMenuItem>
-            <SearchInput placeholder="Search..." variant="compact" className="w-full mb-4" />
-          </NavbarMenuItem>
-
-          {/* Mobile Quick Actions */}
-          <NavbarMenuItem>
-            <div className="mb-4">
-              <div className="text-xs font-semibold text-default-400 uppercase tracking-wider mb-2">
-                Quick Actions
-              </div>
-              <div className="grid grid-cols-1 gap-2">
-                {quickActions.map((action) => (
-                  <Button
-                    key={action.href}
-                    as={NextLink}
-                    href={action.href}
-                    variant="flat"
-                    className="justify-start h-auto p-3"
-                    startContent={action.icon}
-                    endContent={action.badge && (
-                      <Chip size="sm" color="success" variant="flat">
-                        {action.badge}
-                      </Chip>
-                    )}
-                    onPress={() => setIsMenuOpen(false)}
-                  >
-                    {action.label}
-                  </Button>
-                ))}
-              </div>
-            </div>
+            <SearchInput placeholder="Search..." className="w-full mb-4" />
           </NavbarMenuItem>
 
           {/* Mobile Navigation Items */}
           <NavbarMenuItem>
             <div className="space-y-2">
-              <div className="text-xs font-semibold text-default-400 uppercase tracking-wider mb-2">
+              <div className="text-xs font-semibold text-default-400 uppercase tracking-wider mb-3">
                 Navigation
               </div>
               
@@ -588,7 +521,7 @@ export function Navbar({
                 href="/dashboard"
                 variant="flat"
                 className="justify-start h-auto p-3 w-full"
-                startContent={<Home className="w-4 h-4" />}
+                startContent={<LayoutDashboard className="w-4 h-4" />}
                 onPress={() => setIsMenuOpen(false)}
               >
                 Dashboard
@@ -610,7 +543,7 @@ export function Navbar({
                 href="/portfolios"
                 variant="flat"
                 className="justify-start h-auto p-3 w-full"
-                startContent={<BarChart3 className="w-4 h-4" />}
+                startContent={<PieChart className="w-4 h-4" />}
                 onPress={() => setIsMenuOpen(false)}
               >
                 Portfolios
@@ -621,7 +554,7 @@ export function Navbar({
                 href="/ai"
                 variant="flat"
                 className="justify-start h-auto p-3 w-full"
-                startContent={<Sparkles className="w-4 h-4" />}
+                startContent={<Bot className="w-4 h-4" />}
                 endContent={<Chip size="sm" color="success" variant="flat">New</Chip>}
                 onPress={() => setIsMenuOpen(false)}
               >
@@ -636,7 +569,7 @@ export function Navbar({
               
               <NavbarMenuItem>
                 <div className="space-y-2">
-                  <div className="text-xs font-semibold text-default-400 uppercase tracking-wider mb-2">
+                  <div className="text-xs font-semibold text-default-400 uppercase tracking-wider mb-3">
                     Account
                   </div>
                   
@@ -656,7 +589,7 @@ export function Navbar({
                     href="/billing"
                     variant="flat"
                     className="justify-start h-auto p-3 w-full"
-                    startContent={<Crown className="w-4 h-4" />}
+                    startContent={<CreditCard className="w-4 h-4" />}
                     onPress={() => setIsMenuOpen(false)}
                   >
                     Billing
@@ -677,9 +610,9 @@ export function Navbar({
               </NavbarMenuItem>
             </>
           )}
-
         </NavbarMenu>
       </HeroUINavbar>
+
     </>
   );
 }

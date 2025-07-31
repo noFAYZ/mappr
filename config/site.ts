@@ -1,7 +1,7 @@
 export type SiteConfig = typeof siteConfig;
 
 export const siteConfig = {
-  name: "DataAggregator Pro",
+  name: "MoneyMappr Pro",
   description: "The ultimate data aggregation platform for crypto, banking, and business intelligence.",
   
   navItems: [
