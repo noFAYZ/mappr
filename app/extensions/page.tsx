@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardBody, CardHeader } from '@heroui/card';
 import { Button } from '@heroui/button';
 import { Input } from '@heroui/input';
@@ -9,8 +9,12 @@ import { Chip } from '@heroui/chip';
 import { Badge } from '@heroui/badge';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure } from '@heroui/modal';
 import { Tabs, Tab } from '@heroui/tabs';
+import { Avatar } from '@heroui/avatar';
+import { Progress } from '@heroui/progress';
+import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from '@heroui/dropdown';
 import NextLink from 'next/link';
 import { useQuery } from '@tanstack/react-query';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search,
   Filter,
@@ -31,27 +35,51 @@ import {
   AlertCircle,
   RefreshCw,
   Settings,
-  Trash2
+  Trash2,
+  MoreVertical,
+  Clock,
+  TrendingUp,
+  Users,
+  Sparkles,
+  Eye,
+  Copy,
+  Link2,
+  Activity,
+  Database,
+  ArrowRight,
+  ChevronDown,
+  Grid3X3,
+  List,
+  SortAsc,
+  SortDesc
 } from 'lucide-react';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useExtensionStore } from '@/stores';
 import { useUIStore } from '@/stores';
+import { toast } from 'sonner';
 
 const categories = [
-  { key: 'all', label: 'All Categories' },
-  { key: 'crypto', label: 'Cryptocurrency' },
-  { key: 'banking', label: 'Banking & Finance' },
-  { key: 'ecommerce', label: 'E-commerce' },
-  { key: 'accounting', label: 'Accounting' },
-  { key: 'file', label: 'File Processing' },
-  { key: 'other', label: 'Other' }
+  { key: 'all', label: 'All Categories', icon: Grid3X3, color: 'default' },
+  { key: 'crypto', label: 'Cryptocurrency', icon: Wallet, color: 'warning' },
+  { key: 'banking', label: 'Banking & Finance', icon: Building2, color: 'success' },
+  { key: 'ecommerce', label: 'E-commerce', icon: BarChart3, color: 'primary' },
+  { key: 'accounting', label: 'Accounting', icon: FileText, color: 'secondary' },
+  { key: 'file', label: 'File Processing', icon: Upload, color: 'danger' },
+  { key: 'other', label: 'Other', icon: Globe, color: 'default' }
 ];
 
-const ExtensionCard = ({ extension, userExtension, onConnect, onDisconnect, onSync, onConfigure }) => {
+const sortOptions = [
+  { key: 'name', label: 'Name' },
+  { key: 'category', label: 'Category' },
+  { key: 'popularity', label: 'Popularity' },
+  { key: 'recent', label: 'Recently Added' }
+];
+
+const ExtensionCard = ({ extension, userExtension, onConnect, onDisconnect, onSync, onConfigure, viewMode = 'grid' }) => {
   const { profile } = useAuth();
   const userTier = profile?.tier || 'free';
-  const canUse = extension.tier_restrictions[userTier] === true;
+  const canUse = extension.tier_restrictions?.[userTier] === true;
   const isConnected = !!userExtension;
 
   const getSyncStatusColor = (status) => {
@@ -63,130 +91,365 @@ const ExtensionCard = ({ extension, userExtension, onConnect, onDisconnect, onSy
     }
   };
 
-  const getSyncStatusText = (status) => {
+  const getSyncStatusIcon = (status) => {
     switch (status) {
-      case 'success': return 'Synced';
-      case 'error': return 'Error';
-      case 'syncing': return 'Syncing...';
-      default: return 'Pending';
+      case 'success': return <CheckCircle2 className="w-3 h-3" />;
+      case 'error': return <AlertCircle className="w-3 h-3" />;
+      case 'syncing': return <RefreshCw className="w-3 h-3 animate-spin" />;
+      default: return <Clock className="w-3 h-3" />;
     }
   };
 
-  return (
-    <Card className={`hover:shadow-lg transition-all duration-200 ${isConnected ? 'border-success-200 bg-success-50/30' : ''}`}>
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between w-full">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-xl flex items-center justify-center">
-              <span className="text-white font-bold text-lg">
-                {extension.name.charAt(0)}
-              </span>
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-semibold text-lg">{extension.name}</h3>
-                {extension.is_featured && (
-                  <Badge size="sm" color="warning" variant="flat">
-                    Featured
-                  </Badge>
+  const getCategoryIcon = (category) => {
+    const categoryData = categories.find(cat => cat.key === category);
+    const IconComponent = categoryData?.icon || Globe;
+    return <IconComponent className="w-4 h-4" />;
+  };
+
+  const getCategoryColor = (category) => {
+    const categoryData = categories.find(cat => cat.key === category);
+    return categoryData?.color || 'default';
+  };
+
+  if (viewMode === 'list') {
+    return (
+      <motion.div
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        <Card className={`transition-all duration-200 hover:shadow-md border-l-4 ${
+          isConnected ? 'border-l-success bg-success-50/20 dark:bg-success-950/10' : 'border-l-transparent'
+        }`}>
+          <CardBody className="py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4 flex-1">
+                <Avatar
+                  size="md"
+                  name={extension.name}
+                  className="bg-gradient-to-br from-primary to-secondary text-white shrink-0"
+                  fallback={extension.name.charAt(0)}
+                />
+                
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="font-semibold truncate">{extension.name}</h3>
+                    {extension.is_featured && (
+                      <Badge size="sm" color="warning" variant="flat" content={<Star className="w-3 h-3" />} />
+                    )}
+                    {isConnected && (
+                      <Badge size="sm" color="success" variant="flat" content={getSyncStatusIcon(userExtension?.sync_status)} />
+                    )}
+                  </div>
+                  <p className="text-sm text-default-500 line-clamp-1">{extension.description}</p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Chip
+                      size="sm"
+                      variant="flat"
+                      color={getCategoryColor(extension.category)}
+                      startContent={getCategoryIcon(extension.category)}
+                    >
+                      {extension.category}
+                    </Chip>
+                    {extension.supported_data_types?.slice(0, 2).map((type, index) => (
+                      <Chip key={index} size="sm" variant="bordered" className="text-xs">
+                        {type}
+                      </Chip>
+                    ))}
+                    {extension.supported_data_types?.length > 2 && (
+                      <span className="text-xs text-default-400">+{extension.supported_data_types.length - 2} more</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 shrink-0">
+                {!canUse && (
+                  <Chip size="sm" color="warning" variant="flat" startContent={<Crown className="w-3 h-3" />}>
+                    Pro
+                  </Chip>
                 )}
-                {isConnected && (
-                  <Badge size="sm" color="success" variant="flat" startContent={<CheckCircle2 className="w-3 h-3" />}>
-                    Connected
-                  </Badge>
+                
+                {isConnected ? (
+                  <div className="flex items-center gap-2">
+                    <div className="text-right text-sm">
+                      <p className="font-medium text-success">Connected</p>
+                      <p className="text-xs text-default-500">
+                        {userExtension?.last_sync_at ? 
+                          `Synced ${new Date(userExtension.last_sync_at).toLocaleDateString()}` : 
+                          'Never synced'
+                        }
+                      </p>
+                    </div>
+                    <Dropdown>
+                      <DropdownTrigger>
+                        <Button isIconOnly size="sm" variant="flat">
+                          <MoreVertical className="w-4 h-4" />
+                        </Button>
+                      </DropdownTrigger>
+                      <DropdownMenu>
+                        <DropdownItem
+                          key="sync"
+                          startContent={<RefreshCw className="w-4 h-4" />}
+                          onPress={() => onSync(userExtension.id)}
+                        >
+                          Sync Now
+                        </DropdownItem>
+                        <DropdownItem
+                          key="configure"
+                          startContent={<Settings className="w-4 h-4" />}
+                          onPress={() => onConfigure(userExtension)}
+                        >
+                          Configure
+                        </DropdownItem>
+                        <DropdownItem
+                          key="disconnect"
+                          className="text-danger"
+                          color="danger"
+                          startContent={<Trash2 className="w-4 h-4" />}
+                          onPress={() => onDisconnect(userExtension.id)}
+                        >
+                          Disconnect
+                        </DropdownItem>
+                      </DropdownMenu>
+                    </Dropdown>
+                  </div>
+                ) : (
+                  <Button
+                    color="primary"
+                    size="sm"
+                    onPress={() => onConnect(extension)}
+                    isDisabled={!canUse}
+                    startContent={<Plus className="w-4 h-4" />}
+                  >
+                    {canUse ? 'Connect' : 'Upgrade'}
+                  </Button>
                 )}
               </div>
-              <p className="text-sm text-default-500 capitalize">{extension.category}</p>
             </div>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            {!canUse && (
-              <Chip size="sm" color="warning" variant="flat" startContent={<Crown className="w-3 h-3" />}>
-                Upgrade Required
-              </Chip>
-            )}
-            {isConnected && (
-              <Chip 
-                size="sm" 
-                color={getSyncStatusColor(userExtension.sync_status)}
-                variant="flat"
-              >
-                {getSyncStatusText(userExtension.sync_status)}
-              </Chip>
-            )}
-          </div>
-        </div>
-      </CardHeader>
-      
-      <CardBody className="pt-0">
-        <p className="text-default-600 mb-4">{extension.description}</p>
-        
-        {extension.supported_data_types && (
-          <div className="mb-4">
-            <p className="text-sm font-medium mb-2">Supported Data Types:</p>
-            <div className="flex flex-wrap gap-1">
-              {extension.supported_data_types.map((type, index) => (
-                <Chip key={index} size="sm" variant="flat" color="primary">
-                  {type}
-                </Chip>
-              ))}
-            </div>
-          </div>
-        )}
+          </CardBody>
+        </Card>
+      </motion.div>
+    );
+  }
 
-        {isConnected ? (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span>Connection: {userExtension.connection_name}</span>
-              <span className="text-default-500">
-                Last sync: {userExtension.last_sync_at ? new Date(userExtension.last_sync_at).toLocaleDateString() : 'Never'}
-              </span>
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      whileHover={{ y: -4 }}
+    >
+      <Card className={`h-full transition-all duration-300 hover:shadow-xl border group ${
+        isConnected ? 'border-success-200 bg-gradient-to-br from-success-50/30 to-transparent dark:from-success-950/20' : 
+        'hover:border-primary-200 dark:hover:border-primary-800'
+      }`}>
+        <CardHeader className="pb-3">
+          <div className="flex items-start justify-between w-full">
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <Avatar
+                  size="lg"
+                  name={extension.name}
+                  className="bg-gradient-to-br from-primary-500 to-secondary-500 text-white"
+                  fallback={extension.name.charAt(0)}
+                />
+                {isConnected && (
+                  <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-success rounded-full flex items-center justify-center">
+                    <CheckCircle2 className="w-4 h-4 text-white" />
+                  </div>
+                )}
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 className="font-semibold text-lg group-hover:text-primary transition-colors">{extension.name}</h3>
+                  {extension.is_featured && (
+                    <Badge color="warning" variant="flat" content={<Star className="w-3 h-3" />} />
+                  )}
+                </div>
+                <Chip
+                  size="sm"
+                  variant="flat"
+                  color={getCategoryColor(extension.category)}
+                  startContent={getCategoryIcon(extension.category)}
+                  className="capitalize"
+                >
+                  {extension.category}
+                </Chip>
+              </div>
             </div>
             
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant="flat"
-                color="primary"
-                startContent={<RefreshCw className="w-4 h-4" />}
-                onPress={() => onSync(userExtension.id)}
-                isLoading={userExtension.sync_status === 'syncing'}
-              >
-                Sync Now
-              </Button>
-              <Button
-                size="sm"
-                variant="flat"
-                startContent={<Settings className="w-4 h-4" />}
-                onPress={() => onConfigure(userExtension)}
-              >
-                Configure
-              </Button>
-              <Button
-                size="sm"
-                variant="flat"
-                color="danger"
-                startContent={<Trash2 className="w-4 h-4" />}
-                onPress={() => onDisconnect(userExtension.id)}
-              >
-                Disconnect
-              </Button>
-            </div>
+            <Dropdown>
+              <DropdownTrigger>
+                <Button
+                  isIconOnly
+                  size="sm"
+                  variant="light"
+                  className="opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <MoreVertical className="w-4 h-4" />
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu>
+                <DropdownItem startContent={<Eye className="w-4 h-4" />}>
+                  View Details
+                </DropdownItem>
+                <DropdownItem startContent={<ExternalLink className="w-4 h-4" />}>
+                  Documentation
+                </DropdownItem>
+                <DropdownItem startContent={<Copy className="w-4 h-4" />}>
+                  Copy API Info
+                </DropdownItem>
+              </DropdownMenu>
+            </Dropdown>
           </div>
-        ) : (
-          <Button
-            color="primary"
-            className="w-full"
-            startContent={<Plus className="w-4 h-4" />}
-            onPress={() => onConnect(extension)}
-            isDisabled={!canUse}
-          >
-            {canUse ? 'Connect Extension' : 'Upgrade to Connect'}
-          </Button>
-        )}
-      </CardBody>
-    </Card>
+        </CardHeader>
+        
+        <CardBody className="pt-0 flex flex-col h-full">
+          <p className="text-default-600 mb-4 text-sm leading-relaxed flex-1">
+            {extension.description}
+          </p>
+          
+          {extension.supported_data_types && (
+            <div className="mb-4">
+              <p className="text-xs font-medium text-default-500 mb-2 uppercase tracking-wide">
+                Data Types
+              </p>
+              <div className="flex flex-wrap gap-1">
+                {extension.supported_data_types.slice(0, 3).map((type, index) => (
+                  <Chip key={index} size="sm" variant="bordered" className="text-xs">
+                    {type}
+                  </Chip>
+                ))}
+                {extension.supported_data_types.length > 3 && (
+                  <Chip size="sm" variant="flat" className="text-xs">
+                    +{extension.supported_data_types.length - 3}
+                  </Chip>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className="mt-auto space-y-3">
+            {!canUse && (
+              <div className="flex items-center gap-2 p-2 rounded-lg bg-warning-50 border border-warning-200 dark:bg-warning-950/20 dark:border-warning-900/50">
+                <Crown className="w-4 h-4 text-warning" />
+                <span className="text-sm text-warning-700 dark:text-warning-300">Upgrade required</span>
+              </div>
+            )}
+
+            {isConnected ? (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-success rounded-full animate-pulse" />
+                    <span className="font-medium">{userExtension.connection_name}</span>
+                  </div>
+                  <Chip
+                    size="sm"
+                    color={getSyncStatusColor(userExtension.sync_status)}
+                    variant="flat"
+                    startContent={getSyncStatusIcon(userExtension.sync_status)}
+                  >
+                    {userExtension.sync_status}
+                  </Chip>
+                </div>
+                
+                {userExtension.last_sync_at && (
+                  <div className="text-xs text-default-500">
+                    Last sync: {new Date(userExtension.last_sync_at).toLocaleString()}
+                  </div>
+                )}
+                
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="flat"
+                    color="primary"
+                    startContent={<RefreshCw className="w-4 h-4" />}
+                    onPress={() => onSync(userExtension.id)}
+                    isLoading={userExtension.sync_status === 'syncing'}
+                    className="flex-1"
+                  >
+                    {userExtension.sync_status === 'syncing' ? 'Syncing...' : 'Sync'}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="flat"
+                    isIconOnly
+                    startContent={<Settings className="w-4 h-4" />}
+                    onPress={() => onConfigure(userExtension)}
+                  />
+                  <Button
+                    size="sm"
+                    variant="flat"
+                    color="danger"
+                    isIconOnly
+                    startContent={<Trash2 className="w-4 h-4" />}
+                    onPress={() => onDisconnect(userExtension.id)}
+                  />
+                </div>
+              </div>
+            ) : (
+              <Button
+                color="primary"
+                className="w-full"
+                startContent={<Plus className="w-4 h-4" />}
+                endContent={<ArrowRight className="w-4 h-4" />}
+                onPress={() => onConnect(extension)}
+                isDisabled={!canUse}
+              >
+                {canUse ? 'Connect Extension' : 'Upgrade to Connect'}
+              </Button>
+            )}
+          </div>
+        </CardBody>
+      </Card>
+    </motion.div>
+  );
+};
+
+const ExtensionStats = ({ extensions, userExtensions, isLoading }) => {
+  const stats = useMemo(() => {
+    if (isLoading || !extensions) return null;
+    
+    const connected = userExtensions?.length || 0;
+    const available = extensions.length;
+    const categories = [...new Set(extensions.map(ext => ext.category))].length;
+    const syncing = userExtensions?.filter(ue => ue.sync_status === 'syncing').length || 0;
+    
+    return { connected, available, categories, syncing };
+  }, [extensions, userExtensions, isLoading]);
+
+  if (isLoading || !stats) return null;
+
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <Card>
+        <CardBody className="text-center py-4">
+          <div className="text-2xl font-bold text-success">{stats.connected}</div>
+          <div className="text-sm text-default-500">Connected</div>
+        </CardBody>
+      </Card>
+      <Card>
+        <CardBody className="text-center py-4">
+          <div className="text-2xl font-bold text-primary">{stats.available}</div>
+          <div className="text-sm text-default-500">Available</div>
+        </CardBody>
+      </Card>
+      <Card>
+        <CardBody className="text-center py-4">
+          <div className="text-2xl font-bold text-secondary">{stats.categories}</div>
+          <div className="text-sm text-default-500">Categories</div>
+        </CardBody>
+      </Card>
+      <Card>
+        <CardBody className="text-center py-4">
+          <div className="text-2xl font-bold text-warning">{stats.syncing}</div>
+          <div className="text-sm text-default-500">Syncing</div>
+        </CardBody>
+      </Card>
+    </div>
   );
 };
 
@@ -208,6 +471,11 @@ export default function ExtensionsPage() {
   const [selectedExtension, setSelectedExtension] = useState(null);
   const [credentials, setCredentials] = useState({});
   const [connectionName, setConnectionName] = useState('');
+  const [viewMode, setViewMode] = useState('grid');
+  const [sortBy, setSortBy] = useState('name');
+  const [sortOrder, setSortOrder] = useState('asc');
+  const [selectedTab, setSelectedTab] = useState('all');
+  
   const { isOpen, onOpen, onClose } = useDisclosure();
 
   // Fetch extensions
@@ -232,22 +500,59 @@ export default function ExtensionsPage() {
     }
   });
 
-  // Filter extensions
-  const filteredExtensions = extensionsData?.filter(extension => {
-    const matchesSearch = !searchQuery || 
-      extension.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      extension.description.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesCategory = selectedCategory === 'all' || extension.category === selectedCategory;
-    
-    return matchesSearch && matchesCategory;
-  }) || [];
+  // Filter and sort extensions
+  const processedExtensions = useMemo(() => {
+    let filtered = extensionsData?.filter(extension => {
+      const matchesSearch = !searchQuery || 
+        extension.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        extension.description.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesCategory = selectedCategory === 'all' || extension.category === selectedCategory;
+      
+      return matchesSearch && matchesCategory;
+    }) || [];
 
-  const connectedExtensions = filteredExtensions.filter(ext => 
+    // Sort extensions
+    filtered.sort((a, b) => {
+      let aValue, bValue;
+      
+      switch (sortBy) {
+        case 'name':
+          aValue = a.name.toLowerCase();
+          bValue = b.name.toLowerCase();
+          break;
+        case 'category':
+          aValue = a.category;
+          bValue = b.category;
+          break;
+        case 'popularity':
+          // Mock popularity - in real app, use actual metrics
+          aValue = a.connections || 0;
+          bValue = b.connections || 0;
+          break;
+        case 'recent':
+          aValue = new Date(a.created_at || 0).getTime();
+          bValue = new Date(b.created_at || 0).getTime();
+          break;
+        default:
+          return 0;
+      }
+      
+      if (typeof aValue === 'string') {
+        return sortOrder === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
+      }
+      
+      return sortOrder === 'asc' ? aValue - bValue : bValue - aValue;
+    });
+
+    return filtered;
+  }, [extensionsData, searchQuery, selectedCategory, sortBy, sortOrder]);
+
+  const connectedExtensions = processedExtensions.filter(ext => 
     userExtensionsData?.some(ue => ue.extension_id === ext.id)
   );
 
-  const availableExtensions = filteredExtensions.filter(ext => 
+  const availableExtensions = processedExtensions.filter(ext => 
     !userExtensionsData?.some(ue => ue.extension_id === ext.id)
   );
 
@@ -263,52 +568,30 @@ export default function ExtensionsPage() {
 
     try {
       await connectExtension(selectedExtension.id, credentials, connectionName);
-      addNotification({
-        type: 'success',
-        title: 'Extension Connected',
-        message: `Successfully connected ${selectedExtension.name}`
-      });
+      toast.success(`Successfully connected ${selectedExtension.name}`);
       onClose();
+      setCredentials({});
+      setConnectionName('');
     } catch (error) {
-      addNotification({
-        type: 'error',
-        title: 'Connection Failed',
-        message: error.message
-      });
+      toast.error(`Connection failed: ${error.message}`);
     }
   };
 
   const handleDisconnect = async (userExtensionId) => {
     try {
       await disconnectExtension(userExtensionId);
-      addNotification({
-        type: 'success',
-        title: 'Extension Disconnected',
-        message: 'Extension has been disconnected'
-      });
+      toast.success('Extension disconnected successfully');
     } catch (error) {
-      addNotification({
-        type: 'error',
-        title: 'Disconnection Failed',
-        message: error.message
-      });
+      toast.error(`Disconnection failed: ${error.message}`);
     }
   };
 
   const handleSync = async (userExtensionId) => {
     try {
       await syncExtension(userExtensionId);
-      addNotification({
-        type: 'success',
-        title: 'Sync Started',
-        message: 'Data synchronization has been initiated'
-      });
+      toast.success('Sync initiated successfully');
     } catch (error) {
-      addNotification({
-        type: 'error',
-        title: 'Sync Failed',
-        message: error.message
-      });
+      toast.error(`Sync failed: ${error.message}`);
     }
   };
 
@@ -321,202 +604,459 @@ export default function ExtensionsPage() {
     return requiredFields.map(field => {
       switch (field.toLowerCase()) {
         case 'api_key':
-          return { key: 'apiKey', label: 'API Key', type: 'password', required: true };
+          return { key: 'apiKey', label: 'API Key', type: 'password', required: true, description: 'Your API key from the service' };
         case 'secret_key':
-          return { key: 'secretKey', label: 'Secret Key', type: 'password', required: true };
+          return { key: 'secretKey', label: 'Secret Key', type: 'password', required: true, description: 'Your secret key for authentication' };
         case 'access_token':
-          return { key: 'accessToken', label: 'Access Token', type: 'password', required: true };
+          return { key: 'accessToken', label: 'Access Token', type: 'password', required: true, description: 'Your access token' };
         case 'client_id':
-          return { key: 'clientId', label: 'Client ID', type: 'text', required: true };
+          return { key: 'clientId', label: 'Client ID', type: 'text', required: true, description: 'Your application client ID' };
         case 'shop_domain':
-          return { key: 'shopDomain', label: 'Shop Domain', type: 'text', required: true };
+          return { key: 'shopDomain', label: 'Shop Domain', type: 'text', required: true, description: 'Your shop domain (without protocol)' };
         default:
-          return { key: field, label: field.replace('_', ' '), type: 'text', required: true };
+          return { key: field, label: field.replace('_', ' '), type: 'text', required: true, description: `Enter your ${field.replace('_', ' ').toLowerCase()}` };
       }
     });
   };
 
+  const getTabContent = () => {
+    switch (selectedTab) {
+      case 'connected':
+        return connectedExtensions;
+      case 'available':
+        return availableExtensions;
+      default:
+        return processedExtensions;
+    }
+  };
+
   if (error) {
     return (
-      <div className="text-center py-8">
-        <AlertCircle className="w-12 h-12 text-danger mx-auto mb-4" />
-        <h2 className="text-xl font-semibold mb-2">Failed to Load Extensions</h2>
-        <p className="text-default-600">{error.message}</p>
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <Card className="max-w-md">
+          <CardBody className="text-center space-y-4">
+            <AlertCircle className="w-12 h-12 text-danger mx-auto" />
+            <div>
+              <h2 className="text-xl font-semibold mb-2">Failed to Load Extensions</h2>
+              <p className="text-default-600">{error.message}</p>
+            </div>
+            <Button color="primary" onPress={() => window.location.reload()}>
+              Try Again
+            </Button>
+          </CardBody>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-            Extensions
-          </h1>
-          <p className="text-default-500 mt-1">
-            Connect your data sources and start aggregating
-          </p>
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+              Extensions
+            </h1>
+            <p className="text-default-500 mt-1 flex items-center gap-2">
+              <Database className="w-4 h-4" />
+              Connect your data sources and start aggregating insights
+            </p>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <Button 
+              variant="flat"
+              startContent={<Sparkles className="w-4 h-4" />}
+              as={NextLink}
+              href="/extensions/browse"
+            >
+              Explore More
+            </Button>
+            <Button 
+              color="primary" 
+              startContent={<Plus className="w-4 h-4" />}
+              endContent={<ArrowRight className="w-4 h-4" />}
+            >
+              Request Extension
+            </Button>
+          </div>
         </div>
-        
-        <div className="flex items-center gap-3">
-          <Chip size="sm" color="primary" variant="flat">
-            {connectedExtensions.length} Connected
-          </Chip>
-          <Button 
-            as={NextLink}
-            href="/extensions/add" 
-            color="primary" 
-            endContent={<Plus className="w-4 h-4" />}
-          >
-            Add Extension
-          </Button>
-        </div>
+
+        {/* Stats */}
+        <ExtensionStats 
+          extensions={extensionsData} 
+          userExtensions={userExtensionsData} 
+          isLoading={isLoading} 
+        />
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <Input
-          placeholder="Search extensions..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          startContent={<Search className="w-4 h-4 text-default-400" />}
-          className="sm:max-w-md"
-          variant="bordered"
-        />
-        
-        <Select
-          placeholder="All Categories"
-          selectedKeys={[selectedCategory]}
-          onSelectionChange={(keys) => setSelectedCategory(Array.from(keys)[0] as string)}
-          className="sm:max-w-xs"
-          variant="bordered"
-        >
-          {categories.map((category) => (
-            <SelectItem key={category.key} value={category.key}>
-              {category.label}
-            </SelectItem>
-          ))}
-        </Select>
-      </div>
+      <Card>
+        <CardBody>
+          <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
+            <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center flex-1">
+              <Input
+                placeholder="Search extensions..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                startContent={<Search className="w-4 h-4 text-default-400" />}
+                className="sm:max-w-xs"
+                size="sm"
+              />
+              
+              <Select
+                placeholder="Category"
+                selectedKeys={selectedCategory ? [selectedCategory] : []}
+                onSelectionChange={(keys) => setSelectedCategory(Array.from(keys)[0] as string || 'all')}
+                className="sm:max-w-xs"
+                size="sm"
+                startContent={<Filter className="w-4 h-4" />}
+              >
+                {categories.map((category) => (
+                  <SelectItem key={category.key} startContent={<category.icon className="w-4 h-4" />}>
+                    {category.label}
+                  </SelectItem>
+                ))}
+              </Select>
+
+              <Dropdown>
+                <DropdownTrigger>
+                  <Button 
+                    variant="flat" 
+                    size="sm"
+                    startContent={sortOrder === 'asc' ? <SortAsc className="w-4 h-4" /> : <SortDesc className="w-4 h-4" />}
+                    endContent={<ChevronDown className="w-4 h-4" />}
+                  >
+                    Sort: {sortOptions.find(opt => opt.key === sortBy)?.label}
+                  </Button>
+                </DropdownTrigger>
+                <DropdownMenu
+                  selectedKeys={[sortBy]}
+                  onSelectionChange={(keys) => setSortBy(Array.from(keys)[0] as string)}
+                >
+                  {sortOptions.map((option) => (
+                    <DropdownItem key={option.key}>{option.label}</DropdownItem>
+                  ))}
+                </DropdownMenu>
+              </Dropdown>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Tabs
+                selectedKey={viewMode}
+                onSelectionChange={(key) => setViewMode(key as string)}
+                size="sm"
+                variant="light"
+              >
+                <Tab key="grid" title={<Grid3X3 className="w-4 h-4" />} />
+                <Tab key="list" title={<List className="w-4 h-4" />} />
+              </Tabs>
+              
+              <Button
+                variant="flat"
+                size="sm"
+                startContent={sortOrder === 'asc' ? <SortAsc className="w-4 h-4" /> : <SortDesc className="w-4 h-4" />}
+                onPress={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+              />
+            </div>
+          </div>
+        </CardBody>
+      </Card>
 
       {/* Content */}
-      <Tabs defaultSelectedKey="all" className="w-full">
-        <Tab key="all" title="All Extensions">
-          {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[...Array(6)].map((_, i) => (
-                <Card key={i} className="animate-pulse">
-                  <CardBody className="p-6">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-12 h-12 bg-default-200 rounded-xl" />
-                      <div className="space-y-2">
-                        <div className="w-24 h-4 bg-default-200 rounded" />
-                        <div className="w-16 h-3 bg-default-200 rounded" />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="w-full h-3 bg-default-200 rounded" />
-                      <div className="w-3/4 h-3 bg-default-200 rounded" />
-                    </div>
-                  </CardBody>
-                </Card>
-              ))}
+      <Tabs 
+        selectedKey={selectedTab}
+        onSelectionChange={(key) => setSelectedTab(key as string)}
+        className="w-full"
+        classNames={{
+          tabList: "bg-default-100/50 p-1 rounded-lg",
+          cursor: "bg-white dark:bg-default-900 shadow-sm",
+          tab: "h-10",
+          tabContent: "text-sm font-medium group-data-[selected=true]:text-primary"
+        }}
+      >
+        <Tab 
+          key="all" 
+          title={
+            <div className="flex items-center gap-2">
+              <Grid3X3 className="w-4 h-4" />
+              <span>All Extensions</span>
+              <Chip size="sm" variant="flat" className="ml-1">
+                {processedExtensions.length}
+              </Chip>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredExtensions.map((extension) => (
+          }
+        >
+          <AnimatePresence mode="wait">
+            {isLoading ? (
+              <motion.div
+                key="loading"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className={viewMode === 'grid' ? 
+                  'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6' : 
+                  'space-y-3'
+                }
+              >
+                {[...Array(8)].map((_, i) => (
+                  <Card key={i} className="animate-pulse">
+                    <CardBody className="p-6">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-12 h-12 bg-default-200 rounded-xl" />
+                        <div className="space-y-2 flex-1">
+                          <div className="w-3/4 h-4 bg-default-200 rounded" />
+                          <div className="w-1/2 h-3 bg-default-200 rounded" />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="w-full h-3 bg-default-200 rounded" />
+                        <div className="w-4/5 h-3 bg-default-200 rounded" />
+                        <div className="w-full h-8 bg-default-200 rounded mt-4" />
+                      </div>
+                    </CardBody>
+                  </Card>
+                ))}
+              </motion.div>
+            ) : processedExtensions.length === 0 ? (
+              <motion.div
+                key="empty"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="text-center py-12"
+              >
+                <div className="w-16 h-16 rounded-full bg-default-100 flex items-center justify-center mx-auto mb-4">
+                  <Search className="w-8 h-8 text-default-400" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">No extensions found</h3>
+                <p className="text-default-500 mb-4">Try adjusting your search criteria or browse different categories.</p>
+                <Button
+                  variant="flat"
+                  onPress={() => {
+                    setSearchQuery('');
+                    setSelectedCategory('all');
+                  }}
+                >
+                  Clear Filters
+                </Button>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="content"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className={viewMode === 'grid' ? 
+                  'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6' : 
+                  'space-y-3'
+                }
+              >
+                {processedExtensions.map((extension, index) => (
+                  <ExtensionCard
+                    key={extension.id}
+                    extension={extension}
+                    userExtension={getUserExtension(extension.id)}
+                    onConnect={handleConnect}
+                    onDisconnect={handleDisconnect}
+                    onSync={handleSync}
+                    onConfigure={(userExt) => {
+                      toast.info('Configuration modal coming soon!');
+                    }}
+                    viewMode={viewMode}
+                  />
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </Tab>
+
+        <Tab 
+          key="connected" 
+          title={
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4" />
+              <span>Connected</span>
+              <Chip size="sm" variant="flat" color="success" className="ml-1">
+                {connectedExtensions.length}
+              </Chip>
+            </div>
+          }
+        >
+          <AnimatePresence mode="wait">
+            {connectedExtensions.length === 0 ? (
+              <motion.div
+                key="empty-connected"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="text-center py-12"
+              >
+                <div className="w-16 h-16 rounded-full bg-success-100 flex items-center justify-center mx-auto mb-4">
+                  <Wallet className="w-8 h-8 text-success" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">No connected extensions</h3>
+                <p className="text-default-500 mb-4">Connect your first extension to start aggregating data.</p>
+                <Button
+                  color="primary"
+                  startContent={<Plus className="w-4 h-4" />}
+                  onPress={() => setSelectedTab('available')}
+                >
+                  Browse Extensions
+                </Button>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="connected-content"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className={viewMode === 'grid' ? 
+                  'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6' : 
+                  'space-y-3'
+                }
+              >
+                {connectedExtensions.map((extension) => (
+                  <ExtensionCard
+                    key={extension.id}
+                    extension={extension}
+                    userExtension={getUserExtension(extension.id)}
+                    onConnect={handleConnect}
+                    onDisconnect={handleDisconnect}
+                    onSync={handleSync}
+                    onConfigure={(userExt) => {
+                      toast.info('Configuration modal coming soon!');
+                    }}
+                    viewMode={viewMode}
+                  />
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </Tab>
+
+        <Tab 
+          key="available" 
+          title={
+            <div className="flex items-center gap-2">
+              <Plus className="w-4 h-4" />
+              <span>Available</span>
+              <Chip size="sm" variant="flat" color="primary" className="ml-1">
+                {availableExtensions.length}
+              </Chip>
+            </div>
+          }
+        >
+          <AnimatePresence mode="wait">
+            <motion.div
+              key="available-content"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className={viewMode === 'grid' ? 
+                'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6' : 
+                'space-y-3'
+              }
+            >
+              {availableExtensions.map((extension) => (
                 <ExtensionCard
                   key={extension.id}
                   extension={extension}
-                  userExtension={getUserExtension(extension.id)}
+                  userExtension={null}
                   onConnect={handleConnect}
                   onDisconnect={handleDisconnect}
                   onSync={handleSync}
-                  onConfigure={(userExt) => {
-                    // Handle configuration modal
-                  }}
+                  onConfigure={() => {}}
+                  viewMode={viewMode}
                 />
               ))}
-            </div>
-          )}
-        </Tab>
-
-        <Tab key="connected" title={`Connected (${connectedExtensions.length})`}>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {connectedExtensions.map((extension) => (
-              <ExtensionCard
-                key={extension.id}
-                extension={extension}
-                userExtension={getUserExtension(extension.id)}
-                onConnect={handleConnect}
-                onDisconnect={handleDisconnect}
-                onSync={handleSync}
-                onConfigure={(userExt) => {
-                  // Handle configuration modal
-                }}
-              />
-            ))}
-          </div>
-        </Tab>
-
-        <Tab key="available" title={`Available (${availableExtensions.length})`}>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {availableExtensions.map((extension) => (
-              <ExtensionCard
-                key={extension.id}
-                extension={extension}
-                userExtension={null}
-                onConnect={handleConnect}
-                onDisconnect={handleDisconnect}
-                onSync={handleSync}
-                onConfigure={() => {}}
-              />
-            ))}
-          </div>
+            </motion.div>
+          </AnimatePresence>
         </Tab>
       </Tabs>
 
       {/* Connection Modal */}
-      <Modal isOpen={isOpen} onClose={onClose} size="lg">
+      <Modal 
+        isOpen={isOpen} 
+        onClose={onClose} 
+        size="lg"
+        classNames={{
+          backdrop: "bg-background/50 backdrop-blur-sm",
+          base: "border border-default-200",
+          header: "border-b border-default-200",
+          footer: "border-t border-default-200"
+        }}
+      >
         <ModalContent>
-          <ModalHeader>
-            Connect {selectedExtension?.name}
+          <ModalHeader className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-primary-100 dark:bg-primary-900/30">
+              <Link2 className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold">Connect {selectedExtension?.name}</h3>
+              <p className="text-sm text-default-500">
+                Secure connection to {selectedExtension?.name}
+              </p>
+            </div>
           </ModalHeader>
-          <ModalBody>
+          <ModalBody className="space-y-6">
             {selectedExtension && (
-              <div className="space-y-4">
+              <>
                 <Input
                   label="Connection Name"
-                  placeholder="Give this connection a name"
+                  placeholder="Give this connection a memorable name"
                   value={connectionName}
                   onChange={(e) => setConnectionName(e.target.value)}
                   variant="bordered"
+                  startContent={<Settings className="w-4 h-4 text-default-400" />}
+                  description="This helps you identify the connection later"
                 />
                 
-                {getCredentialFields(selectedExtension).map((field) => (
-                  <Input
-                    key={field.key}
-                    label={field.label}
-                    placeholder={`Enter your ${field.label.toLowerCase()}`}
-                    type={field.type}
-                    value={credentials[field.key] || ''}
-                    onChange={(e) => setCredentials(prev => ({
-                      ...prev,
-                      [field.key]: e.target.value
-                    }))}
-                    variant="bordered"
-                    isRequired={field.required}
-                  />
-                ))}
-                
-                <div className="p-3 bg-warning-50 border border-warning-200 rounded-lg">
-                  <p className="text-warning-800 text-sm">
-                    <strong>Security:</strong> Your credentials are encrypted and stored securely. 
-                    We never share your data with third parties.
-                  </p>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Shield className="w-4 h-4 text-primary" />
+                    <h4 className="font-medium">Credentials</h4>
+                  </div>
+                  
+                  {getCredentialFields(selectedExtension).map((field) => (
+                    <Input
+                      key={field.key}
+                      label={field.label}
+                      placeholder={`Enter your ${field.label.toLowerCase()}`}
+                      type={field.type}
+                      value={credentials[field.key] || ''}
+                      onChange={(e) => setCredentials(prev => ({
+                        ...prev,
+                        [field.key]: e.target.value
+                      }))}
+                      variant="bordered"
+                      isRequired={field.required}
+                      description={field.description}
+                      startContent={
+                        field.type === 'password' ? 
+                          <Shield className="w-4 h-4 text-default-400" /> :
+                          <Database className="w-4 h-4 text-default-400" />
+                      }
+                    />
+                  ))}
                 </div>
-              </div>
+                
+                <div className="p-4 bg-gradient-to-r from-primary-50 to-secondary-50 border border-primary-200 rounded-lg dark:from-primary-950/20 dark:to-secondary-950/20 dark:border-primary-800/50">
+                  <div className="flex items-start gap-3">
+                    <Shield className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+                    <div className="text-sm">
+                      <p className="font-medium text-primary mb-1">Security & Privacy</p>
+                      <ul className="text-primary/80 space-y-1 text-xs">
+                        <li>• All credentials are encrypted using AES-256 encryption</li>
+                        <li>• We never store or share your data with third parties</li>
+                        <li>• You can disconnect and delete credentials anytime</li>
+                        <li>• Data is processed securely in compliance with privacy laws</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </>
             )}
           </ModalBody>
           <ModalFooter>
@@ -527,6 +1067,7 @@ export default function ExtensionsPage() {
               color="primary" 
               onPress={handleSubmitConnection}
               isDisabled={!connectionName.trim() || !Object.keys(credentials).length}
+              startContent={<Link2 className="w-4 h-4" />}
             >
               Connect Extension
             </Button>

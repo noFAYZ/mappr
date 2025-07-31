@@ -11,6 +11,7 @@ import { Navbar } from "@/components/navbar";
 import { Sidebar } from "@/components/sidebar";
 import { NavigationProvider } from "@/contexts/NavigationContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { Toaster } from "@/components/ui/sonner";
 
 // Premium font configuration
 const spaceGrotesk = Space_Grotesk({
@@ -178,7 +179,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
         <meta name="description" content={siteConfig.description} />
         <meta name="keywords" content="data aggregation, financial dashboard, crypto analytics, business intelligence, portfolio management, SaaS platform" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/favicon.ico" />
+       
       </head>
       <body
         className={clsx(
@@ -191,6 +192,8 @@ export default function RootLayout({ children }: RootLayoutProps) {
             <NavigationProvider>
               <LayoutContent>
                 {children}
+                <Toaster />
+
               </LayoutContent>
             </NavigationProvider>
           </AuthProvider>
