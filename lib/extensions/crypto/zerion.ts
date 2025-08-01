@@ -242,7 +242,7 @@ export class ZerionExtension extends BaseExtension {
 
   private async getNFTs(address: string) {
     try {
-      const response = await this.sdk.wallets.getNFTs(address);
+      const response = await this.sdk.wallets.getNFTPositions(address);
       return response.data;
     } catch (error) {
       ErrorHandler.handle(error, 'ZerionExtension.getNFTs');
