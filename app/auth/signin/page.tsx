@@ -29,6 +29,7 @@ import {
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUIStore } from '@/stores';
+import { LogoLoader, LogoMappr } from '@/components/icons';
 
 // Form validation schema
 const signInSchema = z.object({
@@ -209,7 +210,9 @@ export default function SignInPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin" />
+          <div className="w-12 h-12 ">
+          <LogoLoader className='w-12 h-12' />
+          </div>
           <p className="text-default-500">Checking authentication...</p>
         </div>
       </div>

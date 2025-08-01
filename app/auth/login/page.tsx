@@ -42,16 +42,12 @@ export default function LoginPage() {
         <Card className="bg-background/80 backdrop-blur-xl border-default-200/50 shadow-2xl">
           <CardHeader className="pb-6 pt-8 px-8">
             <div className="text-center w-full">
-              <div className="flex items-center justify-center mb-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-xl flex items-center justify-center">
-                  <span className="text-white font-bold text-xl">DA</span>
-                </div>
-              </div>
+         
               <h1 className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
                 Welcome Back
               </h1>
               <p className="text-default-500 mt-2">
-                Sign in to your DataAggregator account
+                Sign in to your MoneyMappr account
               </p>
             </div>
           </CardHeader>
@@ -72,8 +68,8 @@ export default function LoginPage() {
                 className: {
                   container: 'w-full',
                   button: 'w-full bg-primary hover:bg-primary-600 text-white px-4 py-3 rounded-lg font-medium transition-colors',
-                  input: 'w-full p-3 border border-default-300 rounded-lg mb-4 bg-background',
-                  message: 'text-sm text-danger mb-4 p-3 bg-danger-50 border border-danger-200 rounded-lg',
+                  input: 'w-full p-3 border border-default-300 rounded-2xl mb-4 bg-background',
+                  message: 'text-sm text-danger mb-4 p-3 bg-danger-50 border border-danger-200 rounded-xl',
                   divider: 'my-6',
                   label: 'text-sm font-medium text-foreground mb-2 block',
                 }

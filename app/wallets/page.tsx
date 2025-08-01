@@ -529,7 +529,7 @@ const WalletCard = ({
   viewMode: 'grid' | 'list';
   delay?: number;
 }) => {
-  const value = walletData?.portfolio?.totalValue || 0;
+  const value = walletData?.portfolio?.totalValue?.positions || 0;
   const change = walletData?.portfolio?.dayChange || 0;
   const changePercent = walletData?.portfolio?.dayChangePercent || 0;
   const positionsCount = walletData?.metadata?.positionsCount || 0;
@@ -542,6 +542,8 @@ const WalletCard = ({
     navigator.clipboard.writeText(wallet.address);
     toast.success('Address copied to clipboard');
   };
+
+  console.log( walletData, 'Wallet Address');
 
   const openEtherscan = () => {
     window.open(`https://etherscan.io/address/${wallet.address}`, '_blank');
@@ -561,7 +563,14 @@ const WalletCard = ({
     if (change < -5) return <TrendingDown className="h-4 w-4 text-danger" />;
     return null;
   };
-
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'success': return 'success';
+      case 'syncing': return 'warning';
+      case 'error': return 'danger';
+      default: return 'default';
+    }
+  };
   if (viewMode === 'list') {
     return (
       <motion.div
@@ -629,7 +638,7 @@ const WalletCard = ({
               <div className="flex items-center gap-6">
                 <div className="text-right">
                   <p className="font-semibold">
-                    {showBalances ? `${value.toLocaleString()}` : '••••••'}
+                    {showBalances ? `${value?.positions?.toLocaleString()}` : '••••••'}
                   </p>
                   <p className={`text-sm ${changePercent >= 0 ? 'text-success' : 'text-danger'}`}>
                     {showBalances ? `${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(2)}%` : '•••%'}

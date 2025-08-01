@@ -334,17 +334,17 @@ export function Navbar({ className }: NavbarProps) {
                       variant="solid"
                       isIconOnly
                       size="sm"
-                      className="h-9 w-9 rounded-full relative"
+                      className="h-9 w-9 rounded-full relative overflow-visible"
                       aria-label="Notifications"
                     >
                       <CuidaNotificationBellOutline className="w-4 h-4 text-default-600" />
                       {unreadNotifications > 0 && (
                         <Chip
-                          content={unreadNotifications}
+                        
                           color="danger"
                           size="sm"
-                          className="absolute -top-1 -right-1"
-                        />
+                          className="absolute -top-1 p-0 text-[10px] -right-1 "
+                        >{unreadNotifications.toString()}</Chip>
                       )}
                     </Button>
                   </DropdownTrigger>
@@ -485,7 +485,7 @@ export function Navbar({ className }: NavbarProps) {
             ) : (
               <Button
                 as={NextLink}
-                href="/auth/login"
+                href="/auth/signin"
            
                 size="sm"
                 variant="solid"
