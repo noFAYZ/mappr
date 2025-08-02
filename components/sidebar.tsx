@@ -463,14 +463,14 @@ export function Sidebar({
 
                       {item.submenu && (!isSidebarCollapsed || isMobile) ? (
                         <Button
-                          variant="bordered"
+                          variant="flat"
                      
                           className={clsx(
-                            "w-full justify-start  p-2 h-auto transition-all duration-200 group border",
+                            "w-full justify-start  p-2 h-auto bg-transparent group",
                             isActive(item.href)
                             
-                            ? "bg-primary-500/25 text-primary-600 border-primary-500/20 shadow-sm"
-                            : "hover:bg-primary-500/20 hover:border-primary-500/20 hover:text-primary-600 "
+                            ? " text-primary-600 border-primary-500/20 shadow-sm"
+                            : " hover:border-primary-500/20 hover:text-primary-600 "
                           )}
                           onPress={() => toggleMenu(item.href)}
                         >
@@ -483,15 +483,11 @@ export function Sidebar({
                             </span>
                             <span className="text-xs font-medium">{item.label}</span>
                             {item.badge && (
-                              <Chip size="sm" color="primary" variant="flat">
+                              <Chip size="sm" color="primary" variant="flat" className="text-[10px] h-5 bg-primary-500/20 rounded-md px-0.5">
                                 {item.badge}
                               </Chip>
                             )}
-                            {item.isNew && (
-                              <Chip size="sm" color="success" content="New" variant="flat">
-                               
-                              </Chip>
-                            )}
+                           
                           </div>
                           <ChevronDown 
                             className={clsx(
@@ -506,14 +502,14 @@ export function Sidebar({
                           href={item.href}
                           size="sm"
                           isIconOnly={isSidebarCollapsed && !isMobile}
-                          variant="bordered"
+                          variant="flat"
                           radius="md"
                           className={clsx(
-                            "w-full h-auto transition-all duration-100 group nav-item border ",
+                            "w-full h-auto transition-all duration-100 group nav-item bg-transparent  ",
                             isSidebarCollapsed && !isMobile ? "justify-center p-2" : "justify-start p-2",
                             isActive(item.href)
-                              ? "bg-primary-500/25 text-primary-600 border-primary-500/20 shadow-sm"
-                              : "hover:bg-primary-500/20 hover:border-primary-500/20 hover:text-primary-600 "
+                              ? " text-primary-600 border-primary-500/20 shadow-sm"
+                              : " hover:border-primary-500/20 hover:text-primary-600 "
                           )}
                         >
                           <div className={clsx(
@@ -531,15 +527,11 @@ export function Sidebar({
                                 <span className="text-xs font-medium">{item.label}</span>
                                 <div className="flex items-center gap-2 ml-auto">
                                   {item.badge && (
-                                    <Badge size="sm" color="primary" variant="flat">
+                                    <Chip size="sm" color="primary" variant="flat" className="text-[10px] h-5 bg-primary-500/20 rounded-md px-0.5">
                                       {item.badge}
-                                    </Badge>
-                                  )}
-                                  {item.isNew && (
-                                    <Chip size="sm" color="success" variant="flat">
-                                      New
                                     </Chip>
                                   )}
+                                 
                                 </div>
                               </>
                             )}
@@ -570,12 +562,12 @@ export function Sidebar({
                               <span className="text-xs">{subItem.label}</span>
                               <div className="flex items-center gap-1 ml-auto">
                                 {subItem.badge && (
-                                  <Badge size="sm" color="primary" variant="flat">
+                                  <Chip size="sm" color="primary" variant="flat" className="text-[10px] h-5 bg-primary-500/20 rounded-md px-0.5">
                                     {subItem.badge}
-                                  </Badge>
+                                  </Chip>
                                 )}
                                 {subItem.isNew && (
-                                  <Chip size="sm" color="success" variant="flat" className="h-4 text-xs">
+                                  <Chip size="sm" color="success" variant="flat" className="text-[10px] h-5 bg-lime-500/25 rounded-md px-0.5">
                                     New
                                   </Chip>
                                 )}

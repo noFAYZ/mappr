@@ -130,7 +130,7 @@ function LayoutContent({ children }: LayoutContentProps) {
 
       {/* Sidebar with enhanced glass effect */}
       <Sidebar 
-        className="bg-background/80 backdrop-blur-xl border-r border-default-200/50 shadow-lg"
+       
       />
       
       {/* Main Content Wrapper with enhanced styling */}
@@ -138,18 +138,18 @@ function LayoutContent({ children }: LayoutContentProps) {
         
         {/* Premium Navbar with enhanced glass effect */}
         {!shouldHideNavbar && (
-          <Navbar className=" bg-background/80 dark:bg-transparent " />
+          <Navbar />
         )}
         
         {/* Main Content Area with premium styling */}
         <main className="flex-1 w-full overflow-x-auto relative">
           
           {/* Content Container with enhanced responsive design */}
-          <div className="relative w-full min-h-[calc(100vh-4rem)] max-w-[2000px] mx-auto">
-            <div className="p-4 sm:p-6 lg:p-8 xl:p-10">
+          <div className="relative w-full min-h-[calc(100vh-5rem)] max-w-7xl mx-auto">
+            <div className="relative p-6">
               
               {/* Premium content wrapper with enhanced animations */}
-              <div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-700 ease-out">
+              <div className="relative animate-in fade-in-0 slide-in-from-bottom-2 duration-200 ease-out">
                 {/* Content backdrop for better readability */}
                 <div className="relative">
                   {/* Subtle content background */}

@@ -196,3 +196,42 @@ export function SolarLoginBoldDuotone(props: SVGProps<SVGSVGElement>) {
 export function LetsIconsLockDuotone(props: SVGProps<SVGSVGElement>) {
 	return (<svg xmlns="http://www.w3.org/2000/svg" width={24} height={24} viewBox="0 0 24 24" {...props}><g fill="none"><path fill="currentColor" fillOpacity={0.25} d="M4 12c0-.943 0-1.414.293-1.707S5.057 10 6 10h12c.943 0 1.414 0 1.707.293S20 11.057 20 12v6.038c0 .38 0 .571-.029.74a2 2 0 0 1-1.164 1.49c-.156.07-.341.116-.71.208c-1.238.31-1.857.464-2.476.578c-2.394.44-4.848.44-7.243 0c-.618-.114-1.237-.269-2.474-.578c-.37-.092-.555-.139-.71-.207a2 2 0 0 1-1.165-1.492C4 18.61 4 18.42 4 18.037z"></path><path stroke="currentColor" d="M16.5 10V9a4.5 4.5 0 0 0-9 0v1" strokeWidth={1}></path><circle cx={12} cy={15} r={2} fill="currentColor"></circle><path stroke="currentColor" strokeLinecap="round" d="M12 16v2.5" strokeWidth={1}></path></g></svg>);
 }
+
+
+export function OouiCheckAll(props: SVGProps<SVGSVGElement>) {
+	return (<svg xmlns="http://www.w3.org/2000/svg" width={20} height={20} viewBox="0 0 20 20" {...props}><path fill="currentColor" d="m.29 12.71l1.42-1.42l2.22 2.22l8.3-10.14l1.54 1.26l-9.7 11.86zM12 10h5v2h-5zm-3 4h5v2H9zm6-8h5v2h-5z" strokeWidth={0.5} stroke="currentColor"></path></svg>);
+}
+
+
+export function BitcoinIconsCaretUpFilled(props: SVGProps<SVGSVGElement>) {
+	return (<svg xmlns="http://www.w3.org/2000/svg" width={24} height={24} viewBox="0 0 24 24" {...props}><path fill="currentColor" fillRule="evenodd" d="M12.248 8.237a.25.25 0 0 0-.354 0L5.53 14.601a.75.75 0 1 1-1.06-1.06l6.363-6.364a1.75 1.75 0 0 1 2.475 0l6.364 6.364a.75.75 0 0 1-1.06 1.06z" clipRule="evenodd" strokeWidth={0.5} stroke="currentColor"></path></svg>);
+}
+
+
+export function IcTwotonePrivacyTip(props: SVGProps<SVGSVGElement>) {
+	return (<svg xmlns="http://www.w3.org/2000/svg" width={24} height={24} viewBox="0 0 24 24" {...props}><path fill="currentColor" d="M12 3.19L5 6.3V11c0 4.52 2.98 8.69 7 9.93c4.02-1.23 7-5.41 7-9.93V6.3zM13 17h-2v-6h2zm0-8h-2V7h2z" opacity={0.3} strokeWidth={0.5} stroke="currentColor"></path><path fill="currentColor" d="m12 3.19l7 3.11V11c0 4.52-2.98 8.69-7 9.93c-4.02-1.24-7-5.41-7-9.93V6.3zM12 1L3 5v6c0 5.55 3.84 10.74 9 12c5.16-1.26 9-6.45 9-12V5zm-1 6h2v2h-2zm0 4h2v6h-2z" strokeWidth={0.5} stroke="currentColor"></path></svg>);
+}
+
+
+export function ArcticonsEssentialSpace(props: SVGProps<SVGSVGElement>) {
+	return (<svg xmlns="http://www.w3.org/2000/svg" width={48} height={48} viewBox="0 0 48 48" {...props}><circle cx={24} cy={24} r={3} fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={1}></circle><path fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" d="m21 3.305l-13.424 7.75a6 6 0 0 0-3 5.195v15.5a6 6 0 0 0 3 5.195L21 44.695a6 6 0 0 0 6 0l13.424-7.75a6 6 0 0 0 3-5.195v-15.5a6 6 0 0 0-3-5.195L27 3.305a6 6 0 0 0-6 0m3 12.123V8.5m0 31v-6.928m7.424-12.857l6-3.464m-26.847 15.5l6-3.464m-.001-8.571l-6-3.464m26.847 15.5l-6-3.464" strokeWidth={1}></path></svg>);
+}
+
+
+export function RiSpaceShipFill(props: SVGProps<SVGSVGElement>) {
+	return (<svg xmlns="http://www.w3.org/2000/svg" width={24} height={24} viewBox="0 0 24 24" {...props}><path fill="currentColor" d="M2.88 18.049a35.9 35.9 0 0 1 8.531-16.32a.8.8 0 0 1 1.178 0q.25.27.412.456a35.9 35.9 0 0 1 8.119 15.864a44 44 0 0 1-6.584.875L12.447 23.1a.5.5 0 0 1-.894 0l-2.089-4.177a44 44 0 0 1-6.584-.875M12 14.995a3 3 0 1 0 0-6a3 3 0 0 0 0 6" strokeWidth={0.5} stroke="currentColor"></path></svg>);
+}
+
+
+export function MdiSpaceInvaders(props: SVGProps<SVGSVGElement>) {
+	return (<svg xmlns="http://www.w3.org/2000/svg" width={24} height={24} viewBox="0 0 24 24" {...props}><path fill="currentColor" d="M7 6H5V4h2zm10 0h2V4h-2zm6 6v6h-2v-4h-2v4h-2v-2H7v2H5v-4H3v4H1v-6h2v-2h2V8h2V6h2v2h6V6h2v2h2v2h2v2zm-8-2v2h2v-2zm-8 2h2v-2H7zm4 6H7v2h4zm6 0h-4v2h4z" strokeWidth={0.5} stroke="currentColor"></path></svg>);
+}
+
+
+export function MdiMessageFastOutline(props: SVGProps<SVGSVGElement>) {
+	return (<svg xmlns="http://www.w3.org/2000/svg" width={24} height={24} viewBox="0 0 24 24" {...props}><path fill="currentColor" d="M20 5H9c-1.1 0-2 .9-2 2v14l4-4h9c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2m0 10h-9.8L9 16.2V7h11zM3 7c-.6 0-1 .4-1 1s.4 1 1 1h2V7zm-1 4c-.6 0-1 .4-1 1s.4 1 1 1h3v-2zm-1 4c-.6 0-1 .4-1 1s.4 1 1 1h4v-2z" strokeWidth={0.5} stroke="currentColor"></path></svg>);
+}
+
+export function UimCommentAltMessage(props: SVGProps<SVGSVGElement>) {
+	return (<svg xmlns="http://www.w3.org/2000/svg" width={24} height={24} viewBox="0 0 24 24" {...props}><path fill="currentColor" d="M17 9H7a1 1 0 0 1 0-2h10a1 1 0 0 1 0 2m0 4H7a1 1 0 0 1 0-2h10a1 1 0 0 1 0 2" strokeWidth={0.5} stroke="currentColor"></path><path fill="currentColor" d="M19 2H5a3.003 3.003 0 0 0-3 3v10a3.003 3.003 0 0 0 3 3h11.586l3.707 3.707A1 1 0 0 0 22 21V5a3.003 3.003 0 0 0-3-3m-2 11H7a1 1 0 0 1 0-2h10a1 1 0 0 1 0 2m0-4H7a1 1 0 0 1 0-2h10a1 1 0 0 1 0 2" opacity={0.5} strokeWidth={0.5} stroke="currentColor"></path></svg>);
+}

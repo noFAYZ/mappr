@@ -25,7 +25,8 @@ export class DataNormalizer {
           change24h: position.attributes?.changes?.percent_1d || 0,
           icon: position.attributes?.fungible_info?.icon?.url,
           chain: position.relationships?.chain?.data?.id,
-          protocol: position.relationships?.protocol?.data?.id
+          protocol: position.relationships?.protocol?.data?.id,
+          verified: position.attributes?.fungible_info?.flags?.verified || false,
         },
         metadata: {
           normalized: true,
@@ -92,14 +93,12 @@ export class DataNormalizer {
     }
   
     static normalizeChartData(chartData: any[]): any[] {
-      if (!Array.isArray(chartData)) return [];
+      if (!Array.isArray(chartData.points)) return [];
   
-      return chartData.map(point => ({
-        timestamp: point.timestamp || point.date,
-        value: point.value || point.price || 0,
-        change: point.change || 0,
-        changePercent: point.changePercent || 0,
-        volume: point.volume || 0
+      return chartData?.points.map(point => ({
+        timestamp: point.timestamp || point[0],
+        value: point.value || point[1] || 0,
+
       }));
     }
   }

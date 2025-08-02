@@ -1,215 +1,470 @@
-import React, { useState } from 'react';
-import { 
-  ArrowLeft,
-  Copy,
-  ExternalLink,
-  Eye,
-  EyeOff,
-  RefreshCw,
+// components/WalletAnalytics/WalletDetails.tsx
+'use client';
+
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { Card, CardBody, CardHeader } from '@heroui/card';
+import { Button } from '@heroui/button';
+import { Chip } from '@heroui/chip';
+import { Tabs, Tab } from '@heroui/tabs';
+import { Avatar } from '@heroui/avatar';
+import { Progress } from '@heroui/progress';
+import { Spinner } from '@heroui/spinner';
+import {
   TrendingUp,
   TrendingDown,
-  BarChart3,
+  DollarSign,
   Coins,
+  Globe,
+  Clock,
   Activity,
+  BarChart3,
+  PieChart,
+  ImageIcon,
+  ExternalLink,
+  Copy,
+  RefreshCw,
+  Search,
+  Filter,
+  Eye,
+  EyeOff,
+  Calendar,
+  Target,
+  Zap,
+  Shield,
+  AlertTriangle,
+  CheckCircle2,
+  Info,
+  ArrowUpRight,
+  ArrowDownRight,
+  Percent,
+  Hash,
+  Send,
+  Download,
+  Upload as UploadIcon,
+  Repeat,
   Star,
-  Wallet
+  Sparkles
 } from 'lucide-react';
-import { useWalletData } from '@/lib/hooks/useWalletAnalytics';
+import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 
-import OverviewTab from '@/components/wallets/tabs/OverviewTab';
-import PositionsTab from '@/components/wallets/tabs/PositionsTab';
-import TransactionsTab from '@/components/wallets/tabs/TransactionsTab';
-import NFTsTab from '@/components/wallets/tabs/NFTsTab';
-import { Avatar } from '@heroui/avatar';
-import { Card, CardBody } from '@heroui/card';
-import { Button } from '@heroui/react';
+import { TabKey } from '@/lib/wallet-analytics/types';
+import type { WalletData, WalletPosition } from '@/lib/wallet-analytics/types';
+import { WalletHeader } from './WalletDetails/WalletHeader';
+import ModernTabs from './WalletDetails/ModernTabs';
+import { TokensList } from './WalletDetails/TokensList';
 
 interface WalletDetailsProps {
-  wallet: any;
-  onBack: () => void;
+  wallet: {
+    id: string;
+    address: string;
+    name?: string;
+    chainType?: string;
+    lastSyncAt?: string;
+    syncStatus?: 'success' | 'syncing' | 'error' | 'pending';
+  };
+  data: WalletData | null;
   showBalances: boolean;
-  onToggleBalances: () => void;
-  formatCurrency: (value: number) => string;
-  formatPercentage: (value: number) => string;
+  onRefresh: () => Promise<void>;
+  isRefreshing?: boolean;
+  isLoading?: boolean;
 }
 
-const WalletDetails = ({ wallet, onBack, showBalances, onToggleBalances, formatCurrency, formatPercentage }) => {
-    const [activeTab, setActiveTab] = useState('overview');
-    // You'll need to implement useWalletData hook or get data from props
-    const data = null; // Replace with actual wallet data
-    const analytics = null; // Replace with actual analytics data
-    const isLoading = false; // Replace with actual loading state
+// Portfolio Performance Chart Component
+const PortfolioChart = ({ 
+  data, 
+  timeframe = '30d', 
+  showBalances 
+}: { 
+  data: any; 
+  timeframe?: string; 
+  showBalances: boolean; 
+}) => {
+  const chartData = data?.chart || data?.history || [];
   
+  if (!showBalances) {
     return (
-      <div className="p-6 space-y-6">
-        {/* Header */}
-        <div className="flex items-center gap-4">
-          <Button
-            variant="flat"
-            startContent={<ArrowLeft className="h-4 w-4" />}
-            onPress={onBack}
-          >
-            Back to Wallets
-          </Button>
-          
-          <div className="flex-1">
-            <div className="flex items-center gap-3">
-              <Avatar 
-                name={(wallet.name || wallet.address).charAt(0).toUpperCase()}
-                className="bg-gradient-to-br from-primary to-secondary text-primary-foreground"
-                size="lg"
-              />
-              <div>
-                <h1 className="text-2xl font-bold text-foreground">
-                  {wallet.name || `Wallet ${wallet.address.slice(0, 8)}...`}
-                </h1>
-                <div className="flex items-center gap-2">
-                  <p className="text-default-500 font-mono text-small">
-                    {wallet.address}
-                  </p>
-                  <Button
-                    isIconOnly
-                    size="sm"
-                    variant="flat"
-                    onPress={() => {
-                      navigator.clipboard.writeText(wallet.address);
-                      toast.success('Address copied');
-                    }}
-                  >
-                    <Copy className="h-3 w-3" />
-                  </Button>
-                  <Button
-                    isIconOnly
-                    size="sm"
-                    variant="flat"
-                    onPress={() => window.open(`https://etherscan.io/address/${wallet.address}`, '_blank')}
-                  >
-                    <ExternalLink className="h-3 w-3" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-  
-          <div className="flex items-center gap-3">
-            <Button
-              variant="flat"
-              startContent={showBalances ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-              onPress={onToggleBalances}
-            >
-              {showBalances ? 'Hide' : 'Show'} Balances
-            </Button>
-            
-            <Button 
-              color="primary"
-              startContent={<RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />}
-              isDisabled={isLoading}
-            >
-              Sync Wallet
-            </Button>
-          </div>
+      <div className="h-64 flex items-center justify-center bg-default-50 dark:bg-default-900 rounded-lg">
+        <div className="text-center">
+          <EyeOff className="w-12 h-12 text-default-300 mx-auto mb-2" />
+          <p className="text-default-500">Chart hidden for privacy</p>
         </div>
-  
-        {/* Portfolio Overview Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="border-none bg-content1">
-            <CardBody className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-foreground">Total Value</h3>
-                <div className="flex items-center gap-1">
-                  {(data?.portfolio?.dayChange || 0) >= 0 ? (
-                    <TrendingUp className="h-4 w-4 text-success" />
-                  ) : (
-                    <TrendingDown className="h-4 w-4 text-danger" />
-                  )}
-                  <span className={`text-small font-medium ${(data?.portfolio?.dayChange || 0) >= 0 ? 'text-success' : 'text-danger'}`}>
-                    {formatPercentage((data?.portfolio?.dayChange || 0) / (data?.portfolio?.totalValue || 1) * 100)}
-                  </span>
-                </div>
-              </div>
-              <p className="text-3xl font-bold text-foreground">
-                {formatCurrency(data?.portfolio?.totalValue || 0)}
-              </p>
-              <p className="text-small text-default-500 mt-2">
-                24h change: {formatCurrency(data?.portfolio?.dayChange || 0)}
-              </p>
-            </CardBody>
-          </Card>
-  
-          <Card className="border-none bg-content1">
-            <CardBody className="p-6">
-              <h3 className="font-semibold text-foreground mb-4">Performance</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-small text-default-500">Rating</span>
-                  <span className="text-small font-medium text-success capitalize">
-                    {analytics?.performance?.rating || 'N/A'}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-small text-default-500">30d Avg</span>
-                  <span className="text-small font-medium text-foreground">
-                    {formatCurrency(analytics?.performance?.avg30DValue || 0)}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-small text-default-500">Total Return</span>
-                  <span className={`text-small font-medium ${(analytics?.performance?.totalReturnPercent || 0) >= 0 ? 'text-success' : 'text-danger'}`}>
-                    {formatPercentage(analytics?.performance?.totalReturnPercent || 0)}
-                  </span>
-                </div>
-              </div>
-            </CardBody>
-          </Card>
-  
-          <Card className="border-none bg-content1">
-            <CardBody className="p-6">
-              <h3 className="font-semibold text-foreground mb-4">Quick Stats</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-small text-default-500">Positions</span>
-                  <span className="text-small font-medium text-foreground">
-                    {data?.metadata?.positionsCount || 0}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-small text-default-500">Chains</span>
-                  <span className="text-small font-medium text-foreground">
-                    {data?.metadata?.chainsCount || 0}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-small text-default-500">Transactions</span>
-                  <span className="text-small font-medium text-foreground">
-                    {data?.metadata?.transactionsCount || 0}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-small text-default-500">NFTs</span>
-                  <span className="text-small font-medium text-foreground">
-                    {data?.metadata?.nftsCount || 0}
-                  </span>
-                </div>
-              </div>
-            </CardBody>
-          </Card>
-        </div>
-  
-        {/* Placeholder for detailed content */}
-        <Card className="border-none bg-content1">
-          <CardBody className="p-6">
-            <div className="text-center py-12">
-              <Wallet className="h-16 w-16 text-default-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-foreground mb-2">Wallet Details Coming Soon</h3>
-              <p className="text-default-500">
-                Advanced wallet analytics and detailed breakdowns will be available here.
-              </p>
-            </div>
-          </CardBody>
-        </Card>
       </div>
     );
+  }
+
+  if (!chartData.length) {
+    return (
+      <div className="h-64 flex items-center justify-center bg-default-50 dark:bg-default-900 rounded-lg">
+        <div className="text-center">
+          <BarChart3 className="w-12 h-12 text-default-300 mx-auto mb-2" />
+          <p className="text-default-500">No chart data available</p>
+          <p className="text-xs text-default-400 mt-1">Sync wallet to view performance</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-64 bg-gradient-to-br from-primary-50 to-secondary-50 dark:from-primary-950 dark:to-secondary-950 rounded-lg p-4">
+      <div className="text-center text-default-500 mt-20">
+        <BarChart3 className="w-12 h-12 mx-auto mb-2" />
+        <p>Interactive chart coming soon</p>
+        <p className="text-xs mt-1">{chartData.length} data points available</p>
+      </div>
+    </div>
+  );
+};
+
+// NFT Collection Component
+const NFTCollection = ({ 
+  nfts, 
+  showBalances 
+}: { 
+  nfts: any; 
+  showBalances: boolean; 
+}) => {
+  const nftData = nfts?.data || nfts?.items || [];
+  
+  if (!nftData.length) {
+    return (
+      <Card className="border-none">
+        <CardBody className="text-center py-12">
+          <ImageIcon className="w-16 h-16 text-default-300 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold mb-2">No NFTs found</h3>
+          <p className="text-default-500">This wallet doesn't own any NFTs</p>
+        </CardBody>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="border-none">
+      <CardBody className="p-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {nftData.slice(0, 12).map((nft: any, index: number) => (
+            <motion.div
+              key={nft.id || index}
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.2, delay: index * 0.1 }}
+            >
+              <Card className="border-none bg-content1">
+                <CardBody className="p-0">
+                  <div className="aspect-square bg-gradient-to-br from-default-100 to-default-200 dark:from-default-800 dark:to-default-900 rounded-lg flex items-center justify-center">
+                    {nft.content?.preview?.url ? (
+                      <img
+                        src={nft.content.preview.url}
+                        alt={nft.content?.detail?.name || 'NFT'}
+                        className="w-full h-full object-cover rounded-lg"
+                      />
+                    ) : (
+                      <ImageIcon className="w-12 h-12 text-default-400" />
+                    )}
+                  </div>
+                  <div className="p-3">
+                    <h4 className="font-medium text-sm truncate">
+                      {nft.content?.detail?.name || nft.name || 'Unnamed NFT'}
+                    </h4>
+                    <p className="text-xs text-default-500 truncate">
+                      {nft.collection?.name || 'Unknown Collection'}
+                    </p>
+                    {showBalances && nft.value && (
+                      <p className="text-xs font-medium text-primary-600 mt-1">
+                        ${nft.value.toLocaleString()}
+                      </p>
+                    )}
+                  </div>
+                </CardBody>
+              </Card>
+            </motion.div>
+          ))}
+          
+          {nftData.length > 12 && (
+            <Card className="border-none bg-content1 flex items-center justify-center cursor-pointer hover:bg-content2 transition-colors">
+              <CardBody className="p-4 text-center">
+                <div className="aspect-square flex flex-col items-center justify-center">
+                  <Sparkles className="w-8 h-8 text-primary-500 mb-2" />
+                  <p className="text-sm font-medium">+{nftData.length - 12} more</p>
+                  <p className="text-xs text-default-500">View all NFTs</p>
+                </div>
+              </CardBody>
+            </Card>
+          )}
+        </div>
+      </CardBody>
+    </Card>
+  );
+};
+
+// Transaction History Component
+const TransactionHistory = ({ 
+  transactions, 
+  showBalances 
+}: { 
+  transactions: any[]; 
+  showBalances: boolean; 
+}) => {
+  const [filter, setFilter] = useState('all');
+  
+  const filteredTransactions = useMemo(() => {
+    if (!transactions?.length) return [];
+    if (filter === 'all') return transactions.slice(0, 10);
+    return transactions.filter(tx => tx.type === filter).slice(0, 10);
+  }, [transactions, filter]);
+
+  const getTransactionIcon = (type: string) => {
+    switch (type) {
+      case 'send': return <Send className="w-4 h-4 text-danger-500" />;
+      case 'receive': return <Download className="w-4 h-4 text-success-500" />;
+      case 'swap': return <Repeat className="w-4 h-4 text-warning-500" />;
+      case 'approve': return <CheckCircle2 className="w-4 h-4 text-primary-500" />;
+      default: return <Activity className="w-4 h-4 text-default-500" />;
+    }
   };
+
+  const formatValue = (value: number) => 
+    showBalances ? `$${value?.toLocaleString() || '0'}` : '••••••';
+
+  if (!filteredTransactions.length) {
+    return (
+      <Card className="border-none">
+        <CardBody className="text-center py-12">
+          <Activity className="w-16 h-16 text-default-300 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold mb-2">No transactions found</h3>
+          <p className="text-default-500">Transaction history will appear here</p>
+        </CardBody>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="border-none">
+      <CardBody className="p-4 space-y-4">
+        {/* Filter Tabs */}
+        <div className="flex gap-2 overflow-x-auto">
+          {['all', 'send', 'receive', 'swap', 'approve'].map((type) => (
+            <Button
+              key={type}
+              size="sm"
+              variant={filter === type ? 'solid' : 'flat'}
+              color={filter === type ? 'primary' : 'default'}
+              onPress={() => setFilter(type)}
+              className="capitalize whitespace-nowrap"
+            >
+              {type}
+            </Button>
+          ))}
+        </div>
+
+        {/* Transaction List */}
+        <div className="space-y-3">
+          {filteredTransactions.map((tx, index) => (
+            <motion.div
+              key={tx.id || index}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.2, delay: index * 0.05 }}
+            >
+              <Card className="border-none bg-content1">
+                <CardBody className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-default-100 dark:bg-default-800 rounded-lg">
+                        {getTransactionIcon(tx.type)}
+                      </div>
+                      <div>
+                        <h4 className="font-medium capitalize">{tx.type || 'Transaction'}</h4>
+                        <div className="flex items-center gap-2 text-sm text-default-500">
+                          <span>{new Date(tx.timestamp).toLocaleDateString()}</span>
+                          <Button
+                            isIconOnly
+                            size="sm"
+                            variant="light"
+                            onPress={() => window.open(`https://etherscan.io/tx/${tx.hash}`, '_blank')}
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-medium">{formatValue(tx.value)}</p>
+                      <p className="text-sm text-default-500 font-mono">
+                        {tx.hash?.slice(0, 6)}...{tx.hash?.slice(-4)}
+                      </p>
+                    </div>
+                  </div>
+                </CardBody>
+              </Card>
+            </motion.div>
+          ))}
+        </div>
+      </CardBody>
+    </Card>
+  );
+};
+
+// Analytics Tab Component
+const AnalyticsTab = ({ 
+  data, 
+  showBalances 
+}: { 
+  data: any; 
+  showBalances: boolean; 
+}) => {
+  return (
+    <Card className="border-none">
+      <CardBody className="p-4">
+        <div className="text-center py-12">
+          <BarChart3 className="w-16 h-16 text-default-300 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold mb-2">Advanced Analytics</h3>
+          <p className="text-default-500">Detailed performance metrics coming soon</p>
+        </div>
+      </CardBody>
+    </Card>
+  );
+};
+
+// Main Wallet Details Component
+const WalletDetails: React.FC<WalletDetailsProps> = ({ 
+  wallet, 
+  data, 
+  showBalances, 
+  onRefresh, 
+  isRefreshing = false,
+  isLoading = false
+}) => {
+  const [selectedTab, setSelectedTab] = useState<TabKey>('tokens');
+  
+  // Reset tab when wallet changes
+  useEffect(() => {
+    setSelectedTab('tokens');
+  }, [wallet?.id]);
+
+  // Enhanced refresh handler
+  const handleRefresh = useCallback(async () => {
+    if (isRefreshing) return;
+    
+    try {
+      await onRefresh();
+      toast.success('Wallet data refreshed successfully');
+    } catch (error) {
+      console.error('Refresh error:', error);
+      toast.error('Failed to refresh wallet data');
+    }
+  }, [onRefresh, isRefreshing]);
+
+  // Show loading state if no data and currently loading
+  if (isLoading || (isRefreshing && !data)) {
+    return (
+      <Card className="border-none h-full">
+        <CardBody className="text-center py-16">
+          <div className="w-16 h-16 bg-gradient-to-br from-default-100 to-default-200 dark:from-default-800 dark:to-default-900 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <RefreshCw className="w-8 h-8 text-default-400 animate-spin" />
+          </div>
+          <h3 className="text-lg font-semibold mb-2">Loading wallet data...</h3>
+          <p className="text-default-500 mb-4">Fetching portfolio information for {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}</p>
+          <div className="flex items-center justify-center gap-2">
+            <Spinner size="sm" />
+            <span className="text-sm text-default-400">This may take a few moments</span>
+          </div>
+        </CardBody>
+      </Card>
+    );
+  }
+
+  // Show no data state only if not loading and no data
+  if (!isLoading && !data) {
+    return (
+      <Card className="border-none h-full">
+        <CardBody className="text-center py-16">
+          <div className="w-16 h-16 bg-gradient-to-br from-default-100 to-default-200 dark:from-default-800 dark:to-default-900 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <Clock className="w-8 h-8 text-default-400" />
+          </div>
+          <h3 className="text-lg font-semibold mb-2">No data available</h3>
+          <p className="text-default-500 mb-4">
+            Sync this wallet to view detailed portfolio information
+          </p>
+          <Button 
+            color="primary" 
+            onPress={handleRefresh} 
+            isLoading={isRefreshing}
+            startContent={!isRefreshing ? <RefreshCw className="w-4 h-4" /> : undefined}
+          >
+            {isRefreshing ? 'Syncing...' : 'Sync Wallet Now'}
+          </Button>
+        </CardBody>
+      </Card>
+    );
+  }
+
+  // Extract positions data - handle different data structures
+  const positions = useMemo(() => {
+    if (!data) return [];
+    
+    // Try different possible data structures
+    if (Array.isArray(data.positions)) return data.positions;
+    if (Array.isArray(data.data)) return data.data;
+    if (data.portfolio?.positions && Array.isArray(data.portfolio.positions)) return data.portfolio.positions;
+    if (data.lastSyncData?.positions && Array.isArray(data.lastSyncData.positions)) return data.lastSyncData.positions;
+    
+    console.warn('WalletDetails: Unable to extract positions from data structure:', data);
+    return [];
+  }, [data]);
+
+  return (
+    <div className="space-y-6 h-full">
+      {/* Portfolio Overview */}
+      <WalletHeader 
+        data={data}
+        address={wallet.address}
+        showBalance={showBalances}
+        onRefresh={handleRefresh}
+        refreshing={isRefreshing}    />
+
+      {/* Modern Tabbed Content */}
+ 
+           {/* Modern Tabbed Content */}
+      <ModernTabs
+        selectedTab={selectedTab}
+        onTabChange={setSelectedTab}
+        nftCount={data?.nftPortfolio?.length || 0}
+        tokenCount={positions.length}
+      
+      >
+        {selectedTab === 'tokens' && (
+         <TokensList 
+         walletId={wallet.id}
+         positions={positions}
+         showBalance={showBalances}
+         isLoading={isLoading}
+         isRefreshing={isRefreshing}
+         onRefresh={handleRefresh}
+       />
+        )}
+
+        {selectedTab === 'nfts' && (
+          <NFTCollection 
+            nfts={data?.nftPortfolio} 
+            showBalances={showBalances} 
+          />
+        )}
+
+        {selectedTab === 'transactions' && (
+          <TransactionHistory 
+            transactions={data?.transactions} 
+            showBalances={showBalances} 
+          />
+        )}
+      </ModernTabs>
+
+
+
+        
+   
+    </div>
+  );
+};
 
 export default WalletDetails;

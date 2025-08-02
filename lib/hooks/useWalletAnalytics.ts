@@ -98,23 +98,21 @@ export const useWalletAnalytics = () => {
       setLoading(true);
       setError(null);
 
-      // Validate address format
-      if (!/^0x[a-fA-F0-9]{40}$/.test(address)) {
-        throw new Error('Invalid wallet address format');
-      }
+  
 
       // Check if wallet already exists
-      const existingWallet = wallets.find(w => w.address.toLowerCase() === address.toLowerCase());
+      const existingWallet = wallets.find(w => w.address?.toString().toLowerCase() === address?.toString()?.toLowerCase());
       if (existingWallet) {
         throw new Error('Wallet already added');
       }
+      await loadWallets(); // Refresh wallets to ensure latest state
 
       const { data, error: dbError } = await supabase
         .from('user_wallets')
         .insert({
           user_id: user.id,
-          address: address.toLowerCase(),
-          name: name || `Wallet ${address.slice(0, 6)}...${address.slice(-4)}`,
+          address: address?.toString()?.toLowerCase(),
+          name: name || `Wallet ${address?.toString().slice(0, 6)}...${address?.toString().slice(-4)}`,
           chain_type: 'ethereum',
           wallet_type: 'external',
           is_active: true,
@@ -125,6 +123,8 @@ export const useWalletAnalytics = () => {
         })
         .select()
         .single();
+
+        console.log('New wallet data:', dbError, data);
 
       if (dbError) throw dbError;
 
@@ -297,7 +297,7 @@ export const useWalletAnalytics = () => {
       const data = walletData[wallet.id];
       if (!data) return acc;
 
-      acc.totalValue += data.portfolio.totalValue || 0;
+      acc.totalValue += data.portfolio.totalValue?.positions || 0;
       acc.totalChange += data.portfolio.dayChange || 0;
       acc.totalPositions += data.metadata.positionsCount || 0;
 

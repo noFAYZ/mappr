@@ -1,350 +1,723 @@
+'use client';
 
-
-import React, { useState } from 'react';
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  RefreshCw, 
-  CheckCircle, 
-  ChevronRight,
-  MoreVertical,
-  Trash2,
-  Copy,
-  ExternalLink
-} from 'lucide-react';
-import { motion } from 'framer-motion';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Card, CardBody } from '@heroui/card';
-import { Avatar } from '@heroui/avatar';
+import { Button } from '@heroui/button';
 import { Chip } from '@heroui/chip';
+import { Avatar } from '@heroui/avatar';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from '@heroui/dropdown';
-import { Button } from '@heroui/react';
-import { Spinner } from '@heroui/spinner';
+import { Tooltip } from '@heroui/tooltip';
+import {
+  MoreVertical,
+  RefreshCw,
+  Copy,
+  ExternalLink,
+  Trash2,
+  TrendingUp,
+  TrendingDown,
+  Globe,
+  Coins,
+  Clock,
+  ChevronRight,
+  Activity,
+  AlertTriangle,
+  CheckCircle2,
+  Timer,
+  ImageIcon
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
+import { truncateAddress } from '@/lib/wallet-analytics/utils';
 
+// Types
 interface WalletCardProps {
-  wallet: any;
-  walletData: any;
-  isSelected: boolean;
-  onToggleSelect: () => void;
-  onSelect: () => void;
-  onSync: () => void;
-  onRemove: () => void;
+  wallet: {
+    id: string;
+    address: string;
+    name?: string;
+    sync_status: 'synced' | 'syncing' | 'error' | 'stale';
+    isWatchOnly?: boolean;
+  };
+  data?: {
+    portfolio?: {
+      totalValue?: {
+        positions?: number;
+      };
+      dayChangePercent?: number;
+    };
+    metadata?: {
+      positionsCount?: number;
+      chainsCount?: number;
+      nftsCount?: number;
+      lastSyncAt?: string;
+    };
+    networks?: string[];
+  };
+  showBalances?: boolean;
+  isSelected?: boolean;
+  onSelect?: (wallet: any) => void;
+  onSync?: (walletId: string) => void;
+  onRemove?: (walletId: string) => void;
+  onViewDetails?: (wallet: any) => void;
+  isSyncing?: boolean;
+  viewMode?: 'list' | 'grid';
+  className?: string;
+}
+
+interface NetworkIconProps {
+  network: string;
+}
+
+interface PerformanceIndicatorProps {
+  change24h?: number;
   showBalances: boolean;
-  isLoading: boolean;
-  formatCurrency: (value: number) => string;
-  formatPercentage: (value: number) => string;
-  viewMode: 'grid' | 'list';
-  index: number;
+}
+
+interface StatusBadgeProps {
+  status: string;
+  lastSync?: string;
+  className?: string;
+}
+
+interface NetworkListProps {
+  networks: string[];
+  maxVisible?: number;
+  className?: string;
 }
 
 
-// Wallet Card Component (inline to fix import issues)
-const WalletCard = ({ 
-  wallet, 
-  walletData,
-  isSelected, 
-  onToggleSelect,
-  onSelect,
-  onSync, 
-  onRemove, 
-  showBalances, 
-  isLoading,
-  formatCurrency,
-  formatPercentage,
-  viewMode,
-  index 
-}) => {
-  const value = walletData?.portfolio?.totalValue || 0;
-  const change = walletData?.portfolio?.dayChange || 0;
-  const changePercent = value > 0 ? (change / (value - change)) * 100 : 0;
-  const positionsCount = walletData?.metadata?.positionsCount || 0;
-  const chainsCount = walletData?.metadata?.chainsCount || 0;
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'success': return 'success';
-      case 'syncing': return 'warning';
-      case 'error': return 'danger';
-      case 'pending': return 'default';
-      default: return 'default';
-    }
+// Network Icons Component
+const NetworkIcon: React.FC<NetworkIconProps> = ({ network }) => {
+  const networkConfigs = {
+    ethereum: { gradient: 'from-blue-500 to-purple-600' },
+    polygon: { gradient: 'from-purple-500 to-pink-600' },
+    arbitrum: { gradient: 'from-blue-400 to-cyan-600' },
+    optimism: { gradient: 'from-red-500 to-pink-600' },
+    base: { gradient: 'from-blue-600 to-indigo-600' },
   };
 
-  const cardVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { 
-      opacity: 1, 
-      y: 0,
-      transition: { 
-        delay: index * 0.1,
-        duration: 0.3 
-      }
-    }
-  };
-
-  if (viewMode === 'list') {
-    return (
-      <motion.div variants={cardVariants} initial="hidden" animate="visible">
-        <Card className={`border-none bg-content1 hover:bg-content2 transition-colors cursor-pointer ${isSelected ? 'ring-2 ring-primary' : ''}`}>
-          <CardBody className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <input
-                  type="checkbox"
-                  checked={isSelected}
-                  onChange={onToggleSelect}
-                  className="rounded border-default-300"
-                />
-                
-                <div className="flex items-center gap-3 cursor-pointer" onClick={onSelect}>
-                  <Avatar 
-                    name={(wallet.name || wallet.address).charAt(0).toUpperCase()}
-                    className="bg-gradient-to-br from-primary to-secondary text-primary-foreground"
-                  />
-                  
-                  <div>
-                    <h3 className="font-semibold text-foreground">
-                      {wallet.name || `Wallet ${wallet.address.slice(0, 6)}...`}
-                    </h3>
-                    <p className="text-small text-default-500 font-mono">
-                      {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-6">
-                <div className="text-right">
-                  <p className="font-semibold text-foreground">
-                    {formatCurrency(value)}
-                  </p>
-                  <div className="flex items-center gap-1">
-                    {changePercent >= 0 ? (
-                      <TrendingUp className="h-3 w-3 text-success" />
-                    ) : (
-                      <TrendingDown className="h-3 w-3 text-danger" />
-                    )}
-                    <span className={`text-small ${changePercent >= 0 ? 'text-success' : 'text-danger'}`}>
-                      {formatPercentage(changePercent)}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="text-center">
-                  <p className="text-small font-medium text-foreground">{positionsCount}</p>
-                  <p className="text-tiny text-default-500">Positions</p>
-                </div>
-
-                <div className="text-center">
-                  <p className="text-small font-medium text-foreground">{chainsCount}</p>
-                  <p className="text-tiny text-default-500">Chains</p>
-                </div>
-
-                <Chip size="sm" color={getStatusColor(wallet.sync_status)} variant="flat">
-                  {wallet.sync_status}
-                </Chip>
-
-                <div className="flex items-center gap-2">
-                  <Button
-                    isIconOnly
-                    size="sm"
-                    variant="flat"
-                    onPress={(e) => {
-                      e.stopPropagation();
-                      onSync();
-                    }}
-                    isLoading={isLoading}
-                  >
-                    <RefreshCw className="h-4 w-4" />
-                  </Button>
-                  
-                  <Button
-                    isIconOnly
-                    size="sm"
-                    color="danger"
-                    variant="flat"
-                    onPress={(e) => {
-                      e.stopPropagation();
-                      if (confirm('Are you sure you want to remove this wallet?')) {
-                        onRemove();
-                      }
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </CardBody>
-        </Card>
-      </motion.div>
-    );
+  const config = networkConfigs[network?.toLowerCase() as keyof typeof networkConfigs];
+  
+  if (!config) {
+    return <Globe className="w-4 h-4 text-default-500" />;
   }
 
   return (
-    <motion.div variants={cardVariants} initial="hidden" animate="visible">
-      <Card 
-        className={`border-none bg-content1 hover:bg-content2 transition-all duration-200 cursor-pointer hover:scale-[1.02] ${isSelected ? 'ring-2 ring-primary' : ''}`}
-        isPressable
-        onPress={onSelect}
-      >
-        <CardBody className="p-6">
-          {/* Wallet Header */}
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <input
-                type="checkbox"
-                checked={isSelected}
-                onChange={(e) => {
-                  e.stopPropagation();
-                  onToggleSelect();
-                }}
-                className="rounded border-default-300"
-              />
-              
-              <Avatar 
-                name={(wallet.name || wallet.address).charAt(0).toUpperCase()}
-                className="bg-gradient-to-br from-primary to-secondary text-primary-foreground"
-              />
-              
-              <div>
-                <h3 className="font-semibold text-foreground">
-                  {wallet.name || `Wallet ${wallet.address.slice(0, 6)}...`}
-                </h3>
-                <p className="text-small text-default-500 font-mono">
-                  {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <Chip size="sm" color={getStatusColor(wallet.sync_status)} variant="flat">
-                {wallet.sync_status}
-              </Chip>
-              
-              <Dropdown>
-                <DropdownTrigger>
-                  <Button
-                    isIconOnly
-                    size="sm"
-                    variant="flat"
-                    onPress={(e) => e.stopPropagation()}
-                  >
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </DropdownTrigger>
-                <DropdownMenu aria-label="Wallet actions">
-                  <DropdownItem 
-                    key="copy" 
-                    startContent={<Copy className="h-4 w-4" />}
-                    onPress={() => {
-                      navigator.clipboard.writeText(wallet.address);
-                      toast.success('Address copied');
-                    }}
-                  >
-                    Copy Address
-                  </DropdownItem>
-                  <DropdownItem 
-                    key="view" 
-                    startContent={<ExternalLink className="h-4 w-4" />}
-                    onPress={() => window.open(`https://etherscan.io/address/${wallet.address}`, '_blank')}
-                  >
-                    View on Explorer
-                  </DropdownItem>
-                  <DropdownItem 
-                    key="sync" 
-                    startContent={<RefreshCw className="h-4 w-4" />}
-                    onPress={onSync}
-                  >
-                    Sync Wallet
-                  </DropdownItem>
-                  <DropdownItem 
-                    key="delete" 
-                    className="text-danger" 
-                    color="danger"
-                    startContent={<Trash2 className="h-4 w-4" />}
-                    onPress={() => {
-                      if (confirm('Are you sure you want to remove this wallet?')) {
-                        onRemove();
-                      }
-                    }}
-                  >
-                    Remove Wallet
-                  </DropdownItem>
-                </DropdownMenu>
-              </Dropdown>
-            </div>
-          </div>
+    <div className={`w-4 h-4 rounded-full bg-gradient-to-br ${config.gradient} flex items-center justify-center`}>
+      <div className="w-2 h-2 bg-white rounded-full" />
+    </div>
+  );
+};
 
-          {/* Portfolio Value */}
-          <div className="mb-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-small text-default-500">Portfolio Value</span>
-              <div className="flex items-center gap-1">
-                {changePercent >= 0 ? (
-                  <TrendingUp className="h-3 w-3 text-success" />
-                ) : (
-                  <TrendingDown className="h-3 w-3 text-danger" />
-                )}
-                <span className={`text-tiny font-medium ${changePercent >= 0 ? 'text-success' : 'text-danger'}`}>
-                  {formatPercentage(changePercent)}
-                </span>
-              </div>
-            </div>
-            <p className="text-2xl font-bold text-foreground">
-              {formatCurrency(value)}
+// Performance Indicator Component
+const PerformanceIndicator: React.FC<PerformanceIndicatorProps> = ({ change24h, showBalances }) => {
+  if (!showBalances || change24h === undefined) {
+    return (
+      <div className="flex items-center gap-1 text-xs text-default-400">
+        <div className="w-3 h-3 bg-default-200 rounded animate-pulse" />
+        <span>••%</span>
+      </div>
+    );
+  }
+
+  const isPositive = change24h >= 0;
+  const color = isPositive ? 'text-success-600' : 'text-danger-700';
+  const bgColor = isPositive ? 'bg-success-100 dark:bg-success-900' : 'bg-danger-100 dark:bg-danger-400/20';
+  const Icon = isPositive ? TrendingUp : TrendingDown;
+
+  return (
+    <Chip 
+
+      className={`flex items-center  h-5 px-0 rounded-md text-[10px] font-semibold ${bgColor} ${color}`}
+     
+    >
+    
+        {isPositive ? '+' : ''}{change24h.toFixed(2)}%
+    
+    </Chip>
+  );
+};
+
+// Status Badge Component
+const StatusBadge: React.FC<StatusBadgeProps> = ({ status, lastSync, className = "" }) => {
+  const getStatusConfig = (status: string) => {
+    switch (status) {
+      case 'synced':
+        return {
+          color: 'success' as const,
+          icon: CheckCircle2,
+          label: 'Synced',
+          description: 'Up to date'
+        };
+      case 'syncing':
+        return {
+          color: 'warning' as const,
+          icon: RefreshCw,
+          label: 'Syncing',
+          description: 'Updating...',
+          animated: true
+        };
+      case 'error':
+        return {
+          color: 'danger' as const,
+          icon: AlertTriangle,
+          label: 'Error',
+          description: 'Sync failed'
+        };
+      case 'stale':
+        return {
+          color: 'default' as const,
+          icon: Timer,
+          label: 'Stale',
+          description: 'Needs update'
+        };
+      default:
+        return {
+          color: 'default' as const,
+          icon: Clock,
+          label: 'Unknown',
+          description: 'Status unknown'
+        };
+    }
+  };
+
+  const config = getStatusConfig(status);
+  const Icon = config.icon;
+
+  return (
+    <Tooltip 
+      content={
+        <div className="text-center">
+          <p className="font-medium">{config.description}</p>
+          {lastSync && (
+            <p className="text-xs text-default-500 mt-1">
+              Last sync: {new Date(lastSync).toLocaleString()}
             </p>
-          </div>
+          )}
+        </div>
+      }
+    >
+      <Chip
+        size="sm"
+        variant="flat"
+        color={config.color}
+        startContent={
+          <Icon className={`w-3 h-3 ${config.animated ? 'animate-spin' : ''}`} />
+        }
+        className={className}
+      >
+        {config.label}
+      </Chip>
+    </Tooltip>
+  );
+};
 
-          {/* Stats */}
-          <div className="grid grid-cols-3 gap-4 mb-4">
-            <div className="text-center">
-              <p className="text-lg font-semibold text-foreground">{positionsCount}</p>
-              <p className="text-tiny text-default-500">Positions</p>
-            </div>
-            <div className="text-center">
-              <p className="text-lg font-semibold text-foreground">{chainsCount}</p>
-              <p className="text-tiny text-default-500">Chains</p>
-            </div>
-            <div className="text-center">
-              <div className="flex items-center justify-center">
-                {isLoading ? (
-                  <Spinner size="sm" color="primary" />
-                ) : (
-                  
-<CheckCircle className="h-4 w-4 text-success" />
-                )}
-              </div>
-              <p className="text-tiny text-default-500">Status</p>
-            </div>
-          </div>
+// Network List Component
+const NetworkList: React.FC<NetworkListProps> = ({ networks, maxVisible = 3, className = "" }) => {
+  const visibleNetworks = networks?.slice(0, maxVisible) || [];
+  const hiddenCount = Math.max(0, (networks?.length || 0) - maxVisible);
 
-          {/* Footer */}
-          <div className="flex items-center justify-between pt-4 border-t border-divider">
-            <span className="text-tiny text-default-500">
-              Last sync: {wallet.last_sync_at ? new Date(wallet.last_sync_at).toLocaleDateString() : 'Never'}
-            </span>
-            
-            <div className="flex items-center gap-1">
+  return (
+    <div className={`flex items-center gap-1 ${className}`}>
+      {visibleNetworks.map((network, index) => (
+        <Tooltip key={index} content={network}>
+          <div className="p-1 bg-default-100 dark:bg-default-800 rounded-md hover:bg-default-200 dark:hover:bg-default-700 transition-colors">
+            <NetworkIcon network={network} />
+          </div>
+        </Tooltip>
+      ))}
+      {hiddenCount > 0 && (
+        <Tooltip content={`+${hiddenCount} more networks`}>
+          <div className="p-1 bg-default-100 dark:bg-default-800 rounded-md text-xs font-medium text-default-600 min-w-[24px] text-center">
+            +{hiddenCount}
+          </div>
+        </Tooltip>
+      )}
+    </div>
+  );
+};
+
+// Wallet Actions Component - Fixed to prevent nested buttons
+const WalletActions: React.FC<{
+  wallet: any;
+  onSync: (id: string) => void;
+  onRemove: (id: string) => void;
+  isSyncing: boolean;
+  isHovered: boolean;
+  onViewDetails?: (wallet: any) => void;
+}> = ({ wallet, onSync, onRemove, isSyncing, isHovered, onViewDetails }) => {
+  const handleCopyAddress = useCallback(() => {
+    navigator.clipboard.writeText(wallet.address);
+    toast.success('Address copied to clipboard');
+  }, [wallet.address]);
+
+  const handleViewOnExplorer = useCallback(() => {
+    window.open(`https://etherscan.io/address/${wallet.address}`, '_blank');
+  }, [wallet.address]);
+
+  const handleSync = useCallback((e: React.MouseEvent) => {
+
+    onSync(wallet.id);
+  }, [onSync, wallet.id]);
+
+  const handleRemove = useCallback((e: React.MouseEvent) => {
+  
+    onRemove(wallet.id);
+  }, [onRemove, wallet.id]);
+
+  const handleViewDetails = useCallback((e: React.MouseEvent) => {
+  
+    onViewDetails?.(wallet);
+  }, [onViewDetails, wallet]);
+
+  return (
+    <div className="flex items-center gap-2 flex-shrink-0">
+     {/*  <AnimatePresence>
+        {isHovered && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            transition={{ duration: 0.2 }}
+            className="flex gap-1"
+          >
+            <Tooltip content="Sync wallet">
               <Button
                 isIconOnly
                 size="sm"
                 variant="flat"
-                onPress={(e) => {
-                  e.stopPropagation();
-                  onSync();
-                }}
-                isLoading={isLoading}
+                color="primary"
+                onClick={handleSync}
+                isLoading={isSyncing}
               >
-                <RefreshCw className="h-3 w-3" />
+                <RefreshCw className="w-4 h-4" />
               </Button>
-              <ChevronRight className="h-4 w-4 text-default-400" />
+            </Tooltip>
+            {onViewDetails && (
+              <Tooltip content="View details">
+                <Button
+                  isIconOnly
+                  size="sm"
+                  variant="flat"
+                  onClick={handleViewDetails}
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </Tooltip>
+            )} 
+          </motion.div>
+        )}
+      </AnimatePresence>*/}
+
+      <Dropdown placement="bottom-end">
+        <DropdownTrigger>
+          <Button
+            isIconOnly
+            size="sm"
+            variant="light"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <MoreVertical className="w-4 h-4" />
+          </Button>
+        </DropdownTrigger>
+        <DropdownMenu aria-label="Wallet actions">
+          <DropdownItem
+            key="sync"
+            startContent={<RefreshCw className="w-4 h-4" />}
+            onPress={handleSync}
+            isDisabled={isSyncing}
+          >
+            Sync Now
+          </DropdownItem>
+          <DropdownItem
+            key="copy"
+            startContent={<Copy className="w-4 h-4" />}
+            onPress={handleCopyAddress}
+          >
+            Copy Address
+          </DropdownItem>
+          <DropdownItem
+            key="explorer"
+            startContent={<ExternalLink className="w-4 h-4" />}
+            onPress={handleViewOnExplorer}
+          >
+            View on Explorer
+          </DropdownItem>
+          <DropdownItem
+            key="remove"
+            className="text-danger"
+            color="danger"
+            startContent={<Trash2 className="w-4 h-4" />}
+            onPress={handleRemove}
+          >
+            Remove Wallet
+          </DropdownItem>
+        </DropdownMenu>
+      </Dropdown>
+    </div>
+  );
+};
+
+// Grid View Component - Fixed button nesting issue
+const GridView: React.FC<WalletCardProps> = ({
+  wallet,
+  data,
+  showBalances = true,
+  isSelected = false,
+  onSelect,
+  onSync,
+  onRemove,
+  onViewDetails,
+  isSyncing = false,
+  className = ""
+}) => {
+  const [isHovered, setIsHovered] = useState(false);
+
+  const formatValue = useCallback((value?: number) => {
+    if (!showBalances) return '••••••';
+    if (value === undefined || value === null) return '$0';
+    return `$${value.toLocaleString()}`;
+  }, [showBalances]);
+
+  const formatCount = useCallback((count?: number) => {
+    if (!showBalances) return '••';
+    return count?.toString() || '0';
+  }, [showBalances]);
+
+  const portfolioValue = data?.portfolio?.totalValue?.positions || 0;
+  const change24h = data?.portfolio?.dayChangePercent;
+  const positionsCount = data?.metadata?.positionsCount || 0;
+  const chainsCount = data?.metadata?.chainsCount || 0;
+  const nftsCount = data?.metadata?.nftsCount || 0;
+  const lastSyncAt = data?.metadata?.lastSyncAt;
+  const networks = data?.networks || ['ethereum'];
+
+  const avatarGradient = useMemo(() => {
+    const gradients = [
+      'from-blue-500 to-purple-600',
+      'from-purple-500 to-pink-600',
+      'from-pink-500 to-red-600',
+      'from-red-500 to-orange-600',
+      'from-orange-500 to-yellow-600',
+      'from-yellow-500 to-green-600',
+      'from-green-500 to-blue-600',
+      'from-blue-500 to-indigo-600',
+      'from-indigo-500 to-purple-600',
+      'from-teal-500 to-cyan-600'
+    ];
+    const index = wallet.address ? wallet.address.charCodeAt(2) % gradients.length : 0;
+    return gradients[index];
+  }, [wallet.address]);
+
+  const cardClassName = `
+    border-none cursor-pointer transition-all duration-75 group rounded-2xl
+    ${isSelected ? 'ring-2 ring-primary-500 bg-primary-50 dark:bg-primary-950' : 'bg-content1 hover:bg-content2'}
+    hover:shadow-lg hover:-translate-y-1
+    ${className}
+  `;
+
+  const handleCardClick = useCallback(() => {
+    onSelect?.(wallet);
+  }, [onSelect, wallet]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      whileHover={{ scale: 1.02 }}
+      transition={{ duration: 0.2 }}
+      onHoverStart={() => setIsHovered(true)}
+      onHoverEnd={() => setIsHovered(false)}
+    >
+      {/* Fixed: Remove isPressable from Card to prevent button nesting */}
+      <Card className={cardClassName} onClick={handleCardClick}>
+        <CardBody className="p-5">
+          {/* Header */}
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+              <div className="relative flex-shrink-0">
+                <Avatar
+                  size="md"
+                  name={wallet.address?.slice(2, 4).toUpperCase()}
+                  className={`bg-gradient-to-br ${avatarGradient} text-white font-bold`}
+                />
+                <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-background ${
+                  wallet.sync_status === 'synced' ? 'bg-success-500' :
+                  wallet.sync_status === 'syncing' ? 'bg-warning-500' :
+                  wallet.sync_status === 'error' ? 'bg-danger-500' : 'bg-default-300'
+                }`} />
+                {isSyncing && (
+                  <div className="absolute -top-1 -right-1 w-3 h-3">
+                    <div className="w-full h-full bg-warning-500 rounded-full animate-ping" />
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 className="font-semibold text-sm truncate">
+                    {wallet.name || 'Unnamed Wallet'}
+                  </h3>
+                  {wallet.isWatchOnly && (
+                    <Tooltip content="Watch-only wallet">
+                      <div className="p-1 bg-default-100 rounded">
+                        <Activity className="w-3 h-3 text-default-500" />
+                      </div>
+                    </Tooltip>
+                  )}
+                </div>
+                <p className="text-xs text-default-500 font-mono truncate">
+                  {wallet.address?.slice(0, 6)}...{wallet.address?.slice(-4)}
+                </p>
+              </div>
             </div>
+
+            <div onClick={(e) => e.stopPropagation()}>
+              <WalletActions
+                wallet={wallet}
+                onSync={onSync!}
+                onRemove={onRemove!}
+                isSyncing={isSyncing}
+                isHovered={isHovered}
+                onViewDetails={onViewDetails}
+              />
+            </div>
+          </div>
+
+          {/* Status Badge */}
+          <div className="flex items-center justify-between mb-3">
+            <StatusBadge status={wallet.sync_status} lastSync={lastSyncAt} />
+            <PerformanceIndicator change24h={change24h} showBalances={showBalances} />
+          </div>
+
+          {/* Portfolio Value */}
+          <div className="mb-4">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs text-default-500">Portfolio Value</span>
+            </div>
+            <p className="text-xl font-bold text-foreground">
+              {formatValue(portfolioValue)}
+            </p>
+          </div>
+
+          {/* Quick Stats */}
+          <div className="grid grid-cols-3 gap-3 mb-4">
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-1 mb-1">
+                <Coins className="w-3 h-3 text-primary-500" />
+              </div>
+              <p className="text-lg font-semibold text-primary-600">
+                {formatCount(positionsCount)}
+              </p>
+              <p className="text-xs text-default-500">Tokens</p>
+            </div>
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-1 mb-1">
+                <Globe className="w-3 h-3 text-success-500" />
+              </div>
+              <p className="text-lg font-semibold text-success-600">
+                {formatCount(chainsCount)}
+              </p>
+              <p className="text-xs text-default-500">Networks</p>
+            </div>
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-1 mb-1">
+                <ImageIcon className="w-3 h-3 text-warning-500" />
+              </div>
+              <p className="text-lg font-semibold text-warning-600">
+                {formatCount(nftsCount)}
+              </p>
+              <p className="text-xs text-default-500">NFTs</p>
+            </div>
+          </div>
+
+          {/* Networks */}
+          {networks.length > 0 && (
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-xs text-default-500">Networks:</span>
+              <NetworkList networks={networks} maxVisible={4} />
+            </div>
+          )}
+
+          {/* Footer */}
+          <div className="flex items-center justify-between pt-3 border-t border-divider">
+            <div className="flex items-center gap-1 text-xs text-default-500">
+              <Clock className="w-3 h-3" />
+              {lastSyncAt ? (
+                <span>Updated {new Date(lastSyncAt).toLocaleDateString()}</span>
+              ) : (
+                <span>Never synced</span>
+              )}
+            </div>
+
+            <AnimatePresence>
+              {isHovered && (
+                <motion.div
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 10 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Button
+                    size="sm"
+                    variant="flat"
+                    color="primary"
+                    endContent={<ChevronRight className="w-3 h-3" />}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onViewDetails?.(wallet);
+                    }}
+                  >
+                    Details
+                  </Button>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </CardBody>
       </Card>
     </motion.div>
   );
+};
+
+// List View Component - Fixed button nesting issue
+const ListView: React.FC<WalletCardProps> = ({
+  wallet,
+  data,
+  showBalances = true,
+  isSelected = false,
+  onSelect,
+  onSync,
+  onRemove,
+  onViewDetails,
+  isSyncing = false,
+  className = ""
+}) => {
+  const [isHovered, setIsHovered] = useState(false);
+
+  const formatValue = useCallback((value?: number) => {
+    if (!showBalances) return '••••••';
+    if (value === undefined || value === null) return '$0';
+    return `$${value.toLocaleString()}`;
+  }, [showBalances]);
+
+  const formatCount = useCallback((count?: number) => {
+    if (!showBalances) return '••';
+    return count?.toString() || '0';
+  }, [showBalances]);
+
+  const portfolioValue = data?.portfolio?.totalValue?.positions || 0;
+  const change24h = data?.portfolio?.dayChangePercent;
+  const positionsCount = data?.metadata?.positionsCount || 0;
+  const chainsCount = data?.metadata?.chainsCount || 0;
+  const nftsCount = data?.metadata?.nftsCount || 0;
+
+  const avatarGradient = useMemo(() => {
+    const gradients = [
+      'from-blue-500 to-purple-600',
+      'from-purple-500 to-pink-600',
+      'from-pink-500 to-red-600',
+      'from-red-500 to-orange-600',
+      'from-orange-500 to-yellow-600',
+      'from-yellow-500 to-green-600',
+      'from-green-500 to-blue-600',
+      'from-blue-500 to-indigo-600',
+      'from-indigo-500 to-purple-600',
+      'from-teal-500 to-cyan-600'
+    ];
+    const index = wallet.address ? wallet.address.charCodeAt(2) % gradients.length : 0;
+    return gradients[index];
+  }, [wallet.address]);
+
+  const cardClassName = ` 
+     cursor-pointer border border-divider group rounded-lg overflow-visible
+    ${isSelected ? ' bg-primary-100/50 dark:bg-default-200' : ''}
+    hover:bg-default-100 animate-in fade-in-0  slide-in-from-bottom-6
+    ${className}
+  `;
+
+  const handleCardClick = useCallback(() => {
+    onSelect?.(wallet);
+    onViewDetails?.(wallet);
+  }, [onSelect, wallet]);
+
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.2 }}
+      onHoverStart={() => setIsHovered(true)}
+      onHoverEnd={() => setIsHovered(false)} onClick={handleCardClick}
+    >
+         
+      {/* Gradient overlay */}
+    
+      
+      {/* Fixed: Remove isPressable from Card to prevent button nesting */}
+      <Card className={cardClassName} >
+         
+        <CardBody className="py-2 px-3 overflow-visible">
+          <div className="flex items-center gap-6">
+            {/* Avatar and Basic Info */}
+            <div className="flex items-center gap-3 flex-1 min-w-0 overflow-visible">
+            {isSyncing && (
+                  <div className="absolute -top-1 right-1 w-2 h-2">
+                    <div className="w-full h-full bg-warning-500 rounded-full animate-ping" />
+                  </div>
+                )}
+              
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-semibold truncate text-sm">
+                    {wallet.name || 'Unnamed Wallet'} 
+                  </h3>
+                  {wallet.isWatchOnly && (
+                    <Tooltip content="Watch-only wallet">
+                      <Chip size="sm" variant="flat" startContent={<Activity className="w-3 h-3" />}>
+                        Watch Only
+                      </Chip>
+                    </Tooltip>
+                  )}
+                </div>
+                <p className="text-xs text-default-500 font-mono bg-content2 rounded-lg w-fit px-2 py-1">
+                  {truncateAddress(wallet.address, 14, 4)}
+                </p>
+              </div>
+            </div>
+
+            {/* Portfolio Value */}
+            <div className="flex flex-col align-middle text-right justify-end min-w-0 flex-shrink-0">
+              <p className=" font-semibold text-default-600 ">
+                {formatValue(portfolioValue)}
+              </p>
+              <PerformanceIndicator change24h={change24h} showBalances={showBalances} />
+            </div>
+
+            {/* Actions */}
+            <div onClick={(e) => e.stopPropagation()}>
+              <WalletActions
+                wallet={wallet}
+                onSync={onSync!}
+                onRemove={onRemove!}
+                isSyncing={isSyncing}
+                isHovered={isHovered}
+                onViewDetails={onViewDetails}
+              />
+            </div>
+          </div>
+
+
+        </CardBody>
+      </Card>
+    </motion.div>
+  );
+};
+
+// Main Wallet Card Component
+const WalletCard: React.FC<WalletCardProps> = ({ viewMode = 'list', ...props }) => {
+  return viewMode === 'grid' ? <GridView {...props} /> : <ListView {...props} />;
 };
 
 export default WalletCard;

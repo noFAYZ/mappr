@@ -160,6 +160,7 @@ export class ZerionExtension extends BaseExtension {
       const chart = options.includeChart && results[results.length - 1]?.status === 'fulfilled' 
         ? results[results.length - 1].value : [];
 
+
       // Normalize and structure data
       const walletData: WalletData = {
         address,
@@ -168,7 +169,7 @@ export class ZerionExtension extends BaseExtension {
         transactions: DataNormalizer.normalizeTransactions(transactions),
         nftPortfolio: DataNormalizer.normalizeNFTs(nfts),
         pnl: this.calculatePnL(portfolio, positions),
-        chart: DataNormalizer.normalizeChartData(chart),
+        chart: DataNormalizer.normalizeChartData(chart?.attributes),
         metadata: {
           lastSyncAt: new Date().toISOString(),
           positionsCount: positions?.length || 0,
@@ -177,6 +178,9 @@ export class ZerionExtension extends BaseExtension {
           nftsCount: nfts?.data?.length || 0
         }
       };
+
+      console.log(`Zerion wallet data for ${address}`, walletData);
+
 
       // Cache the result
       this.cache.set(cacheKey, walletData);

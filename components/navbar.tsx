@@ -262,7 +262,7 @@ export function Navbar({ className }: NavbarProps) {
       <HeroUINavbar 
         maxWidth="full"
         className={clsx(
-          "transition-all duration-200 border-b",
+          " border-b z-50",
           isScrolled 
             ? " border-default-200/50 " 
             : " border-transparent",
@@ -354,7 +354,7 @@ export function Navbar({ className }: NavbarProps) {
                     closeOnSelect={false}
                   >
                     {notifications.length === 0 ? (
-                      <DropdownItem key="empty" className="text-center text-default-500" textValue="No notifications">
+                      <DropdownItem key="empty" className="text-center text-default-500" >
                         <div className="py-4">
                           <Bell className="w-8 h-8 mx-auto mb-2 text-default-300" />
                           <p>No notifications</p>
@@ -432,7 +432,7 @@ export function Navbar({ className }: NavbarProps) {
                     <DropdownItem
                       key="profile-info"
                       className="h-14 gap-2 opacity-100"
-                      textValue={`${user.user_metadata?.full_name || 'User'} - ${user.email}`}
+                     
                     >
                       <div className="flex flex-col">
                         <p className="font-semibold text-sm">
@@ -448,7 +448,7 @@ export function Navbar({ className }: NavbarProps) {
                       startContent={<PhUser className="w-4 h-4" />}
                       as={NextLink}
                       href="/profile"
-                      textValue="Profile"
+                   
                     >
                       Profile
                     </DropdownItem>
@@ -457,7 +457,7 @@ export function Navbar({ className }: NavbarProps) {
                       startContent={<Settings size={16} />}
                       as={NextLink}
                       href="/settings"
-                      textValue="Settings"
+                     
                     >
                       Settings
                     </DropdownItem>
@@ -466,7 +466,7 @@ export function Navbar({ className }: NavbarProps) {
                       startContent={<HelpCircle size={16} />}
                       as={NextLink}
                       href="/help"
-                      textValue="Help & Support"
+                 
                     >
                       Help & Support
                     </DropdownItem>
@@ -475,7 +475,7 @@ export function Navbar({ className }: NavbarProps) {
                       color="danger"
                       startContent={<LogOut className="w-4 h-4" />}
                       onPress={signOut}
-                      textValue="Sign Out"
+                   
                     >
                       Sign Out
                     </DropdownItem>

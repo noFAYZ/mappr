@@ -7,7 +7,7 @@ interface EmptyStateProps {
 
 const EmptyState: React.FC<EmptyStateProps> = ({ onAddWallet }) => {
   return (
-    <div className="text-center py-16">
+    <div className="text-center py-4">
       <div className="max-w-md mx-auto">
         
         {/* Icon */}

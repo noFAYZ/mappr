@@ -40,7 +40,7 @@ import {
   TrendingDown,
   Command
 } from "lucide-react";
-import { HugeiconsAiBrain01, SiDashboardCustomizeLine, SolarWalletBoldDuotone } from "../icons/icons";
+import { ArcticonsEssentialSpace, HugeiconsAiBrain01, MdiSpaceInvaders, RiSpaceShipFill, SiDashboardCustomizeLine, SolarWalletBoldDuotone } from "../icons/icons";
 
 
 
@@ -380,21 +380,23 @@ export function SearchInput({
     <>
       {/* Search Input Trigger */}
       <div className={clsx("w-full", className)}>
-        <button
-          className="w-full justify-start h-9 px-3 bg-default-100 hover:bg-default-200 transition-all duration-100 border border-transparent hover:border-default-200 rounded-xl"
-          onClick={openModal}
-        >
-          <div className="flex items-center gap-2 w-full">
-            <Search className="w-4 h-4 text-default-400 flex-shrink-0" />
-            <span className="text-xs text-default-500 flex-1 text-left">
-              {placeholder}
-            </span>
-            <Kbd className="hidden lg:inline-flex bg-default-200/50 text-xs" keys={["command"]}>
-              K
-            </Kbd>
-          </div>
-        </button>
-      </div>
+ <Button
+   className="group relative justify-start px-4 h-10 bg-gradient-to-br from-orange-400/90 via-orange-600/90 to-pink-400/90 rounded-full text-white shadow-md hover:shadow-lg "
+   onClick={openModal}
+   variant="faded"
+   startContent={
+     <MdiSpaceInvaders className="w-5 h-5 flex-shrink-0 group-hover:scale-110 " />
+   }
+ >
+   <div className="flex items-center gap-2 w-full">
+     <span className="text-xs font-semibold tracking-wide">
+       Launchpad
+     </span>
+   </div>
+   
+
+ </Button>
+</div>
 
       {/* Unified Search & Actions Modal */}
       <Modal 
@@ -466,12 +468,12 @@ export function SearchInput({
                     </Button>
                   )
                 }
-                variant="bordered"
-                size="lg"
-                className="border-default-200/50"
+                variant="faded"
+                size="md"
+              
                 classNames={{
-                  base:'h-10 border-divider ',
-                  inputWrapper: "border-divider bg-default-100  backdrop-blur-sm",
+                  base:'h-10  ',
+                  inputWrapper: " bg-default-100  backdrop-blur-sm",
                   input: "text-xs border-default-200/50 "
                 }}
                 onKeyDown={(e) => {
