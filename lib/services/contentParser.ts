@@ -1,4 +1,4 @@
-// lib/services/contentParser.ts
+"use client";
 
 interface ParsedContent {
   html: string;
@@ -16,8 +16,8 @@ interface ParsedContent {
 }
 
 /**
- * Ultra-fast, compact content parser optimized for AI responses
- * Uses regex-based parsing for maximum performance
+ * Enhanced ContentParser for robust AI response parsing
+ * Production-grade with comprehensive error handling and performance optimization
  */
 export class ContentParserService {
   private static readonly FINANCIAL_KEYWORDS = new Set([
@@ -29,7 +29,7 @@ export class ContentParserService {
   ]);
 
   private static readonly PATTERNS = {
-    // Core patterns
+    // Currency patterns
     currency: /\$[\d,]+(?:\.?\d*)?(?:[BMK])?/g,
     percentage: /[+-]?\d+(?:\.\d+)?%/g,
     number: /\b\d{1,3}(?:,\d{3})*(?:\.\d+)?\b/g,
@@ -55,33 +55,37 @@ export class ContentParserService {
     blockquote: /^>\s*(.+)$/gm,
     callout: /^(⚠️|❗|💡|📊|🎯|✅|❌|🔍|📈|📉|🚫)\s+(.+)$/gm,
     
-    // Clean up patterns
+    // Cleanup patterns
     artifacts: /\[\/?(INST|ASS|SYS|USER|ASSISTANT)\]/g,
     prefixes: /^(Human:|Assistant:|AI:|User:)\s*/gm,
     tokens: /^\s*<\|.*?\|>\s*/gm,
-    multiNewlines: /\n{3,}/g
+    multiNewlines: /\n{3,}/g,
+    
+    // Links
+    links: /\[([^\]]+)\]\(([^)]+)\)/g,
+    autoLinks: /(https?:\/\/[^\s]+)/g
   };
 
   private static codeBlockCache = new Map<string, string>();
   private static idCounter = 0;
 
   /**
-   * Main parsing function - optimized for speed and compactness
+   * Main parsing function with enhanced error handling
    */
-  static parseContent(content: string): ParsedContent {
+  static async parseContent(content: string): Promise<ParsedContent> {
     if (!content?.trim()) {
       return this.getEmptyResult();
     }
 
     try {
-      // Step 1: Clean and analyze
+      // Clean and prepare content
       const cleaned = this.cleanContent(content);
       const metadata = this.analyzeContent(cleaned);
       
-      // Step 2: Process content in optimized order
+      // Process content in optimized order
       let html = cleaned;
       
-      // Preserve code blocks first (prevents interference)
+      // Preserve code blocks first
       html = this.processCodeBlocks(html);
       
       // Process structural elements
@@ -92,25 +96,118 @@ export class ContentParserService {
       
       // Process inline formatting
       html = this.processInlineFormatting(html);
+      html = this.processLinks(html);
       html = this.processFinancialData(html);
       
       // Final processing
       html = this.processParagraphs(html);
       html = this.restoreCodeBlocks(html);
+      html = this.addAccessibilityAttributes(html);
       
       return {
         html: html.trim(),
         metadata
       };
     } catch (error) {
-      console.warn('Parser error, using fallback:', error);
+      console.warn('ContentParser error, using fallback:', error);
       return this.getFallbackResult(content);
     }
   }
 
   /**
-   * Clean content and remove AI artifacts
+   * Extract insights from content
    */
+  static extractInsights(content: string): string[] {
+    const insights: string[] = [];
+    const sentences = content.split(/[.!?]+/).filter(s => s.trim().length > 20);
+    
+    // Look for insight indicators
+    const insightPatterns = [
+      /(?:key insight|important|notably|significantly|interestingly)/i,
+      /(?:this suggests|this indicates|this means)/i,
+      /(?:therefore|consequently|as a result)/i,
+      /(?:recommendation|suggest|recommend)/i
+    ];
+
+    sentences.forEach(sentence => {
+      const trimmed = sentence.trim();
+      if (insightPatterns.some(pattern => pattern.test(trimmed)) && insights.length < 5) {
+        insights.push(trimmed + '.');
+      }
+    });
+
+    return insights;
+  }
+
+  /**
+   * Extract financial data from content
+   */
+  static extractFinancialData(content: string): {
+    currencies: string[];
+    percentages: string[];
+    numbers: string[];
+  } {
+    const currencies = [...new Set(content.match(this.PATTERNS.currency) || [])];
+    const percentages = [...new Set(content.match(this.PATTERNS.percentage) || [])];
+    const numbers = [...new Set(content.match(this.PATTERNS.number) || [])]
+      .filter(num => parseFloat(num.replace(/,/g, '')) > 1000); // Only significant numbers
+
+    return {
+      currencies: currencies.slice(0, 10),
+      percentages: percentages.slice(0, 10),
+      numbers: numbers.slice(0, 10)
+    };
+  }
+
+  /**
+   * Get reading time estimate
+   */
+  static getReadingTime(wordCount: number): number {
+    return Math.max(1, Math.ceil(wordCount / 250));
+  }
+
+  /**
+   * Get content statistics
+   */
+  static getContentStats(content: string, metadata: any): {
+    complexity: 'low' | 'medium' | 'high';
+    topics: string[];
+    sentiment: 'positive' | 'neutral' | 'negative';
+  } {
+    const wordCount = metadata?.wordCount || content.split(/\s+/).length;
+    const hasCode = metadata?.hasCode || false;
+    const hasFinancial = metadata?.hasFinancialData || false;
+    
+    // Determine complexity
+    let complexity: 'low' | 'medium' | 'high' = 'low';
+    if (wordCount > 500 || hasCode || hasFinancial) complexity = 'medium';
+    if (wordCount > 1000 && hasCode && hasFinancial) complexity = 'high';
+
+    // Extract topics (simplified)
+    const topics = Array.from(this.FINANCIAL_KEYWORDS)
+      .filter(keyword => content.toLowerCase().includes(keyword))
+      .slice(0, 5);
+
+    // Simple sentiment analysis
+    const positiveWords = ['good', 'great', 'excellent', 'positive', 'growth', 'profit', 'gain'];
+    const negativeWords = ['bad', 'poor', 'negative', 'loss', 'decline', 'risk'];
+    
+    const positiveCount = positiveWords.filter(word => 
+      content.toLowerCase().includes(word)
+    ).length;
+    const negativeCount = negativeWords.filter(word => 
+      content.toLowerCase().includes(word)
+    ).length;
+
+    let sentiment: 'positive' | 'neutral' | 'negative' = 'neutral';
+    if (positiveCount > negativeCount) sentiment = 'positive';
+    else if (negativeCount > positiveCount) sentiment = 'negative';
+
+    return { complexity, topics, sentiment };
+  }
+
+  // Private helper methods
+
   private static cleanContent(content: string): string {
     return content
       .replace(this.PATTERNS.artifacts, '')
@@ -120,22 +217,17 @@ export class ContentParserService {
       .trim();
   }
 
-  /**
-   * Analyze content for metadata
-   */
   private static analyzeContent(content: string): ParsedContent['metadata'] {
     const hasCode = this.PATTERNS.codeBlock.test(content) || this.PATTERNS.inlineCode.test(content);
     const hasTable = this.PATTERNS.table.test(content);
     const hasMath = /\$\$[\s\S]*?\$\$|\\\([^)]*\\\)/.test(content);
     
-    // Check for financial data
     const hasFinancialData = this.PATTERNS.currency.test(content) || 
                            this.PATTERNS.percentage.test(content) ||
                            Array.from(this.FINANCIAL_KEYWORDS).some(keyword => 
                              content.toLowerCase().includes(keyword)
                            );
 
-    // Word count and reading time
     const words = content.split(/\s+/).filter(w => w.length > 0);
     const wordCount = words.length;
     const estimatedReadTime = Math.max(1, Math.ceil(wordCount / 250));
@@ -179,9 +271,6 @@ export class ContentParserService {
     };
   }
 
-  /**
-   * Process code blocks with caching
-   */
   private static processCodeBlocks(content: string): string {
     return content.replace(this.PATTERNS.codeBlock, (match, lang, code) => {
       const id = `__CODE_${++this.idCounter}__`;
@@ -189,12 +278,19 @@ export class ContentParserService {
       const trimmedCode = code.trim();
       
       const codeHtml = `
-        <div class="my-3 rounded-lg overflow-hidden border border-default-200 dark:border-default-700 shadow-sm">
-          <div class="flex items-center justify-between px-3 py-1.5 bg-default-100 dark:bg-default-800 border-b">
-            <span class="text-xs font-medium text-default-600">${language}</span>
-            <button class="text-xs text-default-500 hover:text-default-700 px-2 py-0.5 rounded hover:bg-default-200 transition-colors" onclick="navigator.clipboard.writeText(this.parentElement.nextElementSibling.textContent)">Copy</button>
+        <div class="my-4 rounded-lg overflow-hidden border border-default-200 dark:border-default-700 shadow-sm bg-default-50 dark:bg-default-900">
+          <div class="flex items-center justify-between px-4 py-2 bg-default-100 dark:bg-default-800 border-b">
+            <span class="text-xs font-semibold text-default-600 uppercase tracking-wide">${this.escapeHtml(language)}</span>
+            <button 
+              class="text-xs text-default-500 hover:text-default-700 px-2 py-1 rounded hover:bg-default-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500" 
+              onclick="navigator.clipboard.writeText(this.closest('.my-4').querySelector('code').textContent); this.textContent='Copied!'; setTimeout(() => this.textContent='Copy', 2000)"
+              tabindex="0"
+              aria-label="Copy code to clipboard"
+            >
+              Copy
+            </button>
           </div>
-          <pre class="bg-default-50 dark:bg-default-900 p-3 overflow-x-auto text-sm"><code class="font-mono text-default-800 dark:text-default-200">${this.escapeHtml(trimmedCode)}</code></pre>
+          <pre class="p-4 overflow-x-auto text-sm leading-relaxed"><code class="font-mono text-default-800 dark:text-default-200">${this.escapeHtml(trimmedCode)}</code></pre>
         </div>
       `;
       
@@ -203,211 +299,193 @@ export class ContentParserService {
     });
   }
 
-  /**
-   * Process headers with compact styling
-   */
   private static processHeaders(content: string): string {
     return content.replace(this.PATTERNS.headers, (match, hashes, text) => {
       const level = hashes.length;
       const id = this.generateId(text);
-      const sizes = ['text-xl', 'text-lg', 'text-base', 'text-sm', 'text-sm', 'text-xs'];
-      const margins = ['mt-4 mb-2', 'mt-3 mb-2', 'mt-3 mb-1.5', 'mt-2 mb-1', 'mt-2 mb-1', 'mt-1 mb-0.5'];
-      
-      return `<h${level} id="${id}" class="${sizes[level-1]} font-semibold text-foreground ${margins[level-1]} flex items-center gap-1.5">
-        <span class="w-1 h-3 bg-primary-${Math.min(700 - (level-1)*100, 500)} rounded-full"></span>
-        ${text}
-      </h${level}>`;
-    });
-  }
-
-  /**
-   * Process tables with financial detection
-   */
-  private static processTables(content: string): string {
-    return content.replace(this.PATTERNS.table, (match, header, divider, rows) => {
-      const headers = header.split('|').map(h => h.trim()).filter(h => h);
-      const tableRows = rows.trim().split('\n').map(row => 
-        row.split('|').map(cell => cell.trim()).filter(cell => cell !== '')
-      ).filter(row => row.length > 0);
-
-      if (headers.length === 0 || tableRows.length === 0) return match;
-
-      // Check if table contains financial data
-      const isFinancial = headers.some(h => 
-        Array.from(this.FINANCIAL_KEYWORDS).some(keyword => 
-          h.toLowerCase().includes(keyword)
-        )
-      ) || tableRows.some(row => 
-        row.some(cell => this.PATTERNS.currency.test(cell) || this.PATTERNS.percentage.test(cell))
-      );
-
-      const borderColor = isFinancial ? 'border-green-200 dark:border-green-800' : 'border-default-200';
-      const headerBg = isFinancial ? 'bg-green-50 dark:bg-green-950/20' : 'bg-default-100 dark:bg-default-800';
-
-      let table = `<div class="my-3 overflow-hidden rounded-lg border ${borderColor} shadow-sm">
-        <div class="overflow-x-auto">
-          <table class="w-full">
-            <thead class="${headerBg}">
-              <tr>`;
-      
-      headers.forEach(header => {
-        table += `<th class="px-3 py-2 text-left font-medium text-default-800 dark:text-default-200 text-sm">${this.processInlineText(header)}</th>`;
-      });
-      
-      table += `</tr></thead><tbody class="divide-y divide-default-200 dark:divide-default-700">`;
-      
-      tableRows.forEach((row, i) => {
-        const bgClass = i % 2 === 0 ? 'bg-white dark:bg-default-900' : 'bg-default-50 dark:bg-default-800';
-        table += `<tr class="${bgClass} hover:bg-default-100 dark:hover:bg-default-700 transition-colors">`;
-        
-        row.forEach((cell, j) => {
-          const content = isFinancial && j > 0 ? this.processFinancialCell(cell) : this.processInlineText(cell);
-          table += `<td class="px-3 py-2 text-default-700 dark:text-default-300 text-sm">${content}</td>`;
-        });
-        
-        table += '</tr>';
-      });
-      
-      return table + '</tbody></table></div></div>';
-    });
-  }
-
-  /**
-   * Process lists with compact styling
-   */
-  private static processLists(content: string): string {
-    // Numbered lists
-    content = content.replace(this.PATTERNS.numberedList, (match, indent, num, text) => {
-      const marginClass = indent ? `ml-${Math.min(parseInt(indent.length / 2) * 2, 6)}` : '';
-      return `<div class="flex items-start gap-2 my-1 ${marginClass}">
-        <span class="min-w-5 h-5 bg-primary-500 text-white rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0">${num}</span>
-        <span class="text-default-700 dark:text-default-300 text-sm leading-snug pt-0.5">${this.processInlineText(text)}</span>
-      </div>`;
-    });
-
-    // Bullet lists
-    content = content.replace(this.PATTERNS.bulletList, (match, indent, text) => {
-      const marginClass = indent ? `ml-${Math.min(parseInt(indent.length / 2) * 2, 6)}` : '';
-      return `<div class="flex items-start gap-2 my-1 ${marginClass}">
-        <span class="w-1.5 h-1.5 bg-primary-500 rounded-full mt-2 flex-shrink-0"></span>
-        <span class="text-default-700 dark:text-default-300 text-sm leading-snug">${this.processInlineText(text)}</span>
-      </div>`;
-    });
-
-    return content;
-  }
-
-  /**
-   * Process special elements (blockquotes, callouts)
-   */
-  private static processSpecialElements(content: string): string {
-    // Blockquotes
-    content = content.replace(this.PATTERNS.blockquote, (match, text) => {
-      return `<div class="border-l-2 border-amber-400 bg-amber-50 dark:bg-amber-950/20 pl-3 py-2 my-2 rounded-r text-sm">
-        <span class="italic text-amber-800 dark:text-amber-200">${this.processInlineText(text)}</span>
-      </div>`;
-    });
-
-    // Callouts
-    content = content.replace(this.PATTERNS.callout, (match, emoji, text) => {
-      const styles = {
-        '⚠️': 'bg-yellow-50 dark:bg-yellow-950/20 border-yellow-300 text-yellow-800 dark:text-yellow-200',
-        '❗': 'bg-red-50 dark:bg-red-950/20 border-red-300 text-red-800 dark:text-red-200',
-        '💡': 'bg-blue-50 dark:bg-blue-950/20 border-blue-300 text-blue-800 dark:text-blue-200',
-        '📊': 'bg-purple-50 dark:bg-purple-950/20 border-purple-300 text-purple-800 dark:text-purple-200',
-        '🎯': 'bg-green-50 dark:bg-green-950/20 border-green-300 text-green-800 dark:text-green-200',
-        '✅': 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-300 text-emerald-800 dark:text-emerald-200',
-        '❌': 'bg-red-50 dark:bg-red-950/20 border-red-300 text-red-800 dark:text-red-200',
-        '🔍': 'bg-indigo-50 dark:bg-indigo-950/20 border-indigo-300 text-indigo-800 dark:text-indigo-200',
-        '📈': 'bg-green-50 dark:bg-green-950/20 border-green-300 text-green-800 dark:text-green-200',
-        '📉': 'bg-red-50 dark:bg-red-950/20 border-red-300 text-red-800 dark:text-red-200',
-        '🚫': 'bg-gray-50 dark:bg-gray-950/20 border-gray-300 text-gray-800 dark:text-gray-200'
+      const className = `text-default-900 dark:text-default-100 font-bold leading-tight mb-3 mt-6`;
+      const sizeClasses = {
+        1: 'text-2xl',
+        2: 'text-xl', 
+        3: 'text-lg',
+        4: 'text-base',
+        5: 'text-sm font-semibold',
+        6: 'text-sm font-medium'
       };
       
-      const styleClass = styles[emoji] || styles['💡'];
-      return `<div class="my-2 p-2 rounded border-l-2 ${styleClass}">
-        <div class="flex items-start gap-2">
-          <span class="text-base flex-shrink-0">${emoji}</span>
-          <span class="text-sm">${this.processInlineText(text)}</span>
+      return `<h${level} id="${id}" class="${className} ${sizeClasses[level as keyof typeof sizeClasses]}">${this.escapeHtml(text.trim())}</h${level}>`;
+    });
+  }
+
+  private static processTables(content: string): string {
+    return content.replace(this.PATTERNS.table, (match, header, separator, rows) => {
+      const headerCells = header.split('|').map(cell => cell.trim()).filter(Boolean);
+      const alignments = separator.split('|').map(cell => {
+        const trimmed = cell.trim();
+        if (trimmed.startsWith(':') && trimmed.endsWith(':')) return 'center';
+        if (trimmed.endsWith(':')) return 'right';
+        return 'left';
+      });
+
+      const rowsArray = rows.trim().split('\n').filter(Boolean);
+      
+      let tableHtml = `
+        <div class="my-4 overflow-x-auto rounded-lg border border-default-200 dark:border-default-700">
+          <table class="w-full text-sm">
+            <thead class="bg-default-100 dark:bg-default-800">
+              <tr>
+      `;
+      
+      headerCells.forEach((cell, index) => {
+        const alignment = alignments[index] || 'left';
+        tableHtml += `<th class="px-4 py-2 text-${alignment} font-semibold text-default-700 dark:text-default-300">${this.escapeHtml(cell)}</th>`;
+      });
+      
+      tableHtml += `
+              </tr>
+            </thead>
+            <tbody class="bg-content1">
+      `;
+      
+      rowsArray.forEach((row, rowIndex) => {
+        const cells = row.split('|').map(cell => cell.trim()).filter(Boolean);
+        tableHtml += `<tr class="${rowIndex % 2 === 0 ? 'bg-default-50 dark:bg-default-900/50' : ''}">`;
+        
+        cells.forEach((cell, index) => {
+          const alignment = alignments[index] || 'left';
+          tableHtml += `<td class="px-4 py-2 text-${alignment} text-default-600 dark:text-default-400 border-t border-default-200 dark:border-default-700">${this.escapeHtml(cell)}</td>`;
+        });
+        
+        tableHtml += '</tr>';
+      });
+      
+      tableHtml += `
+            </tbody>
+          </table>
         </div>
-      </div>`;
+      `;
+      
+      return tableHtml;
+    });
+  }
+
+  private static processLists(content: string): string {
+    // Process numbered lists
+    content = content.replace(this.PATTERNS.numberedList, (match, indent, number, text) => {
+      const level = indent.length / 2;
+      const marginClass = level > 0 ? `ml-${Math.min(level * 4, 8)}` : '';
+      return `<li class="text-default-700 dark:text-default-300 mb-1 ${marginClass}">${this.escapeHtml(text.trim())}</li>`;
+    });
+
+    // Process bullet lists  
+    content = content.replace(this.PATTERNS.bulletList, (match, indent, text) => {
+      const level = indent.length / 2;
+      const marginClass = level > 0 ? `ml-${Math.min(level * 4, 8)}` : '';
+      return `<li class="text-default-700 dark:text-default-300 mb-1 ${marginClass} list-disc list-inside">${this.escapeHtml(text.trim())}</li>`;
     });
 
     return content;
   }
 
-  /**
-   * Process inline formatting
-   */
+  private static processSpecialElements(content: string): string {
+    // Process blockquotes
+    content = content.replace(this.PATTERNS.blockquote, (match, text) => {
+      return `<blockquote class="border-l-4 border-primary-500 pl-4 py-2 my-3 bg-primary-50 dark:bg-primary-950/30 text-primary-800 dark:text-primary-200 italic">${this.escapeHtml(text.trim())}</blockquote>`;
+    });
+
+    // Process callouts
+    content = content.replace(this.PATTERNS.callout, (match, emoji, text) => {
+      const colorMap: Record<string, string> = {
+        '⚠️': 'warning',
+        '❗': 'danger', 
+        '💡': 'primary',
+        '📊': 'secondary',
+        '🎯': 'success',
+        '✅': 'success',
+        '❌': 'danger',
+        '🔍': 'primary',
+        '📈': 'success',
+        '📉': 'danger',
+        '🚫': 'danger'
+      };
+      
+      const color = colorMap[emoji] || 'default';
+      return `<div class="my-3 p-3 rounded-lg border-l-4 border-${color}-500 bg-${color}-50 dark:bg-${color}-950/30"><span class="mr-2">${emoji}</span><span class="text-${color}-800 dark:text-${color}-200">${this.escapeHtml(text.trim())}</span></div>`;
+    });
+
+    return content;
+  }
+
   private static processInlineFormatting(content: string): string {
-    return content
-      .replace(this.PATTERNS.strikethrough, '<del class="text-default-500">$1</del>')
-      .replace(this.PATTERNS.bold, '<strong class="font-semibold text-foreground">$1</strong>')
-      .replace(this.PATTERNS.italic, '<em class="italic text-default-600">$1</em>')
-      .replace(this.PATTERNS.inlineCode, '<code class="bg-orange-100 dark:bg-orange-950 text-orange-800 dark:text-orange-200 px-1.5 py-0.5 rounded text-sm font-mono">$1</code>');
-  }
-
-  /**
-   * Process financial data with smart highlighting
-   */
-  private static processFinancialData(content: string): string {
-    // Currency amounts
-    content = content.replace(this.PATTERNS.currency, (match) => {
-      const value = parseFloat(match.replace(/[$,BMK]/g, ''));
-      let colorClass = 'text-blue-700 dark:text-blue-400 bg-blue-100 dark:bg-blue-950/30';
-      
-      if (match.includes('B') || value >= 1000000) {
-        colorClass = 'text-green-700 dark:text-green-400 bg-green-100 dark:bg-green-950/30';
-      } else if (match.includes('M') || value >= 1000) {
-        colorClass = 'text-purple-700 dark:text-purple-400 bg-purple-100 dark:bg-purple-950/30';
-      }
-      
-      return `<span class="font-medium ${colorClass} px-1.5 py-0.5 rounded text-sm">${match}</span>`;
+    // Bold
+    content = content.replace(this.PATTERNS.bold, (match, text) => {
+      return `<strong class="font-semibold text-default-900 dark:text-default-100">${this.escapeHtml(text)}</strong>`;
     });
 
-    // Percentages
-    content = content.replace(this.PATTERNS.percentage, (match) => {
-      const value = parseFloat(match.replace('%', ''));
-      let colorClass = 'text-default-700 dark:text-default-400 bg-default-100 dark:bg-default-950/30';
-      
-      if (value > 0) {
-        colorClass = 'text-green-700 dark:text-green-400 bg-green-100 dark:bg-green-950/30';
-      } else if (value < 0) {
-        colorClass = 'text-red-700 dark:text-red-400 bg-red-100 dark:bg-red-950/30';
-      }
-      
-      return `<span class="font-medium ${colorClass} px-1.5 py-0.5 rounded text-sm">${match}</span>`;
+    // Italic  
+    content = content.replace(this.PATTERNS.italic, (match, text) => {
+      return `<em class="italic text-default-800 dark:text-default-200">${this.escapeHtml(text)}</em>`;
     });
 
-    // Financial keywords
-    const keywordRegex = new RegExp(`\\b(${Array.from(this.FINANCIAL_KEYWORDS).join('|')})\\b`, 'gi');
-    content = content.replace(keywordRegex, '<span class="font-medium text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/20 px-1 rounded text-sm">$1</span>');
+    // Strikethrough
+    content = content.replace(this.PATTERNS.strikethrough, (match, text) => {
+      return `<del class="line-through text-default-500">${this.escapeHtml(text)}</del>`;
+    });
+
+    // Inline code
+    content = content.replace(this.PATTERNS.inlineCode, (match, code) => {
+      return `<code class="px-1.5 py-0.5 bg-default-100 dark:bg-default-800 text-default-800 dark:text-default-200 rounded text-sm font-mono">${this.escapeHtml(code)}</code>`;
+    });
 
     return content;
   }
 
-  /**
-   * Process paragraphs
-   */
+  private static processLinks(content: string): string {
+    // Markdown links
+    content = content.replace(this.PATTERNS.links, (match, text, url) => {
+      return `<a href="${this.escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 underline transition-colors">${this.escapeHtml(text)}</a>`;
+    });
+
+    // Auto links
+    content = content.replace(this.PATTERNS.autoLinks, (match, url) => {
+      return `<a href="${this.escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 underline transition-colors break-all">${this.escapeHtml(url)}</a>`;
+    });
+
+    return content;
+  }
+
+  private static processFinancialData(content: string): string {
+    // Highlight currencies
+    content = content.replace(this.PATTERNS.currency, (match) => {
+      return `<span class="font-semibold text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-1 rounded">${match}</span>`;
+    });
+
+    // Highlight percentages
+    content = content.replace(this.PATTERNS.percentage, (match) => {
+      const isPositive = match.startsWith('+') || (!match.startsWith('-') && parseFloat(match) > 0);
+      const colorClass = isPositive ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20' : 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20';
+      return `<span class="font-semibold ${colorClass} px-1 rounded">${match}</span>`;
+    });
+
+    return content;
+  }
+
   private static processParagraphs(content: string): string {
     return content
-      .split(/\n\s*\n/)
+      .split('\n\n')
       .map(para => {
         const trimmed = para.trim();
-        if (!trimmed || trimmed.startsWith('<')) return trimmed;
+        if (!trimmed) return '';
         
-        // Don't wrap lists, headers, or special elements
-        if (/^(<div|<h[1-6])/m.test(trimmed)) return trimmed;
+        // Skip if already wrapped in HTML tags
+        if (trimmed.startsWith('<') && trimmed.endsWith('>')) return trimmed;
         
-        return `<p class="text-default-700 dark:text-default-300 leading-snug my-1.5 text-sm">${trimmed}</p>`;
+        return `<p class="text-default-700 dark:text-default-300 leading-relaxed mb-3">${trimmed}</p>`;
       })
-      .filter(p => p)
-      .join('');
+      .filter(Boolean)
+      .join('\n\n');
   }
 
-  /**
-   * Restore cached code blocks
-   */
   private static restoreCodeBlocks(content: string): string {
     this.codeBlockCache.forEach((html, id) => {
       content = content.replace(id, html);
@@ -416,54 +494,25 @@ export class ContentParserService {
     return content;
   }
 
-  /**
-   * Process inline text (for table cells, list items, etc.)
-   */
-  private static processInlineText(text: string): string {
-    return text
-      .replace(this.PATTERNS.bold, '<strong>$1</strong>')
-      .replace(this.PATTERNS.italic, '<em>$1</em>')
-      .replace(this.PATTERNS.inlineCode, '<code class="bg-orange-100 dark:bg-orange-950 text-orange-800 dark:text-orange-200 px-1 py-0.5 rounded text-xs font-mono">$1</code>');
+  private static addAccessibilityAttributes(content: string): string {
+    // Add ARIA labels and roles where appropriate
+    content = content.replace(/<table/g, '<table role="table"');
+    content = content.replace(/<blockquote/g, '<blockquote role="blockquote"');
+    return content;
   }
 
-  /**
-   * Process financial data in table cells
-   */
-  private static processFinancialCell(cell: string): string {
-    let processed = this.processInlineText(cell);
-    
-    // Apply financial highlighting
-    processed = processed.replace(this.PATTERNS.percentage, (match) => {
-      const value = parseFloat(match.replace('%', ''));
-      const color = value >= 0 ? 'text-green-600' : 'text-red-600';
-      return `<span class="font-medium ${color}">${match}</span>`;
-    });
-    
-    processed = processed.replace(this.PATTERNS.currency, (match) => {
-      return `<span class="font-medium text-green-600">${match}</span>`;
-    });
-    
-    return processed;
+  private static escapeHtml(text: string): string {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
   }
 
-  /**
-   * Utility functions
-   */
   private static generateId(text: string): string {
     return text
       .toLowerCase()
       .replace(/[^\w\s-]/g, '')
       .replace(/\s+/g, '-')
-      .slice(0, 50);
-  }
-
-  private static escapeHtml(text: string): string {
-    return text
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;');
+      .substring(0, 50);
   }
 
   private static getEmptyResult(): ParsedContent {
@@ -486,83 +535,18 @@ export class ContentParserService {
   private static getFallbackResult(content: string): ParsedContent {
     const wordCount = content.split(/\s+/).length;
     return {
-      html: `<p class="text-default-700 dark:text-default-300 leading-snug my-1.5 text-sm">${this.escapeHtml(content)}</p>`,
+      html: `<p class="text-default-700 dark:text-default-300 leading-relaxed">${this.escapeHtml(content)}</p>`,
       metadata: {
         hasCode: false,
         hasTable: false,
         hasFinancialData: false,
         hasMath: false,
-        estimatedReadTime: Math.ceil(wordCount / 250),
+        estimatedReadTime: Math.max(1, Math.ceil(wordCount / 250)),
         contentType: 'text',
         wordCount,
         headings: [],
         codeLanguages: []
       }
     };
-  }
-
-  /**
-   * Static utility methods for external use
-   */
-  static getReadingTime(wordCount: number): string {
-    const minutes = Math.max(1, Math.ceil(wordCount / 250));
-    return minutes === 1 ? '1 min' : `${minutes} min`;
-  }
-
-  static extractInsights(content: string): string[] {
-    const sentences = content
-      .split(/[.!?]+/)
-      .map(s => s.trim())
-      .filter(s => s.length > 15 && s.length < 150);
-    
-    return sentences
-      .map(sentence => {
-        let score = 0;
-        
-        // Financial keywords
-        Array.from(this.FINANCIAL_KEYWORDS).forEach(keyword => {
-          if (sentence.toLowerCase().includes(keyword)) score += 2;
-        });
-        
-        // Financial patterns
-        if (this.PATTERNS.currency.test(sentence)) score += 1;
-        if (this.PATTERNS.percentage.test(sentence)) score += 1;
-        
-        // Action words
-        if (/\b(should|recommend|suggest|important|key|critical|significant)\b/i.test(sentence)) score += 1;
-        
-        return { sentence, score };
-      })
-      .filter(item => item.score > 0)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 3)
-      .map(item => item.sentence);
-  }
-
-  static getContentStats(content: string, metadata: ParsedContent['metadata']) {
-    return {
-      wordCount: metadata.wordCount,
-      characterCount: content.length,
-      estimatedReadTime: metadata.estimatedReadTime,
-      paragraphCount: content.split(/\n\s*\n/).length,
-      headingCount: metadata.headings.length,
-      codeBlockCount: metadata.codeLanguages.length,
-      hasFinancialData: metadata.hasFinancialData,
-      contentComplexity: this.calculateComplexity(metadata)
-    };
-  }
-
-  private static calculateComplexity(metadata: ParsedContent['metadata']): 'simple' | 'moderate' | 'complex' {
-    let score = 0;
-    if (metadata.hasCode) score += 2;
-    if (metadata.hasTable) score += 1;
-    if (metadata.hasMath) score += 2;
-    if (metadata.hasFinancialData) score += 1;
-    if (metadata.wordCount > 300) score += 1;
-    if (metadata.headings.length > 3) score += 1;
-    
-    if (score <= 2) return 'simple';
-    if (score <= 4) return 'moderate';
-    return 'complex';
   }
 }

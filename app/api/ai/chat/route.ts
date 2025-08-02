@@ -561,10 +561,13 @@ export async function POST(request: NextRequest) {
       content: aiResponse,
       timestamp: new Date().toISOString(),
       metadata: {
+     
         model: usedModel,
-        processingTime,
         type: 'financial_analysis',
-        confidence: usedModel.includes('Fallback') ? 0.7 : 0.9
+        confidence: usedModel.includes('Fallback') ? 0.7 : 0.9,
+        processingTime: Date.now() - startTime,
+        wordCount: aiResponse.split(/\s+/).length,
+      
       }
     };
 

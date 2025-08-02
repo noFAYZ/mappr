@@ -74,28 +74,18 @@ import { useUIStore } from '@/stores';
 import clsx from 'clsx';
 import { Switch } from '@heroui/react';
 import { LogoMappr } from '@/components/icons';
-import { MdiMessageFastOutline, PhUser, UimCommentAltMessage } from '@/components/icons/icons';
-import ChatMessage from './components/ChatMessage';
+import { UimCommentAltMessage } from '@/components/icons/icons';
 
-// Types
-interface Message {
-  id: string;
-  role: 'user' | 'assistant' | 'system';
-  content: string;
-  timestamp: string;
-  isStreaming?: boolean;
-  isError?: boolean;
-  attachments?: MessageAttachment[];
-  metadata?: {
-    type?: 'text' | 'analysis' | 'insight' | 'recommendation' | 'chart' | 'table';
-    data?: any;
-    tokens?: number;
-    processingTime?: number;
-    model?: string;
-    confidence?: number;
-  };
-}
+// Import the new MessageContainer system
 
+import { toast } from 'sonner';
+import { MessageExporter } from '@/lib/utils/messageExport';
+import { MessageSearch } from '@/lib/utils/messageSearch';
+import { MessageAnalytics } from '@/lib/utils/messageAnalytics';
+import { Message } from './components/types';
+import { MessageContainer } from './components/MessageContainer';
+
+// Keep your existing types but update Message interface
 interface MessageAttachment {
   id: string;
   type: 'image' | 'file' | 'csv' | 'pdf';
@@ -128,7 +118,7 @@ interface SuggestionPrompt {
   isPremium?: boolean;
 }
 
-// API Service
+// Enhanced API Service with updateConversation method
 class AIService {
   static async sendMessage(message: string, conversationId?: string, attachments?: MessageAttachment[]) {
     const response = await fetch('/api/ai/chat', {
@@ -171,6 +161,21 @@ class AIService {
     return response.json();
   }
 
+  // NEW: Update conversation method
+  static async updateConversation(conversationId: string, updates: Partial<Conversation>) {
+    const response = await fetch(`/api/ai/conversations/${conversationId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates)
+    });
+    
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Failed to update conversation' }));
+      throw new Error(error.error || 'Failed to update conversation');
+    }
+    return response.json();
+  }
+
   static async deleteConversation(conversationId: string) {
     const response = await fetch(`/api/ai/conversations/${conversationId}`, {
       method: 'DELETE'
@@ -189,8 +194,7 @@ class AIService {
   }
 }
 
-
-// Conversation Sidebar Component
+// Keep your existing ConversationSidebar component unchanged
 const ConversationSidebar = ({ 
   conversations, 
   selectedId, 
@@ -376,7 +380,7 @@ const ConversationSidebar = ({
   );
 };
 
-// Welcome Screen Component
+// Keep your existing WelcomeScreen component unchanged
 const WelcomeScreen = ({ onPromptSelect }: { onPromptSelect: (prompt: string) => void }) => {
   const { profile } = useAuth();
   
@@ -626,7 +630,7 @@ const WelcomeScreen = ({ onPromptSelect }: { onPromptSelect: (prompt: string) =>
   );
 };
 
-// Message Input Component
+// Keep your existing MessageInput component unchanged (code too long for this response)
 const MessageInput = ({ 
   value, 
   onChange, 
@@ -646,6 +650,7 @@ const MessageInput = ({
   attachments?: MessageAttachment[];
   onRemoveAttachment?: (id: string) => void;
 }) => {
+  // ... Keep your existing MessageInput implementation exactly as is
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -735,573 +740,690 @@ const MessageInput = ({
                     <p className="text-xs text-default-500">{(attachment.size / 1024).toFixed(1)} KB</p>
                   </div>
                   {onRemoveAttachment && (
-                    <Button
-                      isIconOnly
-                      size="sm"
-                      variant="flat"
-                      className="w-6 h-6 min-w-6"
-                      onPress={() => onRemoveAttachment(attachment.id)}
-                    >
-                      <X className="w-3 h-3" />
-                    </Button>
-                  )}
-                </motion.div>
-              ))}
+                    <Button isIconOnly
+                    size="sm"
+                    variant="flat"
+                    className="w-6 h-6 min-w-6"
+                    onPress={() => onRemoveAttachment(attachment.id)}
+                  >
+                    <X className="w-3 h-3" />
+                  </Button>
+                )}
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+
+    {/* Main Input Area */}
+    <div className={clsx(
+      "relative rounded-2xl border border-divider",
+      isDragging 
+        ? "border-primary-500/20 bg-primary-50 dark:bg-primary-950/20" 
+        : "border-default-300 hover:border-default focus-within:border-default",
+      "bg-default-50 dark:bg-default-100/10"
+    )}>
+      
+      {/* Drag overlay */}
+      <AnimatePresence>
+        {isDragging && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-10 bg-primary-500/10 rounded-2xl flex items-center justify-center border border-dashed border-primary-500"
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+          >
+            <div className="text-center">
+              <Upload className="w-8 h-8 mx-auto mb-2 text-primary-600" />
+              <p className="text-sm font-medium text-primary-600">Drop files here to attach</p>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Main Input Area */}
-      <div className={clsx(
-        "relative rounded-2xl border border-divider",
-        isDragging 
-          ? "border-primary-500/20 bg-primary-50 dark:bg-primary-950/20" 
-          : "border-default-300 hover:border-default focus-within:border-default",
-        "bg-default-50 dark:bg-default-100/10"
-      )}>
-        
-        {/* Drag overlay */}
-        <AnimatePresence>
-          {isDragging && (
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 z-10 bg-primary-500/10 rounded-2xl flex items-center justify-center border border-dashed border-primary-500"
-              onDrop={handleDrop}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-            >
-              <div className="text-center">
-                <Upload className="w-8 h-8 mx-auto mb-2 text-primary-600" />
-                <p className="text-sm font-medium text-primary-600">Drop files here to attach</p>
-              </div>
-            </motion.div>
+      {/* Textarea */}
+      <Textarea
+        ref={textareaRef}
+        placeholder="Message Assistant... (⌘ + Enter to send)"
+        value={value}
+        onValueChange={onChange}
+        onKeyDown={handleKeyDown}
+        variant="flat"
+        minRows={1}
+        maxRows={isExpanded ? 20 : 8}
+        className="resize-none"
+        classNames={{
+          base: "w-full",
+          input: "resize-none text-sm leading-relaxed",
+          inputWrapper: "!bg-transparent border-none shadow-none group-data-[focus=true]:bg-transparent px-4 py-3"
+        }}
+        disabled={disabled}
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+      />
+      
+      {/* Bottom toolbar */}
+      <div className="flex items-center justify-between px-4 pb-3">
+        {/* Left actions */}
+        <div className="flex items-center gap-1">
+          {/* Attach button */}
+          {onAttach && (
+            <>
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept="image/*,.pdf,.csv,.xlsx,.txt,.json"
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+              <Tooltip content="Attach files">
+                <Button
+                  isIconOnly
+                  size="sm"
+                  variant="flat"
+                  className="w-8 h-8 min-w-8 hover:bg-default-200"
+                  onPress={() => fileInputRef.current?.click()}
+                >
+                  <Paperclip className="w-4 h-4" />
+                </Button>
+              </Tooltip>
+            </>
           )}
-        </AnimatePresence>
-
-        {/* Textarea */}
-        <Textarea
-          ref={textareaRef}
-          placeholder="Message Assistant... (⌘ + Enter to send)"
-          value={value}
-          onValueChange={onChange}
-          onKeyDown={handleKeyDown}
-          variant="flat"
-          minRows={1}
-          maxRows={isExpanded ? 20 : 8}
-          className="resize-none"
-          classNames={{
-            base: "w-full",
-            input: "resize-none text-sm leading-relaxed",
-            inputWrapper: "!bg-transparent border-none shadow-none group-data-[focus=true]:bg-transparent px-4 py-3"
-          }}
-          disabled={disabled}
-          onDrop={handleDrop}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-        />
-        
-        {/* Bottom toolbar */}
-        <div className="flex items-center justify-between px-4 pb-3">
-          {/* Left actions */}
-          <div className="flex items-center gap-1">
-            {/* Attach button */}
-            {onAttach && (
-              <>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  multiple
-                  accept="image/*,.pdf,.csv,.xlsx,.txt,.json"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                />
-                <Tooltip content="Attach files">
-                  <Button
-                    isIconOnly
-                    size="sm"
-                    variant="flat"
-                    className="w-8 h-8 min-w-8 hover:bg-default-200"
-                    onPress={() => fileInputRef.current?.click()}
-                  >
-                    <Paperclip className="w-4 h-4" />
-                  </Button>
-                </Tooltip>
-              </>
-            )}
-            
-            {/* Voice recording */}
-            <Tooltip content={isRecording ? "Stop recording" : "Voice message"}>
-              <Button
-                isIconOnly
-                size="sm"
-                variant="flat"
-                className={clsx(
-                  "w-8 h-8 min-w-8 transition-colors",
-                  isRecording ? "bg-danger-100 text-danger-600" : "hover:bg-default-200"
-                )}
-                onPress={() => setIsRecording(!isRecording)}
-              >
-                {isRecording ? <StopCircle className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-              </Button>
-            </Tooltip>
-
-            {/* Expand toggle */}
-            <Tooltip content={isExpanded ? "Collapse" : "Expand"}>
-              <Button
-                isIconOnly
-                size="sm"
-                variant="flat"
-                className="w-8 h-8 min-w-8 hover:bg-default-200"
-                onPress={() => setIsExpanded(!isExpanded)}
-              >
-                {isExpanded ? <Minimize className="w-4 h-4" /> : <Expand className="w-4 h-4" />}
-              </Button>
-            </Tooltip>
-          </div>
-
-          {/* Right actions */}
-          <div className="flex items-center gap-3">
-            {/* Character count */}
-            <Chip 
-              size="sm" 
-              variant="flat" 
-              color={isNearLimit ? "warning" : "default"}
-              className="text-xs h-6"
-            >
-              {characterCount}/{maxCharacters}
-            </Chip>
-
-            {/* Send button */}
+          
+          {/* Voice recording */}
+          <Tooltip content={isRecording ? "Stop recording" : "Voice message"}>
             <Button
-              color="primary"
+              isIconOnly
               size="sm"
-              isDisabled={!canSend}
-              isLoading={isLoading}
-              onPress={onSend}
+              variant="flat"
               className={clsx(
-                "px-4 h-8 min-w-16 font-medium transition-all duration-200",
-                canSend 
-                  ? "bg-primary-600 hover:bg-primary-700 shadow-lg hover:shadow-primary-500/25" 
-                  : "opacity-50"
+                "w-8 h-8 min-w-8 transition-colors",
+                isRecording ? "bg-danger-100 text-danger-600" : "hover:bg-default-200"
               )}
-              endContent={!isLoading && <ArrowUp className="w-4 h-4" />}
+              onPress={() => setIsRecording(!isRecording)}
             >
-              Send
+              {isRecording ? <StopCircle className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
             </Button>
-          </div>
-        </div>
-      </div>
+          </Tooltip>
 
-      {/* Footer info */}
-      <div className="flex items-center justify-between mt-3 text-xs text-default-500">
-        <div className="flex items-center gap-4">
-          <span className="flex items-center text-xs gap-1">
-            <Kbd keys={["command"]}>⌘</Kbd> + <Kbd>Enter</Kbd> to send
-          </span>
-          <span className="flex items-center gap-1">
-            <Kbd>Shift</Kbd> + <Kbd>Enter</Kbd> for new line
-          </span>
+          {/* Expand toggle */}
+          <Tooltip content={isExpanded ? "Collapse" : "Expand"}>
+            <Button
+              isIconOnly
+              size="sm"
+              variant="flat"
+              className="w-8 h-8 min-w-8 hover:bg-default-200"
+              onPress={() => setIsExpanded(!isExpanded)}
+            >
+              {isExpanded ? <Minimize className="w-4 h-4" /> : <Expand className="w-4 h-4" />}
+            </Button>
+          </Tooltip>
         </div>
-        <div className="flex items-center gap-4">
-          <span>Model: GPT-4 Turbo</span>
-          {profile?.tier && (
-            <Chip size="sm" variant="flat" color="primary" className="bg-primary-500/20 rounded-md px-0 h-5 capitalize">
-              {profile.tier} Plan
-            </Chip>
-          )}
+
+        {/* Right actions */}
+        <div className="flex items-center gap-3">
+          {/* Character count */}
+          <Chip 
+            size="sm" 
+            variant="flat" 
+            color={isNearLimit ? "warning" : "default"}
+            className="text-xs h-6"
+          >
+            {characterCount}/{maxCharacters}
+          </Chip>
+
+          {/* Send button */}
+          <Button
+            color="primary"
+            size="sm"
+            isDisabled={!canSend}
+            isLoading={isLoading}
+            onPress={onSend}
+            className={clsx(
+              "px-4 h-8 min-w-16 font-medium transition-all duration-200",
+              canSend 
+                ? "bg-primary-600 hover:bg-primary-700 shadow-lg hover:shadow-primary-500/25" 
+                : "opacity-50"
+            )}
+            endContent={!isLoading && <ArrowUp className="w-4 h-4" />}
+          >
+            Send
+          </Button>
         </div>
       </div>
     </div>
-  );
+
+    {/* Footer info */}
+    <div className="flex items-center justify-between mt-3 text-xs text-default-500">
+      <div className="flex items-center gap-4">
+        <span className="flex items-center text-xs gap-1">
+          <Kbd keys={["command"]}>⌘</Kbd> + <Kbd>Enter</Kbd> to send
+        </span>
+        <span className="flex items-center gap-1">
+          <Kbd>Shift</Kbd> + <Kbd>Enter</Kbd> for new line
+        </span>
+      </div>
+      <div className="flex items-center gap-4">
+        <span>Model: GPT-4 Turbo</span>
+        {profile?.tier && (
+          <Chip size="sm" variant="flat" color="primary" className="bg-primary-500/20 rounded-md px-0 h-5 capitalize">
+            {profile.tier} Plan
+          </Chip>
+        )}
+      </div>
+    </div>
+  </div>
+);
 };
 
-// Main AI Page Component
+// Main AI Page Component with MessageContainer Integration
 export default function AIPage() {
-  const { user, profile } = useAuth();
-  const { addNotification } = useUIStore();
-  const { theme } = useTheme();
-  const queryClient = useQueryClient();
+const { user, profile } = useAuth();
+const { addNotification } = useUIStore();
+const { theme } = useTheme();
+const queryClient = useQueryClient();
+
+const [currentMessage, setCurrentMessage] = useState('');
+const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
+const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+const [attachments, setAttachments] = useState<MessageAttachment[]>([]);
+const [isPlaying, setIsPlaying] = useState(false);
+const [searchQuery, setSearchQuery] = useState('');
+const [searchResults, setSearchResults] = useState([]);
+
+const messagesEndRef = useRef<HTMLDivElement>(null);
+const { isOpen: isSettingsOpen, onOpen: onSettingsOpen, onClose: onSettingsClose } = useDisclosure();
+
+// Fetch conversations
+const { data: conversations = [], isLoading: loadingConversations, error: conversationsError } = useQuery({
+  queryKey: ['ai-conversations'],
+  queryFn: AIService.getConversations,
+  refetchOnWindowFocus: false,
+  retry: 3,
+  retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000)
+});
+
+const currentConversation = selectedConversation 
+  ? conversations.find(c => c.id === selectedConversation)
+  : null;
+
+// Convert messages to new MessageContainer format
+const formattedMessages: Message[] = useMemo(() => {
+  if (!currentConversation?.messages) return [];
   
-  const [currentMessage, setCurrentMessage] = useState('');
-  const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [attachments, setAttachments] = useState<MessageAttachment[]>([]);
-  const [isPlaying, setIsPlaying] = useState(false);
-  
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { isOpen: isSettingsOpen, onOpen: onSettingsOpen, onClose: onSettingsClose } = useDisclosure();
-
-  // Fetch conversations
-  const { data: conversations = [], isLoading: loadingConversations, error: conversationsError } = useQuery({
-    queryKey: ['ai-conversations'],
-    queryFn: AIService.getConversations,
-    refetchOnWindowFocus: false,
-    retry: 3,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000)
-  });
-
-  const currentConversation = selectedConversation 
-    ? conversations.find(c => c.id === selectedConversation)
-    : null;
-
-  // Send message mutation
-  const sendMessageMutation = useMutation({
-    mutationFn: ({ message, conversationId, attachments }: { 
-      message: string; 
-      conversationId?: string;
-      attachments?: MessageAttachment[];
-    }) => AIService.sendMessage(message, conversationId, attachments),
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['ai-conversations'] });
-      if (data.conversationId && !selectedConversation) {
-        setSelectedConversation(data.conversationId);
-      }
-      setAttachments([]);
-    },
-    onError: (error: Error) => {
-      addNotification({
-        type: 'error',
-        title: 'Message Failed',
-        message: error.message || 'Failed to send message. Please try again.'
-      });
+  return currentConversation.messages.map((msg: any) => ({
+    id: msg.id,
+    role: msg.role,
+    content: msg.content,
+    timestamp: msg.timestamp || new Date().toISOString(),
+    isStreaming: msg.isStreaming || false,
+    isError: msg.isError || false,
+    attachments: msg.attachments || [],
+    metadata: {
+      type: msg.metadata?.type || 'text',
+      model: msg.metadata?.model,
+      confidence: msg.metadata?.confidence,
+      data: msg.metadata?.data,
+      wordCount: msg.content?.split(/\s+/).length || 0,
+      processingTime: msg.metadata?.processingTime,
+      sources: msg.metadata?.sources || []
     }
-  });
+  }));
+}, [currentConversation?.messages]);
 
-  // Create conversation mutation
-  const createConversationMutation = useMutation({
-    mutationFn: AIService.createConversation,
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['ai-conversations'] });
-      setSelectedConversation(data.data.id);
-      setIsSidebarOpen(false);
-    }
-  });
-
-  // Delete conversation mutation
-  const deleteConversationMutation = useMutation({
-    mutationFn: AIService.deleteConversation,
-    onSuccess: (_, deletedId) => {
-      queryClient.invalidateQueries({ queryKey: ['ai-conversations'] });
-      if (selectedConversation === deletedId) {
-        setSelectedConversation(null);
-      }
-      addNotification({
-        type: 'success',
-        title: 'Conversation Deleted',
-        message: 'The conversation has been successfully deleted.'
-      });
-    }
-  });
-
-  // Star conversation mutation
-  const starConversationMutation = useMutation({
-    mutationFn: AIService.starConversation,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ai-conversations'] });
-    }
-  });
-
-  // Auto-scroll to bottom when messages change
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ 
-      behavior: 'smooth',
-      block: 'end'
+// NEW: Update conversation mutation
+const updateConversationMutation = useMutation({
+  mutationFn: async ({ id, updates }: { id: string; updates: Partial<Conversation> }) => {
+    return AIService.updateConversation(id, updates);
+  },
+  onSuccess: (data, variables) => {
+    // Update the specific conversation in cache
+    queryClient.setQueryData(['ai-conversations'], (old: Conversation[] | undefined) => {
+      if (!old) return old;
+      return old.map(conv => 
+        conv.id === variables.id ? { ...conv, ...variables.updates } : conv
+      );
     });
-  }, [currentConversation?.messages]);
-
-  // Handle file attachments
-  const handleAttachFiles = useCallback((files: FileList) => {
-    const newAttachments: MessageAttachment[] = Array.from(files).map(file => ({
-      id: crypto.randomUUID(),
-      type: file.type.startsWith('image/') ? 'image' : 'file',
-      name: file.name,
-      size: file.size,
-      url: URL.createObjectURL(file)
-    }));
     
-    setAttachments(prev => [...prev, ...newAttachments]);
-  }, []);
-
-  const handleRemoveAttachment = useCallback((id: string) => {
-    setAttachments(prev => {
-      const attachment = prev.find(a => a.id === id);
-      if (attachment?.url) {
-        URL.revokeObjectURL(attachment.url);
-      }
-      return prev.filter(a => a.id !== id);
-    });
-  }, []);
-
-  // Handle sending messages
-  const handleSendMessage = useCallback(async () => {
-    if (!currentMessage.trim() || sendMessageMutation.isPending) return;
-
-    const message = currentMessage.trim();
-    setCurrentMessage('');
-
-    try {
-      await sendMessageMutation.mutateAsync({
-        message,
-        conversationId: selectedConversation || undefined,
-        attachments: attachments.length > 0 ? attachments : undefined
-      });
-    } catch (error) {
-      console.error('Send message error:', error);
+    // Don't show toast for message updates (too frequent)
+    if (variables.updates.title !== undefined || variables.updates.is_starred !== undefined) {
+      toast.success('Conversation updated');
     }
-  }, [currentMessage, selectedConversation, attachments, sendMessageMutation]);
+  },
+  onError: (error) => {
+    console.error('Update conversation failed:', error);
+    toast.error(error.message || 'Failed to update conversation');
+  },
+});
 
-  const handlePromptSelect = useCallback((prompt: string) => {
-    setCurrentMessage(prompt);
+// Send message mutation
+const sendMessageMutation = useMutation({
+  mutationFn: ({ message, conversationId, attachments }: { 
+    message: string; 
+    conversationId?: string;
+    attachments?: MessageAttachment[];
+  }) => AIService.sendMessage(message, conversationId, attachments),
+  onSuccess: (data) => {
+    queryClient.invalidateQueries({ queryKey: ['ai-conversations'] });
+    if (data.conversationId && !selectedConversation) {
+      setSelectedConversation(data.conversationId);
+    }
+    setAttachments([]);
+  },
+  onError: (error: Error) => {
+    addNotification({
+      type: 'error',
+      title: 'Message Failed',
+      message: error.message || 'Failed to send message. Please try again.'
+    });
+  }
+});
+
+// Create conversation mutation
+const createConversationMutation = useMutation({
+  mutationFn: AIService.createConversation,
+  onSuccess: (data) => {
+    queryClient.invalidateQueries({ queryKey: ['ai-conversations'] });
+    setSelectedConversation(data.data.id);
     setIsSidebarOpen(false);
-  }, []);
+  }
+});
 
-  const handleCopyMessage = useCallback((content: string) => {
-    navigator.clipboard.writeText(content);
+// Delete conversation mutation
+const deleteConversationMutation = useMutation({
+  mutationFn: AIService.deleteConversation,
+  onSuccess: (_, deletedId) => {
+    queryClient.invalidateQueries({ queryKey: ['ai-conversations'] });
+    if (selectedConversation === deletedId) {
+      setSelectedConversation(null);
+    }
     addNotification({
       type: 'success',
-      title: 'Copied',
-      message: 'Message copied to clipboard'
+      title: 'Conversation Deleted',
+      message: 'The conversation has been successfully deleted.'
     });
-  }, [addNotification]);
+  }
+});
 
-  const handleRegenerateMessage = useCallback(async () => {
-    if (!currentConversation?.messages.length) return;
+// Star conversation mutation
+const starConversationMutation = useMutation({
+  mutationFn: AIService.starConversation,
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ['ai-conversations'] });
+  }
+});
+
+// Auto-scroll to bottom when messages change
+useEffect(() => {
+  messagesEndRef.current?.scrollIntoView({ 
+    behavior: 'smooth',
+    block: 'end'
+  });
+}, [currentConversation?.messages]);
+
+// Handle file attachments
+const handleAttachFiles = useCallback((files: FileList) => {
+  const newAttachments: MessageAttachment[] = Array.from(files).map(file => ({
+    id: crypto.randomUUID(),
+    type: file.type.startsWith('image/') ? 'image' : 'file',
+    name: file.name,
+    size: file.size,
+    url: URL.createObjectURL(file)
+  }));
+  
+  setAttachments(prev => [...prev, ...newAttachments]);
+}, []);
+
+const handleRemoveAttachment = useCallback((id: string) => {
+  setAttachments(prev => {
+    const attachment = prev.find(a => a.id === id);
+    if (attachment?.url) {
+      URL.revokeObjectURL(attachment.url);
+    }
+    return prev.filter(a => a.id !== id);
+  });
+}, []);
+
+// Handle sending messages
+const handleSendMessage = useCallback(async () => {
+  if (!currentMessage.trim() || sendMessageMutation.isPending) return;
+
+  const message = currentMessage.trim();
+  setCurrentMessage('');
+
+  try {
+    await sendMessageMutation.mutateAsync({
+      message,
+      conversationId: selectedConversation || undefined,
+      attachments: attachments.length > 0 ? attachments : undefined
+    });
+  } catch (error) {
+    console.error('Send message error:', error);
+  }
+}, [currentMessage, selectedConversation, attachments, sendMessageMutation]);
+
+const handlePromptSelect = useCallback((prompt: string) => {
+  setCurrentMessage(prompt);
+  setIsSidebarOpen(false);
+}, []);
+
+const handleCopyMessage = useCallback((content: string) => {
+  navigator.clipboard.writeText(content);
+  addNotification({
+    type: 'success',
+    title: 'Copied',
+    message: 'Message copied to clipboard'
+  });
+}, [addNotification]);
+
+// NEW: Enhanced handlers for MessageContainer
+const handleRegenerateMessage = useCallback(async (messageId: string) => {
+  if (!selectedConversation) return;
+
+  try {
+    const messageIndex = formattedMessages.findIndex(m => m.id === messageId);
+    if (messageIndex === -1) return;
+
+    const userMessage = formattedMessages[messageIndex - 1];
+    if (!userMessage || userMessage.role !== 'user') {
+      toast.error('Cannot regenerate: No user message found');
+      return;
+    }
+
+    // Remove the assistant message and all subsequent messages
+    const updatedMessages = formattedMessages.slice(0, messageIndex);
     
-    const lastUserMessage = currentConversation.messages
-      .filter(m => m.role === 'user')
-      .pop();
-    
-    if (lastUserMessage) {
-      try {
-        await sendMessageMutation.mutateAsync({
-          message: lastUserMessage.content,
-          conversationId: selectedConversation || undefined
-        });
-      } catch (error) {
-        console.error('Regenerate message error:', error);
+    // Update conversation
+    await updateConversationMutation.mutateAsync({
+      id: selectedConversation,
+      updates: { messages: updatedMessages }
+    });
+
+    // Regenerate response
+    await sendMessageMutation.mutateAsync({
+      conversationId: selectedConversation,
+      message: userMessage.content,
+      attachments: userMessage.attachments?.map(att => ({
+        id: att.id,
+        name: att.name,
+        type: att.type as 'image' | 'file' | 'csv' | 'pdf',
+        size: att.size || 0,
+        url: att.url
+      }))
+    });
+
+    toast.success('Response regenerated');
+  } catch (error) {
+    console.error('Regeneration failed:', error);
+    toast.error('Failed to regenerate message');
+  }
+}, [selectedConversation, formattedMessages, updateConversationMutation, sendMessageMutation]);
+
+const handleEditMessage = useCallback(async (messageId: string, newContent: string) => {
+  if (!selectedConversation) return;
+
+  try {
+    const messageIndex = formattedMessages.findIndex(m => m.id === messageId);
+    if (messageIndex === -1) return;
+
+    const updatedMessages = [...formattedMessages];
+    updatedMessages[messageIndex] = {
+      ...updatedMessages[messageIndex],
+      content: newContent,
+      metadata: {
+        ...updatedMessages[messageIndex].metadata,
+        wordCount: newContent.split(/\s+/).length
       }
-    }
-  }, [currentConversation, selectedConversation, sendMessageMutation]);
+    };
 
-  const handleSpeakMessage = useCallback((content: string) => {
-    if ('speechSynthesis' in window) {
-      const utterance = new SpeechSynthesisUtterance(content);
-      utterance.onstart = () => setIsPlaying(true);
-      utterance.onend = () => setIsPlaying(false);
-      speechSynthesis.speak(utterance);
+    // If editing a user message, remove all subsequent messages
+    if (updatedMessages[messageIndex].role === 'user') {
+      updatedMessages.splice(messageIndex + 1);
     }
-  }, []);
 
-  const handleStopSpeaking = useCallback(() => {
-    if ('speechSynthesis' in window) {
-      speechSynthesis.cancel();
-      setIsPlaying(false);
-    }
-  }, []);
+    await updateConversationMutation.mutateAsync({
+      id: selectedConversation,
+      updates: { messages: updatedMessages }
+    });
 
-  // Handle conversation errors
-  useEffect(() => {
-    if (conversationsError) {
-      addNotification({
-        type: 'error',
-        title: 'Failed to Load Conversations',
-        message: 'Unable to fetch your conversation history. Please refresh the page.'
-      });
-    }
-  }, [conversationsError, addNotification]);
+    toast.success('Message updated');
+  } catch (error) {
+    console.error('Edit failed:', error);
+    toast.error('Failed to edit message');
+  }
+}, [selectedConversation, formattedMessages, updateConversationMutation]);
 
-  return (
-    <div className='flex'>
+const handleExportChat = useCallback(async () => {
+  try {
+    await MessageExporter.download(formattedMessages, {
+      format: 'html',
+      title: currentConversation?.title || 'Chat Export',
+      includeMetadata: true,
+      includeTimestamps: true
+    });
+    toast.success('Chat exported successfully');
+  } catch (error) {
+    console.error('Export failed:', error);
+    toast.error('Failed to export chat');
+  }
+}, [formattedMessages, currentConversation]);
+
+const handleSearch = useCallback((query: string) => {
+  setSearchQuery(query);
+  if (query.trim()) {
+    const results = MessageSearch.search(formattedMessages, query, {
+      caseSensitive: false,
+      wholeWords: false,
+      includeMetadata: true
+    });
+    setSearchResults(results);
+  } else {
+    setSearchResults([]);
+  }
+}, [formattedMessages]);
+
+const conversationStats = useMemo(() => {
+  return MessageAnalytics.generateStats(formattedMessages);
+}, [formattedMessages]);
+
+// Handle conversation errors
+useEffect(() => {
+  if (conversationsError) {
+    addNotification({
+      type: 'error',
+      title: 'Failed to Load Conversations',
+      message: 'Unable to fetch your conversation history. Please refresh the page.'
+    });
+  }
+}, [conversationsError, addNotification]);
+
+return (
+  <div className='flex'>
+    
+    <ConversationSidebar
+      conversations={conversations}
+      selectedId={selectedConversation}
+      onSelect={setSelectedConversation}
+      onNew={() => createConversationMutation.mutate()}
+      onDelete={(id) => deleteConversationMutation.mutate(id)}
+      onStar={(id) => starConversationMutation.mutate(id)}
+      isLoading={loadingConversations}
+      isOpen={isSidebarOpen}
+      onClose={() => setIsSidebarOpen(false)}
+      onSettingsOpen={onSettingsOpen}
+    />
+
+    {/* Main Chat Interface */}
+    <div className="flex-1 flex-col min-w-0 relative">
       
-      <ConversationSidebar
-        conversations={conversations}
-        selectedId={selectedConversation}
-        onSelect={setSelectedConversation}
-        onNew={() => createConversationMutation.mutate()}
-        onDelete={(id) => deleteConversationMutation.mutate(id)}
-        onStar={(id) => starConversationMutation.mutate(id)}
-        isLoading={loadingConversations}
-        isOpen={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
-        onSettingsOpen={onSettingsOpen}
-      />
-
-      {/* Main Chat Interface */}
-      <div className="flex-1 flex-col min-w-0 relative">
+      {/* Mobile Header */}
+      <div className="lg:hidden p-4 border-b border-default-200/50 flex items-center justify-between bg-background/80 backdrop-blur-xl">
+        <Button
+          isIconOnly
+          variant="flat"
+          size="sm"
+          onPress={() => setIsSidebarOpen(true)}
+          className="hover:bg-default-200"
+        >
+          <History className="w-4 h-4" />
+        </Button>
         
-        {/* Mobile Header */}
-        <div className="lg:hidden p-4 border-b border-default-200/50 flex items-center justify-between bg-background/80 backdrop-blur-xl">
-          <Button
-            isIconOnly
-            variant="flat"
-            size="sm"
-            onPress={() => setIsSidebarOpen(true)}
-            className="hover:bg-default-200"
-          >
-            <History className="w-4 h-4" />
-          </Button>
-          
-          <Button
-            isIconOnly
-            variant="flat"
-            size="sm"
-            onPress={onSettingsOpen}
-            className="hover:bg-default-200"
-          >
-            <Settings className="w-4 h-4" />
-          </Button>
-        </div>
+        <Button
+          isIconOnly
+          variant="flat"
+          size="sm"
+          onPress={onSettingsOpen}
+          className="hover:bg-default-200"
+        >
+          <Settings className="w-4 h-4" />
+        </Button>
+      </div>
 
-        {/* Messages Area */}
-        <div className="flex-1 overflow-hidden relative ">
-          {!currentConversation ? (
-            <WelcomeScreen onPromptSelect={handlePromptSelect} />
-          ) : (
-            <ScrollShadow className="h-full">
-              <div className="max-w-4xl mx-auto py-6 px-4">
-                <AnimatePresence mode="popLayout">
-                  {currentConversation.messages?.map((message, index) => (
-                    <ChatMessage
-                      key={message.id}
-                      message={message}
-                      onCopy={handleCopyMessage}
-                      onRegenerate={
-                        index === currentConversation.messages.length - 1 && message.role === 'assistant' 
-                          ? handleRegenerateMessage 
-                          : undefined
-                      }
-                      onSpeak={handleSpeakMessage}
-                      isPlaying={isPlaying}
-                      onStopSpeaking={handleStopSpeaking}
-                    />
-                  ))}
-                </AnimatePresence>
-                
-                {/* Streaming indicator */}
-                <AnimatePresence>
-                  {sendMessageMutation.isPending && (
-                    <motion.div 
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -20 }}
-                      className="flex gap-4 w-full p-4"
-                    >
-                      <Avatar
-                        size="md"
-                        className="flex-shrink-0 mt-1"
-                        fallback={
-                          <div className="w-full h-full  flex items-center justify-center relative overflow-hidden">
-                            <LogoMappr className="w-7 h-7 text-white relative z-10" />
-                          
-                          </div>
-                        }
-                      />
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-3">
-                          <span className="text-sm font-semibold text-foreground">Assistant</span>
-                          <Chip size="sm" variant="flat" color="primary" className="text-xs h-5">
-                            Analyzing...
-                          </Chip>
+      {/* Messages Area - UPDATED TO USE MessageContainer */}
+      <div className="flex-1 overflow-hidden relative">
+        {!currentConversation ? (
+          <WelcomeScreen onPromptSelect={handlePromptSelect} />
+        ) : (
+          <ScrollShadow className="h-full">
+            <div className="max-w-4xl mx-auto py-6 px-4">
+              {/* REPLACED: Use MessageContainer instead of individual ChatMessage components */}
+              <MessageContainer
+                messages={formattedMessages}
+                onRegenerate={handleRegenerateMessage}
+                onEdit={handleEditMessage}
+                enableSpeech={true}
+                enableFeedback={true}
+                className="space-y-6"
+              />
+              
+              {/* Streaming indicator */}
+              <AnimatePresence>
+                {sendMessageMutation.isPending && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    className="flex gap-4 w-full p-4"
+                  >
+                    <Avatar
+                      size="md"
+                      className="flex-shrink-0 mt-1"
+                      fallback={
+                        <div className="w-full h-full flex items-center justify-center relative overflow-hidden">
+                          <LogoMappr className="w-7 h-7 text-white relative z-10" />
                         </div>
-                        <div className="bg-white dark:bg-default-50/10 border border-default-200 dark:border-default-700 rounded-2xl p-4 shadow-sm">
-                          <div className="flexitems-center gap-3 text-default-500">
-                            <div className="flex gap-1">
-                              <motion.div 
-                                className="w-2 h-2 bg-current rounded-full"
-                                animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
-                                transition={{ duration: 1, repeat: Infinity, delay: 0 }}
-                              />
-                              <motion.div 
-                                className="w-2 h-2 bg-current rounded-full"
-                                animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
-                                transition={{ duration: 1, repeat: Infinity, delay: 0.2 }}
-                              />
-                              <motion.div 
-                                className="w-2 h-2 bg-current rounded-full"
-                                animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
-                                transition={{ duration: 1, repeat: Infinity, delay: 0.4 }}
-                              />
-                            </div>
-                            <span className="text-sm font-medium">
-                              Processing your request and analyzing data...
-                            </span>
+                      }
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-sm font-semibold text-foreground">Assistant</span>
+                        <Chip size="sm" variant="flat" color="primary" className="text-xs h-5">
+                          Analyzing...
+                        </Chip>
+                      </div>
+                      <div className="bg-white dark:bg-default-50/10 border border-default-200 dark:border-default-700 rounded-2xl p-4 shadow-sm">
+                        <div className="flex items-center gap-3 text-default-500">
+                          <div className="flex gap-1">
+                            <motion.div 
+                              className="w-2 h-2 bg-current rounded-full"
+                              animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
+                              transition={{ duration: 1, repeat: Infinity, delay: 0 }}
+                            />
+                            <motion.div 
+                              className="w-2 h-2 bg-current rounded-full"
+                              animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
+                              transition={{ duration: 1, repeat: Infinity, delay: 0.2 }}
+                            />
+                            <motion.div 
+                              className="w-2 h-2 bg-current rounded-full"
+                              animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
+                              transition={{ duration: 1, repeat: Infinity, delay: 0.4 }}
+                            />
                           </div>
-                          
-                          {/* Progress indicators */}
-                          <div className="mt-3 space-y-2">
-                            <div className="flex items-center gap-2 text-xs text-default-500">
-                              <motion.div 
-                                className="w-1 h-1 bg-primary-500 rounded-full"
-                                animate={{ opacity: [0, 1, 0] }}
-                                transition={{ duration: 1.5, repeat: Infinity }}
-                              />
-                              <span>Accessing your financial data</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-xs text-default-500">
-                              <motion.div 
-                                className="w-1 h-1 bg-primary-500 rounded-full"
-                                animate={{ opacity: [0, 1, 0] }}
-                                transition={{ duration: 1.5, repeat: Infinity, delay: 0.5 }}
-                              />
-                              <span>Running analysis algorithms</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-xs text-default-500">
-                              <motion.div 
-                                className="w-1 h-1 bg-primary-500 rounded-full"
-                                animate={{ opacity: [0, 1, 0] }}
-                                transition={{ duration: 1.5, repeat: Infinity, delay: 1 }}
-                              />
-                              <span>Generating insights and recommendations</span>
-                            </div>
+                          <span className="text-sm font-medium">
+                            Processing your request and analyzing data...
+                          </span>
+                        </div>
+                        
+                        {/* Progress indicators */}
+                        <div className="mt-3 space-y-2">
+                          <div className="flex items-center gap-2 text-xs text-default-500">
+                            <motion.div 
+                              className="w-1 h-1 bg-primary-500 rounded-full"
+                              animate={{ opacity: [0, 1, 0] }}
+                              transition={{ duration: 1.5, repeat: Infinity }}
+                            />
+                            <span>Accessing your financial data</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-default-500">
+                            <motion.div 
+                              className="w-1 h-1 bg-primary-500 rounded-full"
+                              animate={{ opacity: [0, 1, 0] }}
+                              transition={{ duration: 1.5, repeat: Infinity, delay: 0.5 }}
+                            />
+                            <span>Running analysis algorithms</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-default-500">
+                            <motion.div 
+                              className="w-1 h-1 bg-primary-500 rounded-full"
+                              animate={{ opacity: [0, 1, 0] }}
+                              transition={{ duration: 1.5, repeat: Infinity, delay: 1 }}
+                            />
+                            <span>Generating insights and recommendations</span>
                           </div>
                         </div>
                       </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-                
-                <div ref={messagesEndRef} />
-              </div>
-            </ScrollShadow>
-          )}
-        </div>
-
-        {/* Message Input */}
-        <div className="p-4 border-t border-default-200/50">
-          <MessageInput
-            value={currentMessage}
-            onChange={setCurrentMessage}
-            onSend={handleSendMessage}
-            isLoading={sendMessageMutation.isPending}
-            disabled={sendMessageMutation.isPending}
-            onAttach={handleAttachFiles}
-            attachments={attachments}
-            onRemoveAttachment={handleRemoveAttachment}
-          />
-        </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              
+              <div ref={messagesEndRef} />
+            </div>
+          </ScrollShadow>
+        )}
       </div>
 
-      {/* Settings Modal */}
-      <Modal 
-        isOpen={isSettingsOpen} 
-        onClose={onSettingsClose}
-        size="2xl"
-        backdrop="blur"
-        classNames={{
-          backdrop: "bg-gradient-to-t from-zinc-900/50 to-zinc-900/10 backdrop-opacity-20"
-        }}
-      >
-        <ModalContent>
-          <ModalBody className="p-6">
-            <div className="space-y-6">
-              <div className="text-center">
-                <h3 className="text-2xl font-bold mb-2">AI Assistant Settings</h3>
-                <p className="text-default-600">Customize your AI experience</p>
-              </div>
+      {/* Message Input */}
+      <div className="p-4 border-t border-default-200/50">
+        <MessageInput
+          value={currentMessage}
+          onChange={setCurrentMessage}
+          onSend={handleSendMessage}
+          isLoading={sendMessageMutation.isPending}
+          disabled={sendMessageMutation.isPending}
+          onAttach={handleAttachFiles}
+          attachments={attachments}
+          onRemoveAttachment={handleRemoveAttachment}
+        />
+      </div>
+    </div>
 
+    {/* Settings Modal - Keep your existing modal */}
+    <Modal 
+      isOpen={isSettingsOpen} 
+      onClose={onSettingsClose}
+      size="2xl"
+      backdrop="blur"
+      classNames={{
+        backdrop: "bg-gradient-to-t from-zinc-900/50 to-zinc-900/10 backdrop-opacity-20"
+      }}
+    >
+      <ModalContent>
+        <ModalBody className="p-6">
+          <div className="space-y-6">
+            <div className="text-center">
+              <h3 className="text-2xl font-bold mb-2">AI Assistant Settings</h3>
+              <p className="text-default-600">Customize your AI experience</p>
+            </div>
+
+          
               {/* Model Selection */}
               <Card>
                 <CardBody className="p-4">
@@ -1448,27 +1570,26 @@ export default function AIPage() {
                   </div>
                 </CardBody>
               </Card>
-
-              {/* Action Buttons */}
-              <div className="flex gap-3 pt-4">
-                <Button 
-                  color="primary" 
-                  className="flex-1"
-                  onPress={onSettingsClose}
-                >
-                  Save Settings
-                </Button>
-                <Button 
-                  variant="flat" 
-                  onPress={onSettingsClose}
-                >
-                  Cancel
-                </Button>
-              </div>
+            {/* Action Buttons */}
+            <div className="flex gap-3 pt-4">
+              <Button 
+                color="primary" 
+                className="flex-1"
+                onPress={onSettingsClose}
+              >
+                Save Settings
+              </Button>
+              <Button 
+                variant="flat" 
+                onPress={onSettingsClose}
+              >
+                Cancel
+              </Button>
             </div>
-          </ModalBody>
-        </ModalContent>
-      </Modal>
-    </div>
-  );
+          </div>
+        </ModalBody>
+      </ModalContent>
+    </Modal>
+  </div>
+);
 }

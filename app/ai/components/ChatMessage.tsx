@@ -38,9 +38,9 @@
   import clsx from 'clsx';
   
   import { useAuth } from '@/contexts/AuthContext';
-  import { ContentParserService } from '@/lib/services/contentParser';
   import {  LogoMappr } from '@/components/icons';
 import { PhUser } from '@/components/icons/icons';
+import { ContentParserService } from '@/lib/services/contentParser';
   
   interface Message {
     id: string;
@@ -99,7 +99,7 @@ import { PhUser } from '@/components/icons/icons';
         
         // Fallback to simple rendering
         setParsedContent({
-          html: `<p class="text-default-700 dark:text-default-300 leading-snug my-2 text-sm">${content.replace(/\n/g, '<br>')}</p>`,
+          html: `<p class=" leading-snug my-2 text-sm">${content.replace(/\n/g, '<br>')}</p>`,
           metadata: {
             hasCode: false,
             hasTable: false,
@@ -145,7 +145,7 @@ import { PhUser } from '@/components/icons/icons';
       <div className="space-y-3">
         {/* Content Metadata Bar */}
         {parsedContent.metadata?.contentType && parsedContent.metadata.contentType !== 'text' && (
-          <div className="flex items-center gap-2 text-xs text-default-500 pb-1.5 border-b border-default-100">
+          <div className="flex items-center gap-2 text-xs  pb-1.5 border-b border-default-100">
             <Chip size="sm" variant="flat" color="primary" className="h-5">
               {parsedContent.metadata.contentType}
             </Chip>
@@ -165,7 +165,7 @@ import { PhUser } from '@/components/icons/icons';
               </Chip>
             )}
             {parsedContent.metadata.hasMath && (
-              <Chip size="sm" variant="flat" color="purple" className="h-5">
+              <Chip size="sm" variant="flat" color="secondary" className="h-5">
                 Math
               </Chip>
             )}
@@ -503,7 +503,7 @@ import { PhUser } from '@/components/icons/icons';
         animate="animate"
         exit="exit"
         className={clsx(
-          "group flex gap-3 w-full relative transition-all duration-200",
+          "group flex gap-3 w-full relative ",
           isUser ? "flex-row-reverse" : "flex-row",
           "hover:bg-default-50/50 dark:hover:bg-default-100/10 rounded-2xl p-3",
           message.isError && "bg-danger-50/50 dark:bg-danger-950/20 border border-danger-200/50"
@@ -514,21 +514,22 @@ import { PhUser } from '@/components/icons/icons';
         {/* Avatar Section */}
         <div className="flex flex-col items-center gap-2">
           <Avatar
-            src={isUser ? profile?.avatar_url : undefined}
+            src={isUser ? (profile?.avatar_url || undefined) : undefined}
             name={isUser ? profile?.full_name || 'You' : 'Assistant'}
             size="sm"
+            
             className={clsx(
-              "flex-shrink-0 ring-2 transition-all duration-200",
+              "flex-shrink-0 bg-default-200",
               isUser 
-                ? "ring-primary-200 dark:ring-primary-800" 
-                : "ring-default-200 dark:ring-default-700"
+                ? "border border-divider" 
+                : "border border-divider"
             )}
-            isBordered={!isUser}
+         
             fallback={
               isUser ? (
                 <PhUser className="w-5 h-5" />
               ) : (
-                <LogoMappr className="w-7 h-7 relative z-10" />
+                <LogoMappr className="w-6 h-6 relative z-10" />
               )
             }
           />
@@ -652,7 +653,7 @@ import { PhUser } from '@/components/icons/icons';
               onEdit={onEdit}
               onFeedback={onFeedback}
               isPlaying={isPlaying}
-              showActions={localShowActions || message.isStreaming}
+              showActions={localShowActions || message.isStreaming || false}
             />
           )}
         </div>
