@@ -30,7 +30,7 @@ export class DataNormalizer {
         },
         metadata: {
           normalized: true,
-          originalData: position,
+         
           normalizedAt: new Date().toISOString()
         }
       }));
@@ -56,7 +56,7 @@ export class DataNormalizer {
         },
         metadata: {
           normalized: true,
-          originalData: tx,
+          
           normalizedAt: new Date().toISOString()
         }
       }));
@@ -80,7 +80,7 @@ export class DataNormalizer {
           },
           metadata: {
             normalized: true,
-            originalData: nft,
+      
             normalizedAt: new Date().toISOString()
           }
         })),

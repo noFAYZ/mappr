@@ -1,234 +1,254 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { toast } from 'sonner';
+import { CHAT_MESSAGE_CONFIG } from '@/lib/constants/chatMessage';
 
-
-interface UseChatMessageOptions {
+interface UseChatMessageProps {
   enableSpeech?: boolean;
-  enableCopy?: boolean;
   enableFeedback?: boolean;
   onError?: (error: Error) => void;
+  onCopy?: (content: string) => void;
+  onSpeak?: (content: string, messageId: string) => void;
+  onFeedback?: (messageId: string, type: 'positive' | 'negative') => void;
 }
 
-export const useChatMessage = (options: UseChatMessageOptions = {}) => {
-  const {
-    enableSpeech = true,
-    enableCopy = true,
-    enableFeedback = true,
-    onError
-  } = options;
+interface UseChatMessageReturn {
+  isPlaying: boolean;
+  currentSpeechId: string | null;
+  handleCopy: (content: string, messageId?: string) => Promise<void>;
+  handleSpeak: (content: string, messageId: string) => void;
+  handleStopSpeaking: () => void;
+  handleFeedback: (messageId: string, type: 'positive' | 'negative') => void;
+  handleRegenerate: (messageId: string, callback: () => void) => void;
+  handleEdit: (messageId: string, content: string, callback: (id: string, content: string) => void) => void;
+  isCurrentMessagePlaying: (messageId: string) => boolean;
+  copyStatus: Map<string, 'idle' | 'copying' | 'copied' | 'error'>;
+  speechSupported: boolean;
+  setSpeechRate: (rate: number) => void;
+  setSpeechPitch: (pitch: number) => void;
+  setSpeechVolume: (volume: number) => void;
+}
 
+export const useChatMessage = ({
+  enableSpeech = true,
+  enableFeedback = true,
+  onError,
+  onCopy,
+  onSpeak,
+  onFeedback
+}: UseChatMessageProps = {}): UseChatMessageReturn => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentSpeechId, setCurrentSpeechId] = useState<string | null>(null);
-  const speechSynthesisRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const [copyStatus, setCopyStatus] = useState<Map<string, 'idle' | 'copying' | 'copied' | 'error'>>(new Map());
+  const [speechRate, setSpeechRate] = useState(CHAT_MESSAGE_CONFIG.SPEECH_RATE);
+  const [speechPitch, setSpeechPitch] = useState(CHAT_MESSAGE_CONFIG.SPEECH_PITCH);
+  const [speechVolume, setSpeechVolume] = useState(CHAT_MESSAGE_CONFIG.SPEECH_VOLUME);
+  
+  const speechRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const speechSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
 
   // Cleanup speech on unmount
   useEffect(() => {
     return () => {
-      if (speechSynthesisRef.current) {
+      if (speechSupported && speechRef.current) {
         window.speechSynthesis.cancel();
       }
     };
-  }, []);
+  }, [speechSupported]);
 
-  // Copy to clipboard functionality
-  const handleCopy = useCallback(async (content: string) => {
-    if (!enableCopy) return;
-
+  // Enhanced copy handler with error handling and status tracking
+  const handleCopy = useCallback(async (content: string, messageId?: string): Promise<void> => {
+    const id = messageId || 'default';
+    
     try {
-      await navigator.clipboard.writeText(content);
-      toast.success('Copied to clipboard');
-    } catch (error) {
-      console.error('Failed to copy:', error);
+      setCopyStatus(prev => new Map(prev.set(id, 'copying')));
       
-      // Fallback for older browsers
+      if (!navigator.clipboard) {
+        throw new Error('Clipboard API not supported');
+      }
+
+      // Sanitize content for copying
+      const sanitizedContent = content
+        .replace(/<[^>]*>/g, '') // Remove HTML tags
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .trim();
+
+      await navigator.clipboard.writeText(sanitizedContent);
+      
+      setCopyStatus(prev => new Map(prev.set(id, 'copied')));
+      onCopy?.(sanitizedContent);
+      
+      // Reset status after delay
+      setTimeout(() => {
+        setCopyStatus(prev => new Map(prev.set(id, 'idle')));
+      }, 2000);
+      
+    } catch (error) {
+      console.error('Copy failed:', error);
+      setCopyStatus(prev => new Map(prev.set(id, 'error')));
+      onError?.(error as Error);
+      
+      // Fallback: try legacy method
       try {
         const textArea = document.createElement('textarea');
         textArea.value = content;
-        textArea.style.position = 'fixed';
-        textArea.style.left = '-999999px';
-        textArea.style.top = '-999999px';
         document.body.appendChild(textArea);
-        textArea.focus();
         textArea.select();
         document.execCommand('copy');
-        textArea.remove();
-        toast.success('Copied to clipboard');
+        document.body.removeChild(textArea);
+        
+        setCopyStatus(prev => new Map(prev.set(id, 'copied')));
+        setTimeout(() => {
+          setCopyStatus(prev => new Map(prev.set(id, 'idle')));
+        }, 2000);
       } catch (fallbackError) {
-        toast.error('Failed to copy to clipboard');
-        onError?.(new Error('Copy failed'));
+        console.error('Fallback copy failed:', fallbackError);
+        setTimeout(() => {
+          setCopyStatus(prev => new Map(prev.set(id, 'idle')));
+        }, 2000);
       }
     }
-  }, [enableCopy, onError]);
+  }, [onCopy, onError]);
 
-  // Speech synthesis functionality
-  const handleSpeak = useCallback((content: string, messageId?: string) => {
-    if (!enableSpeech) return;
+  // Enhanced speech handler with configuration options
+  const handleSpeak = useCallback((content: string, messageId: string): void => {
+    if (!enableSpeech || !speechSupported) {
+      onError?.(new Error('Speech synthesis not supported'));
+      return;
+    }
 
     try {
-      // Stop current speech if playing
-      if (isPlaying) {
-        window.speechSynthesis.cancel();
-        setIsPlaying(false);
-        setCurrentSpeechId(null);
-        return;
-      }
+      // Stop any current speech
+      window.speechSynthesis.cancel();
+
+      // Limit content length for speech
+      const textToSpeak = content.length > CHAT_MESSAGE_CONFIG.MAX_SPEECH_LENGTH 
+        ? content.substring(0, CHAT_MESSAGE_CONFIG.MAX_SPEECH_LENGTH) + '... content truncated for speech'
+        : content;
 
       // Clean content for speech
-      const cleanContent = content
-        .replace(/[#*`_~\[\]()]/g, '') // Remove markdown
-        .replace(/https?:\/\/[^\s]+/g, 'link') // Replace URLs
-        .replace(/\n+/g, '. ') // Replace line breaks
+      const cleanedContent = textToSpeak
+        .replace(/<[^>]*>/g, '') // Remove HTML
+        .replace(/```[\s\S]*?```/g, 'code block') // Replace code blocks
+        .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold markdown
+        .replace(/\*(.*?)\*/g, '$1') // Remove italic markdown
+        .replace(/`(.*?)`/g, '$1') // Remove inline code
+        .replace(/#{1,6}\s/g, '') // Remove heading markers
+        .replace(/\n+/g, '. ') // Replace line breaks with periods
+        .replace(/\s+/g, ' ') // Normalize whitespace
         .trim();
 
-      if (!cleanContent) {
-        toast.error('No content to read');
-        return;
-      }
+      const utterance = new SpeechSynthesisUtterance(cleanedContent);
+      utterance.rate = speechRate;
+      utterance.pitch = speechPitch;
+      utterance.volume = speechVolume;
 
-      const utterance = new SpeechSynthesisUtterance(cleanContent);
-      speechSynthesisRef.current = utterance;
-
-      // Configure speech
-      utterance.rate = 0.9;
-      utterance.pitch = 1;
-      utterance.volume = 0.8;
-
-      // Set voice preference (use first available English voice)
-      const voices = window.speechSynthesis.getVoices();
-      const englishVoice = voices.find(voice => 
-        voice.lang.startsWith('en') && voice.name.includes('Google')
-      ) || voices.find(voice => voice.lang.startsWith('en'));
-      
-      if (englishVoice) {
-        utterance.voice = englishVoice;
-      }
-
-      // Event handlers
       utterance.onstart = () => {
         setIsPlaying(true);
-        setCurrentSpeechId(messageId || null);
+        setCurrentSpeechId(messageId);
       };
 
       utterance.onend = () => {
         setIsPlaying(false);
         setCurrentSpeechId(null);
-        speechSynthesisRef.current = null;
       };
 
       utterance.onerror = (event) => {
         console.error('Speech synthesis error:', event);
         setIsPlaying(false);
         setCurrentSpeechId(null);
-        speechSynthesisRef.current = null;
-        toast.error('Speech synthesis failed');
-        onError?.(new Error('Speech synthesis failed'));
+        onError?.(new Error(`Speech synthesis failed: ${event.error}`));
       };
 
-      // Start speaking
+      speechRef.current = utterance;
       window.speechSynthesis.speak(utterance);
-      
-    } catch (error) {
-      console.error('Speech synthesis error:', error);
-      toast.error('Speech not supported');
-      onError?.(new Error('Speech synthesis not supported'));
-    }
-  }, [enableSpeech, isPlaying, onError]);
+      onSpeak?.(content, messageId);
 
-  // Stop speaking
-  const handleStopSpeaking = useCallback(() => {
-    if (speechSynthesisRef.current) {
+    } catch (error) {
+      console.error('Speech synthesis failed:', error);
+      onError?.(error as Error);
+    }
+  }, [enableSpeech, speechSupported, speechRate, speechPitch, speechVolume, onError, onSpeak]);
+
+  const handleStopSpeaking = useCallback((): void => {
+    if (speechSupported) {
       window.speechSynthesis.cancel();
       setIsPlaying(false);
       setCurrentSpeechId(null);
-      speechSynthesisRef.current = null;
     }
-  }, []);
+  }, [speechSupported]);
 
-  // Feedback functionality
-  const handleFeedback = useCallback(async (messageId: string, type: 'positive' | 'negative') => {
+  const handleFeedback = useCallback((messageId: string, type: 'positive' | 'negative'): void => {
     if (!enableFeedback) return;
-
+    
     try {
-      const response = await fetch('/api/ai/feedback', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messageId, type, timestamp: new Date().toISOString() })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to submit feedback');
+      onFeedback?.(messageId, type);
+      
+      // Store feedback locally for analytics
+      const feedbackData = {
+        messageId,
+        type,
+        timestamp: new Date().toISOString(),
+        userAgent: navigator.userAgent
+      };
+      
+      // Store in localStorage for persistence
+      const existingFeedback = JSON.parse(localStorage.getItem('chat_feedback') || '[]');
+      existingFeedback.push(feedbackData);
+      
+      // Keep only last 100 feedback entries
+      if (existingFeedback.length > 100) {
+        existingFeedback.splice(0, existingFeedback.length - 100);
       }
-
-      toast.success(
-        type === 'positive' 
-          ? 'Thank you for the positive feedback!' 
-          : 'Thank you for the feedback. We\'ll work to improve.'
-      );
+      
+      localStorage.setItem('chat_feedback', JSON.stringify(existingFeedback));
+      
     } catch (error) {
       console.error('Feedback submission failed:', error);
-      toast.error('Failed to submit feedback');
-      onError?.(new Error('Feedback submission failed'));
+      onError?.(error as Error);
     }
-  }, [enableFeedback, onError]);
+  }, [enableFeedback, onFeedback, onError]);
 
-  // Regenerate message
-  const handleRegenerate = useCallback(async (messageId: string, onRegenerate?: () => void) => {
+  const handleRegenerate = useCallback((messageId: string, callback: () => void): void => {
     try {
-      if (onRegenerate) {
-        onRegenerate();
-      } else {
-        // Default regeneration logic
-        const response = await fetch('/api/ai/regenerate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messageId })
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to regenerate message');
-        }
-
-        toast.success('Regenerating response...');
-      }
+      callback();
     } catch (error) {
-      console.error('Regeneration failed:', error);
-      toast.error('Failed to regenerate message');
-      onError?.(new Error('Message regeneration failed'));
+      console.error('Message regeneration failed:', error);
+      onError?.(error as Error);
     }
   }, [onError]);
 
-  // Edit message
-  const handleEdit = useCallback((messageId: string, content: string, onEdit?: (id: string, content: string) => void) => {
+  const handleEdit = useCallback((messageId: string, content: string, callback: (id: string, content: string) => void): void => {
     try {
-      if (onEdit) {
-        onEdit(messageId, content);
-      } else {
-        // Default edit logic - could open a modal or inline editor
-        toast.info('Edit functionality not implemented');
-      }
+      callback(messageId, content);
     } catch (error) {
-      console.error('Edit failed:', error);
-      toast.error('Failed to edit message');
-      onError?.(new Error('Message edit failed'));
+      console.error('Message editing failed:', error);
+      onError?.(error as Error);
     }
   }, [onError]);
+
+  const isCurrentMessagePlaying = useCallback((messageId: string): boolean => {
+    return isPlaying && currentSpeechId === messageId;
+  }, [isPlaying, currentSpeechId]);
 
   return {
-    // State
     isPlaying,
     currentSpeechId,
-    
-    // Actions
     handleCopy,
     handleSpeak,
     handleStopSpeaking,
     handleFeedback,
     handleRegenerate,
     handleEdit,
-    
-    // Utilities
-    isCurrentMessagePlaying: (messageId?: string) => isPlaying && currentSpeechId === messageId
+    isCurrentMessagePlaying,
+    copyStatus,
+    speechSupported,
+    setSpeechRate,
+    setSpeechPitch,
+    setSpeechVolume
   };
 };
