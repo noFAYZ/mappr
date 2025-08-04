@@ -88,7 +88,7 @@ export const TokensList: React.FC<TokensListProps> = ({
       sum + (pos.attributes?.value || 0), 0
     );
 
-    console.log('positions:', positions);
+  
 
     return positions.map((position, index) => ({
       id: position.id || `${walletId}-${index}`,

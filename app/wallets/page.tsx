@@ -308,12 +308,15 @@ export default function WalletsPage() {
     syncWallet,
     syncAllWallets,
     isWalletSyncing,
-    syncingCount,
-    hasWallets,
+    syncing,
+
+
     walletData
   } = useWalletAnalytics();
 
   const { portfolioSummary } = usePortfolioOverview();
+
+  
 
   // Format helper functions
   const formatCurrency = useCallback((value) => {
@@ -409,12 +412,12 @@ export default function WalletsPage() {
   }, [addWallet, addNotification]);
 
   // Loading state
-  if (loading && !hasWallets) {
+  if (loading ) {
     return <WalletPageLoader />;
   }
 
   // Empty state
-  if (!hasWallets && !loading) {
+  if (wallets?.length<0 && !loading) {
     return (
       <div className="p-6">
         <EmptyState onAddWallet={onAddModalOpen} />
@@ -440,7 +443,7 @@ export default function WalletsPage() {
         summary={portfolioSummary}
         showBalances={showBalances}
         onRefreshAll={handleSyncAll}
-        isRefreshing={syncingCount > 0}
+        isRefreshing={syncing}
       />
      
         </div>
@@ -463,7 +466,7 @@ export default function WalletsPage() {
             variant="faded"
             size='sm'
             radius='full'
-            startContent={<RefreshCw className={`w-4 h-4 ${syncingCount > 0 ? 'animate-spin' : ''}`} />}
+            startContent={<RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />}
             onPress={handleSyncAll}
            
             isIconOnly

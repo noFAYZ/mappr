@@ -1,12 +1,8 @@
-// lib/extensions/crypto/zerion-enhanced.ts
+// lib/extensions/crypto/zerion.ts
 import { BaseExtension } from '../base';
-import { EncryptionService } from '@/lib/utils/encryption';
 import { DataNormalizer } from '@/lib/utils/data-normalization';
 import { ErrorHandler } from '@/lib/utils/error-handler';
 import { CacheManager } from '@/lib/utils/cache-manager';
-
-// Import the SDK - ensure you have zerion-sdk-ts installed
-// npm install zerion-sdk-ts
 import ZerionSDK from 'zerion-sdk-ts';
 import { supabase } from '@/lib/supabase';
 
@@ -22,8 +18,7 @@ export interface WalletData {
     totalValue: number;
     dayChange: number;
     dayChangePercent: number;
-    positions: any[];
-    chains: string[];
+    chains: any[];
   };
   positions: any[];
   transactions: any[];
@@ -63,7 +58,7 @@ export class ZerionExtension extends BaseExtension {
   constructor() {
     super();
     this.cache = new CacheManager('zerion', {
-      defaultTTL: 5 * 60 * 1000, // 5 minutes
+      defaultTTL: 5 * 60 * 1000,
       maxSize: 1000
     });
   }
@@ -74,7 +69,6 @@ export class ZerionExtension extends BaseExtension {
         throw new Error('API key is required for Zerion connection');
       }
 
-      // Initialize SDK
       this.sdk = new ZerionSDK({
         apiKey: credentials.apiKey,
         timeout: 30000,
@@ -82,9 +76,7 @@ export class ZerionExtension extends BaseExtension {
         retryDelay: 2000
       });
 
-      // Test connection
       await this.validateCredentials(credentials);
-      
     } catch (error) {
       ErrorHandler.handle(error, 'ZerionExtension.connect');
       throw error;
@@ -98,7 +90,6 @@ export class ZerionExtension extends BaseExtension {
 
   async validateCredentials(credentials: ZerionCredentials): Promise<boolean> {
     try {
-      // Test with a simple API call
       await this.sdk.fungibles.getTopFungibles(1);
       return true;
     } catch (error) {
@@ -111,47 +102,62 @@ export class ZerionExtension extends BaseExtension {
     includeTransactions?: boolean;
     includeNFTs?: boolean;
     includeChart?: boolean;
-    chartPeriod?: string;
+    chartPeriod?: 'hour' | 'day' | 'week' | 'month' | '3months' | 'year' | 'max';
+    forceRefresh?: boolean;
   } = {}): Promise<SyncResult> {
     const startTime = Date.now();
-    
+    const cacheKey = `wallet_${address}_${JSON.stringify(options)}`;
+
     try {
+      if (!this.sdk) {
+        throw new Error('Zerion SDK not initialized. Call connect() first.');
+      }
+
       if (!this.isValidAddress(address)) {
-        throw new Error(`Invalid wallet address: ${address}`);
+        throw new Error('Invalid wallet address format');
       }
 
-      const cacheKey = `wallet_${address}`;
-      const cached = this.cache.get(cacheKey);
-      
-      if (cached && !this.shouldRefreshCache(cached.timestamp)) {
-        return {
-          success: true,
-          data: cached.data,
-          syncedAt: cached.timestamp,
-          syncDuration: Date.now() - startTime
-        };
+      // Check cache unless force refresh
+      if (!options.forceRefresh) {
+        const cached = this.cache.get(cacheKey);
+        if (cached && !this.shouldRefreshCache(cached.metadata.lastSyncAt)) {
+          return {
+            success: true,
+            data: cached,
+            syncedAt: cached.metadata.lastSyncAt,
+            syncDuration: Date.now() - startTime
+          };
+        }
       }
 
-      // Fetch all data in parallel for better performance
-      const promises: Promise<any>[] = [
-        this.getPortfolioData(address),
-        this.getPositions(address),
+      console.log(`Syncing wallet ${address} with options:`, options);
+
+      // Prepare API calls
+      const apiCalls = [
+        this.sdk.wallets.getPortfolio(address),
+        this.sdk.wallets.getPositions(address)
       ];
 
       if (options.includeTransactions) {
-        promises.push(this.getTransactions(address));
+        apiCalls.push(this.sdk.wallets.getTransactions(address));
       }
 
       if (options.includeNFTs) {
-        promises.push(this.getNFTs(address));
+        apiCalls.push(this.sdk.wallets.getNFTPositions(address));
       }
 
       if (options.includeChart) {
-        promises.push(this.getChart(address, options.chartPeriod || 'day'));
+        apiCalls.push(this.sdk.wallets.getChart(address, options.chartPeriod || 'month'));
       }
 
-      const results = await Promise.allSettled(promises);
-      
+      if (false) {
+        apiCalls.push(this.sdk.wallets.getPnL(address,  'week'));
+      }
+
+      // Execute API calls in parallel
+      const results = await Promise.allSettled(apiCalls);
+
+      // Extract results
       const portfolio = results[0].status === 'fulfilled' ? results[0].value : null;
       const positions = results[1].status === 'fulfilled' ? results[1].value : [];
       const transactions = options.includeTransactions && results[2]?.status === 'fulfilled' ? results[2].value : [];
@@ -159,30 +165,29 @@ export class ZerionExtension extends BaseExtension {
         ? results[results.length - (options.includeChart ? 2 : 1)].value : null;
       const chart = options.includeChart && results[results.length - 1]?.status === 'fulfilled' 
         ? results[results.length - 1].value : [];
+      const pnl = results[results.length - (options.includeChart ? 2 : 1)]?.status === 'fulfilled'  ? results[results.length - (options.includeChart ? 2 : 1)].value : null;
 
 
       // Normalize and structure data
       const walletData: WalletData = {
         address,
-        portfolio: this.normalizePortfolioData(portfolio, positions),
-        positions: DataNormalizer.normalizePositions(positions),
-        transactions: DataNormalizer.normalizeTransactions(transactions),
-        nftPortfolio: DataNormalizer.normalizeNFTs(nfts),
-        pnl: this.calculatePnL(portfolio, positions),
-        chart: DataNormalizer.normalizeChartData(chart?.attributes),
+        portfolio: this.normalizePortfolioData(portfolio?.data),
+        positions: DataNormalizer.normalizePositions(positions?.data),
+        transactions: DataNormalizer.normalizeTransactions(transactions?.data),
+        nftPortfolio: DataNormalizer.normalizeNFTs(nfts?.data),
+        pnl: pnl?.attributes || null,
+        chart: DataNormalizer.normalizeChartData(chart?.data?.attributes),
         metadata: {
           lastSyncAt: new Date().toISOString(),
-          positionsCount: positions?.length || 0,
-          chainsCount: this.getUniqueChains(positions).length,
+          positionsCount: positions?.data?.length || 0,
+          chainsCount: this.getUniqueChains(positions?.data).length,
           transactionsCount: transactions?.length || 0,
           nftsCount: nfts?.data?.length || 0
         }
       };
 
-      console.log(`Zerion wallet data for ${address}`, walletData);
-
-
-      // Cache the result
+      console.log(`Wallet ${address} synced successfully in ${Date.now() - startTime}ms`, walletData);
+ 
       this.cache.set(cacheKey, walletData);
 
       return {
@@ -203,91 +208,22 @@ export class ZerionExtension extends BaseExtension {
     }
   }
 
-  async sync(dataTypes: string[] = this.supportedDataTypes): Promise<any[]> {
-    // This method would be called for bulk syncing of all connected wallets
-    // Implementation depends on your specific requirements
-    return [];
-  }
-
-  // Private helper methods
-  private async getPortfolioData(address: string) {
-    try {
-      const response = await this.sdk.wallets.getPortfolio(address);
-      return response.data;
-    } catch (error) {
-      ErrorHandler.handle(error, 'ZerionExtension.getPortfolioData');
-      throw error;
-    }
-  }
-
-  private async getPositions(address: string) {
-    try {
-      const response = await this.sdk.wallets.getPositions(address, {
-        page: { size: 50 }
-      });
-      return response.data;
-    } catch (error) {
-      ErrorHandler.handle(error, 'ZerionExtension.getPositions');
-      throw error;
-    }
-  }
-
-  private async getTransactions(address: string, limit: number = 50) {
-    try {
-      const response = await this.sdk.wallets.getTransactions(address, {
-        page: { size: limit }
-      });
-      return response.data;
-    } catch (error) {
-      ErrorHandler.handle(error, 'ZerionExtension.getTransactions');
-      throw error;
-    }
-  }
-
-  private async getNFTs(address: string) {
-    try {
-      const response = await this.sdk.wallets.getNFTPositions(address);
-      return response.data;
-    } catch (error) {
-      ErrorHandler.handle(error, 'ZerionExtension.getNFTs');
-      throw error;
-    }
-  }
-
-  private async getChart(address: string, period: string) {
-    try {
-      const response = await this.sdk.wallets.getChart(address, period);
-      return response.data;
-    } catch (error) {
-      ErrorHandler.handle(error, 'ZerionExtension.getChart');
-      throw error;
-    }
-  }
-
-  private normalizePortfolioData(portfolio: any, positions: any[]): WalletData['portfolio'] {
-    const totalValue = portfolio?.attributes?.total || 0;
+  private normalizePortfolioData(portfolio: any): WalletData['portfolio'] {
+    const totalValue = portfolio?.attributes?.total?.positions || 0;
     const dayChange = portfolio?.attributes?.changes?.absolute_1d || 0;
     const dayChangePercent = portfolio?.attributes?.changes?.percent_1d || 0;
-    const uniqueChains = this.getUniqueChains(positions);
+    const chainDistribution = portfolio?.attributes?.positions_distribution_by_chain;
 
     return {
       totalValue,
       dayChange,
       dayChangePercent,
-      positions,
-      chains: uniqueChains
+      chains: chainDistribution
     };
   }
 
-  private calculatePnL(portfolio: any, positions: any[]): WalletData['pnl'] {
-    // Calculate P&L from portfolio and positions data
-    const totalValue = portfolio?.attributes?.total || 0;
-    
-    return {
-      total: totalValue,
-      realized: 0, // Would need transaction data to calculate
-      unrealized: totalValue // Simplified calculation
-    };
+  private calculatePnL(pnl: any): WalletData['pnl'] {
+    return pnl?.attributes;
   }
 
   private getUniqueChains(positions: any[]): string[] {
@@ -303,17 +239,16 @@ export class ZerionExtension extends BaseExtension {
   }
 
   private isValidAddress(address: string): boolean {
-    // Basic Ethereum address validation
     return /^0x[a-fA-F0-9]{40}$/.test(address);
   }
 
   private shouldRefreshCache(timestamp: string): boolean {
     const cacheAge = Date.now() - new Date(timestamp).getTime();
-    return cacheAge > 5 * 60 * 1000; // 5 minutes
+    return cacheAge > 5 * 60 * 1000;
   }
 }
 
-// Wallet Service for database operations
+// Enhanced Wallet Service for normalized database operations
 export class WalletService {
   static async addWallet(userId: string, address: string, name?: string): Promise<any> {
     try {
@@ -372,69 +307,302 @@ export class WalletService {
     }
   }
 
+  // Updated method to store data in normalized tables
   static async updateWalletData(walletId: string, data: WalletData): Promise<void> {
     try {
-      const { error } = await supabase
-        .from('user_wallets')
-        .update({
-          last_sync_data: data,
-          last_sync_at: new Date().toISOString(),
-          sync_status: 'success'
-        })
-        .eq('id', walletId);
+      // Begin transaction
+      const updates = [];
 
-      if (error) throw error;
+      // 1. Update wallet summary
+      updates.push(
+        supabase
+          .from('user_wallets')
+          .update({
+            last_sync_at: new Date().toISOString(),
+            sync_status: 'success'
+          })
+          .eq('id', walletId)
+      );
 
-      // Store detailed data in aggregated_data table
-      await this.storeAggregatedData(walletId, data);
+      // 2. Store/update portfolio summary
+      updates.push(
+        supabase
+          .from('wallet_portfolio_summary')
+          .upsert({
+            wallet_id: walletId,
+            total_value: data.portfolio.totalValue,
+            day_change: data.portfolio.dayChange,
+            day_change_percent: data.portfolio.dayChangePercent,
+            positions_count: data.metadata.positionsCount,
+            nft_count: data.metadata.nftsCount,
+            chains_count: data.metadata.chainsCount,
+            last_sync_at: new Date().toISOString()
+          }, {
+            onConflict: 'wallet_id'
+          })
+      );
+
+      // 3. Replace positions (overwrite existing)
+      if (data.positions?.length) {
+        // First delete existing positions
+        updates.push(
+          supabase
+            .from('wallet_positions')
+            .delete()
+            .eq('wallet_id', walletId)
+        );
+
+        // Then insert new positions
+        const positionsToInsert = data.positions.map(pos => ({
+          wallet_id: walletId,
+          token_address: pos.relationships?.fungible?.data?.id || null,
+          symbol: pos.attributes.symbol,
+          name: pos.attributes.name,
+          value: pos.attributes.value,
+          quantity: pos.attributes.quantity?.numeric,
+          price: pos.attributes.price,
+          change_24h: pos.attributes.change24h,
+          icon_url: pos.attributes.icon,
+          chain_id: pos.attributes.chain,
+          protocol_id: pos.attributes.protocol,
+          is_verified: pos.attributes.verified,
+          position_type: 'token',
+          metadata: {
+            originalData: pos,
+            normalizedAt: new Date().toISOString()
+          }
+        }));
+
+        updates.push(
+          supabase
+            .from('wallet_positions')
+            .insert(positionsToInsert)
+        );
+      }
+
+      // 4. Replace NFT positions (overwrite existing)
+      if (data.nftPortfolio?.items?.length) {
+        // First delete existing NFTs
+        updates.push(
+          supabase
+            .from('wallet_nft_positions')
+            .delete()
+            .eq('wallet_id', walletId)
+        );
+
+        // Then insert new NFTs
+        const nftsToInsert = data.nftPortfolio.items.map(nft => ({
+          wallet_id: walletId,
+          token_id: nft.attributes.tokenId,
+          collection_name: nft.attributes.collection,
+          name: nft.attributes.name,
+          description: nft.attributes.description,
+          image_url: nft.attributes.image,
+          floor_price: nft.attributes.value,
+          chain_id: nft.attributes.chain,
+          contract_address: nft.id,
+          metadata: {
+            originalData: nft,
+            normalizedAt: new Date().toISOString()
+          }
+        }));
+
+        updates.push(
+          supabase
+            .from('wallet_nft_positions')
+            .insert(nftsToInsert)
+        );
+      }
+
+      // 5. Append new transactions (if any)
+      if (data.transactions?.length) {
+        const existingTxHashes = await this.getExistingTransactionHashes(walletId);
+        const newTransactions = data.transactions.filter(
+          tx => !existingTxHashes.has(tx.attributes.hash)
+        );
+
+        if (newTransactions.length) {
+          const transactionsToInsert = newTransactions.map(tx => ({
+            wallet_id: walletId,
+            hash: tx.attributes.hash,
+            status: tx.attributes.status,
+            timestamp: tx.attributes.timestamp,
+            block_number: tx.attributes.blockNumber,
+            gas_used: tx.attributes.gasUsed,
+            gas_price: tx.attributes.gasPrice,
+            fee: tx.attributes.fee,
+            value: tx.attributes.value,
+            direction: tx.attributes.direction,
+            chain_id: tx.attributes.chain,
+            from_address: tx.attributes.from_address,
+            to_address: tx.attributes.to_address,
+            transaction_type: tx.type,
+            metadata: {
+              originalData: tx,
+              normalizedAt: new Date().toISOString()
+            }
+          }));
+
+          updates.push(
+            supabase
+              .from('wallet_transactions')
+              .insert(transactionsToInsert)
+          );
+        }
+      }
+
+      // 6. Append chart data
+      if (data.chart?.length) {
+        const chartDataToInsert = data.chart.map(point => ({
+          wallet_id: walletId,
+          timestamp: new Date(point.timestamp).toISOString(),
+          value: point.value,
+          period: 'hour' // Default period, can be made configurable
+        }));
+
+        updates.push(
+          supabase
+            .from('wallet_chart_data')
+            .upsert(chartDataToInsert, {
+              onConflict: 'wallet_id,timestamp,period'
+            })
+        );
+      }
+
+      // Execute all updates
+      const results = await Promise.allSettled(updates);
+      
+      // Check for errors
+      const errors = results
+        .filter(result => result.status === 'rejected')
+        .map(result => result.reason);
+
+      if (errors.length > 0) {
+        throw new Error(`Database update errors: ${errors.join(', ')}`);
+      }
+
     } catch (error) {
       ErrorHandler.handle(error, 'WalletService.updateWalletData');
       throw error;
     }
   }
 
-  private static async storeAggregatedData(walletId: string, data: WalletData): Promise<void> {
-    const records = [];
-
-    // Store portfolio data
-    if (data.portfolio) {
-      records.push({
-        wallet_id: walletId,
-        data_type: 'portfolio',
-        raw_data: data.portfolio,
-        normalized_data: DataNormalizer.normalizePortfolio(data.portfolio),
-        metadata: { syncedAt: data.metadata.lastSyncAt }
-      });
-    }
-
-    // Store positions
-    if (data.positions?.length) {
-      records.push({
-        wallet_id: walletId,
-        data_type: 'positions',
-        raw_data: data.positions,
-        normalized_data: DataNormalizer.normalizePositions(data.positions),
-        metadata: { count: data.positions.length }
-      });
-    }
-
-    // Store transactions
-    if (data.transactions?.length) {
-      records.push({
-        wallet_id: walletId,
-        data_type: 'transactions',
-        raw_data: data.transactions,
-        normalized_data: DataNormalizer.normalizeTransactions(data.transactions),
-        metadata: { count: data.transactions.length }
-      });
-    }
-
-    if (records.length) {
-      const { error } = await supabase
-        .from('aggregated_data')
-        .insert(records);
+  private static async getExistingTransactionHashes(walletId: string): Promise<Set<string>> {
+    try {
+      const { data, error } = await supabase
+        .from('wallet_transactions')
+        .select('hash')
+        .eq('wallet_id', walletId);
 
       if (error) throw error;
+
+      return new Set(data?.map(tx => tx.hash) || []);
+    } catch (error) {
+      console.error('Error fetching existing transaction hashes:', error);
+      return new Set();
+    }
+  }
+
+  // Retrieve wallet data from normalized tables
+  static async getWalletData(walletId: string): Promise<WalletData | null> {
+    try {
+      // Get portfolio summary
+      const { data: summary, error: summaryError } = await supabase
+        .from('wallet_portfolio_summary')
+        .select('*')
+        .eq('wallet_id', walletId)
+        .single();
+
+      if (summaryError && summaryError.code !== 'PGRST116') throw summaryError;
+
+      // Get positions
+      const { data: positions, error: positionsError } = await supabase
+        .from('wallet_positions')
+        .select('*')
+        .eq('wallet_id', walletId)
+        .order('value', { ascending: false });
+
+      if (positionsError) throw positionsError;
+
+      // Get NFTs
+      const { data: nfts, error: nftsError } = await supabase
+        .from('wallet_nft_positions')
+        .select('*')
+        .eq('wallet_id', walletId);
+
+      if (nftsError) throw nftsError;
+
+      // Get recent transactions
+      const { data: transactions, error: txError } = await supabase
+        .from('wallet_transactions')
+        .select('*')
+        .eq('wallet_id', walletId)
+        .order('timestamp', { ascending: false })
+        .limit(100);
+
+      if (txError) throw txError;
+
+      // Get chart data
+      const { data: chartData, error: chartError } = await supabase
+        .from('wallet_chart_data')
+        .select('*')
+        .eq('wallet_id', walletId)
+        .order('timestamp', { ascending: false })
+        .limit(168); // Last week of hourly data
+
+      if (chartError) throw chartError;
+
+      // Get wallet info
+      const { data: wallet, error: walletError } = await supabase
+        .from('user_wallets')
+        .select('address, name')
+        .eq('id', walletId)
+        .single();
+
+      if (walletError) throw walletError;
+
+      if (!summary && !positions?.length) {
+        return null;
+      }
+
+      // Reconstruct WalletData format
+      return {
+        address: wallet.address,
+        name: wallet.name,
+        portfolio: {
+          totalValue: summary?.total_value || 0,
+          dayChange: summary?.day_change || 0,
+          dayChangePercent: summary?.day_change_percent || 0,
+          positions: positions || [],
+          chains: [...new Set(positions?.map(p => p.chain_id).filter(Boolean))] || []
+        },
+        positions: positions || [],
+        transactions: transactions || [],
+        nftPortfolio: {
+          items: nfts || [],
+          totalCount: nfts?.length || 0
+        },
+        pnl: {
+          total: summary?.total_value || 0,
+          realized: 0,
+          unrealized: summary?.total_value || 0
+        },
+        chart: chartData?.map(d => ({
+          timestamp: d.timestamp,
+          value: d.value
+        })) || [],
+        metadata: {
+          lastSyncAt: summary?.last_sync_at || new Date().toISOString(),
+          positionsCount: summary?.positions_count || 0,
+          chainsCount: summary?.chains_count || 0,
+          transactionsCount: transactions?.length || 0,
+          nftsCount: summary?.nft_count || 0
+        }
+      };
+
+    } catch (error) {
+      ErrorHandler.handle(error, 'WalletService.getWalletData');
+      throw error;
     }
   }
 }
