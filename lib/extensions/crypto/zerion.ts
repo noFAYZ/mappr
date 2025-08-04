@@ -256,7 +256,7 @@ export class WalletService {
         .from('user_wallets')
         .insert({
           user_id: userId,
-          address: address.toLowerCase(),
+          address: address?.toLowerCase(),
           name: name || `Wallet ${address.slice(0, 6)}...${address.slice(-4)}`,
           is_active: true,
           metadata: {

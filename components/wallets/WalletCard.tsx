@@ -27,7 +27,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
-import { truncateAddress } from '@/lib/wallet-analytics/utils';
+import { formatCurrency, truncateAddress } from '@/lib/wallet-analytics/utils';
 
 // Types
 interface WalletCardProps {
@@ -607,7 +607,7 @@ const ListView: React.FC<WalletCardProps> = ({
     return count?.toString() || '0';
   }, [showBalances]);
 
-  const portfolioValue = data?.portfolio?.totalValue?.positions || 0;
+  const portfolioValue = data?.portfolio?.totalValue || 0;
   const change24h = data?.portfolio?.dayChangePercent;
   const positionsCount = data?.metadata?.positionsCount || 0;
   const chainsCount = data?.metadata?.chainsCount || 0;
@@ -631,8 +631,8 @@ const ListView: React.FC<WalletCardProps> = ({
   }, [wallet.address]);
 
   const cardClassName = ` 
-     cursor-pointer border border-divider group rounded-lg overflow-visible
-    ${isSelected ? ' bg-primary-100/50 dark:bg-default-200' : ''}
+     cursor-pointer bg-content2 border border-divider group rounded-xl overflow-visible
+    ${isSelected ? ' bg-primary-500/20 dark:bg-default-200' : ''}
     hover:bg-default-100 animate-in fade-in-0  slide-in-from-bottom-6
     ${className}
   `;
@@ -690,7 +690,7 @@ const ListView: React.FC<WalletCardProps> = ({
             {/* Portfolio Value */}
             <div className="flex flex-col align-middle text-right justify-end min-w-0 flex-shrink-0">
               <p className=" font-semibold text-default-600 ">
-                {formatValue(portfolioValue)}
+                {formatCurrency(portfolioValue, showBalances,true)}
               </p>
               <PerformanceIndicator change24h={change24h} showBalances={showBalances} />
             </div>

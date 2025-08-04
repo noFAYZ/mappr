@@ -104,12 +104,9 @@ const WalletsList = ({
   }, [wallets, walletData, searchQuery, filterStatus, sortBy]);
 
   return (
-    <Card className=" rounded-2xl flex flex-col p-4 h-fit border border-divider space-y-2">
+    <div className=" flex flex-col space-y-2">
         {/* Enhanced Header */}
-        <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className=""
+        <div
       >
         {/* Search Bar */}
         <div className="mb-1">
@@ -196,7 +193,7 @@ const WalletsList = ({
             {filteredWallets.length} wallet{filteredWallets.length !== 1 ? 's' : ''}
           </div>
         </div>
-      </motion.div>
+      </div>
       {/* Wallets List */}
       <div className="flex-1 space-y-2">
         <AnimatePresence>
@@ -240,7 +237,7 @@ const WalletsList = ({
           </div>
         )}
       </div>
-    </Card>
+    </div>
   );
 };
 
@@ -291,7 +288,7 @@ const WalletDetailsPanel = ({ wallet, data, showBalances, onRefresh, isRefreshin
 // Main Wallets Page Component
 export default function WalletsPage() {
   const [showBalances, setShowBalances] = useState(true);
-  const [selectedWallet, setSelectedWallet] = useState(null);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [sortBy, setSortBy] = useState('value');
@@ -308,6 +305,8 @@ export default function WalletsPage() {
     syncWallet,
     syncAllWallets,
     isWalletSyncing,
+    setSelectedWallet,
+    selectedWallet,
     syncing,
 
 
@@ -316,8 +315,8 @@ export default function WalletsPage() {
 
   const { portfolioSummary } = usePortfolioOverview();
 
-  
 
+  
   // Format helper functions
   const formatCurrency = useCallback((value) => {
     if (!showBalances) return '••••••';
@@ -391,6 +390,8 @@ export default function WalletsPage() {
   }, [removeWallet, selectedWallet, addNotification]);
 
   const handleAddWallet = useCallback(async (address, name) => {
+
+    
     try {
       const newWallet = await addWallet(address, name);
       if (newWallet) {
@@ -530,8 +531,9 @@ export default function WalletsPage() {
       <AddWalletModal
         isOpen={isAddModalOpen}
         onOpenChange={onAddModalOpenChange}
-        onAdd={handleAddWallet}
+        onAddWallet={handleAddWallet}
       />
+     
 
       {/* Error Display */}
       {error && (

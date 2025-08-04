@@ -85,24 +85,25 @@ export const TokensList: React.FC<TokensListProps> = ({
     }
 
     const totalValue = positions.reduce((sum, pos) => 
-      sum + (pos.attributes?.value || 0), 0
+      sum + (pos.attributes?.value  ||pos?.value|| 0), 0
     );
 
-  
+    console.log('wallet', positions)
+
 
     return positions.map((position, index) => ({
       id: position.id || `${walletId}-${index}`,
-      symbol: position.attributes?.fungible_info?.symbol || position.attributes?.symbol || 'Unknown',
-      name: position.attributes?.fungible_info?.name || position.attributes?.name || 'Unknown Asset',
-      value: position.attributes?.value || 0,
-      quantity: position.attributes?.quantity?.numeric || position.attributes?.quantity_float || 0,
-      price: position.attributes?.price || 0,
-      change24h: position.attributes?.change24h || 0,
-      chainId: position.attributes?.chain || '',
-      isVerified: position.attributes?.verified || false,
-      tokenAddress: position.attributes?.fungible_info?.implementations?.[0]?.address || '',
-      icon: position.attributes?.fungible_info?.icon?.url || position.attributes?.icon,
-      percentage: totalValue > 0 ? ((position.attributes?.value || 0) / totalValue) * 100 : 0
+      symbol: position.attributes?.fungible_info?.symbol || position.attributes?.symbol ||position?.symbol || 'Unknown',
+      name: position.attributes?.fungible_info?.name || position.attributes?.name || position?.name || 'Unknown Asset',
+      value: position.attributes?.value  || position?.value || 0,
+      quantity: position.attributes?.quantity?.numeric || position.attributes?.quantity_float ||  position?.quantity || 0,
+      price: position.attributes?.price || position?.price || 0,
+      change24h: position.attributes?.change24h || position?.change24h || 0,
+      chainId: position.attributes?.chain || position?.chain || '',
+      isVerified: position.attributes?.verified  || position?.is_verified || false,
+      tokenAddress: position.attributes?.fungible_info?.implementations?.[0]?.address || position.attributes?.address || position?.address || '',
+      icon: position.attributes?.fungible_info?.icon?.url || position.attributes?.icon || position?.icon_url || '',
+      percentage: totalValue > 0 ? ((position.attributes?.value ||position?.value || 0) / totalValue) * 100 : 0 
     }));
   }, [walletId]);
 

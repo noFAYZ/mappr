@@ -324,6 +324,8 @@ export const TokenRow = React.memo<TokenRowProps>(({
               }
               size="md"
               className="h-2"
+              label={false}
+              aria-label='Token allocation progress'
               classNames={{
                 indicator: clsx(
                   "",

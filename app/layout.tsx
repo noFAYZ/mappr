@@ -12,6 +12,7 @@ import { Sidebar } from "@/components/sidebar";
 import { NavigationProvider } from "@/contexts/NavigationContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { Toaster } from "@/components/ui/sonner";
+import ModernToastProvider from "@/components/ui/Toaster";
 
 // Premium font configuration
 const spaceGrotesk = Space_Grotesk({
@@ -188,6 +189,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
         )}
       >
         <Providers>
+        <ModernToastProvider>
           <AuthProvider>
             <NavigationProvider>
               <LayoutContent>
@@ -197,6 +199,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
               </LayoutContent>
             </NavigationProvider>
           </AuthProvider>
+          </ModernToastProvider>
         </Providers>
       </body>
     </html>

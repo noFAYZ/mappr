@@ -4,6 +4,17 @@ import { ZerionExtension, WalletService, WalletData } from '@/lib/extensions/cry
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '../supabase';
+import { 
+  Copy, 
+  ExternalLink, 
+  RefreshCw, 
+  Trash2, 
+  CheckCircle, 
+  AlertCircle,
+  Clock,
+  TrendingUp,
+  Wallet
+} from 'lucide-react';
 
 export interface UserWallet {
   id: string;
@@ -40,6 +51,136 @@ export interface SyncOptions {
   chartPeriod?: 'hour' | 'day' | 'week' | 'month' | '3months' | 'year' | 'max';
   forceRefresh?: boolean;
 }
+
+// Enhanced toast utilities for wallet operations
+const walletToast = {
+  // Wallet connection success
+  connected: (walletName: string, address: string) => {
+    return toast.success('Wallet Connected Successfully', {
+      description: `${walletName} has been added to your portfolio`,
+      icon: CheckCircle,
+      action: {
+        label: 'Copy Address',
+        onClick: () => {
+          navigator.clipboard.writeText(address);
+          toast.success('Address Copied', {
+            description: 'Wallet address copied to clipboard',
+            duration: 2000,
+            icon: Copy
+          });
+        }
+      }
+    });
+  },
+
+  // Wallet sync success
+  synced: (walletName: string, tokenCount: number, totalValue: number) => {
+    return toast.success('Wallet Synced', {
+      description: `${walletName} • ${tokenCount} tokens • $${totalValue.toLocaleString()}`,
+      icon: RefreshCw,
+      action: {
+        label: 'View Details',
+        onClick: () => {
+          // Navigate to wallet details or trigger callback
+          console.log('Navigate to wallet details');
+        }
+      }
+    });
+  },
+
+  // Wallet sync started
+  syncStarted: (walletName: string) => {
+    return toast.loading('Syncing Wallet Data', {
+      description: `Fetching latest data for ${walletName}...`,
+      icon: RefreshCw
+    });
+  },
+
+  // Connection error
+  connectionError: (walletName: string, error: string) => {
+    return toast.error('Sync Failed', {
+      description: `Unable to sync ${walletName}: ${error}`,
+      icon: AlertCircle,
+      duration: 8000,
+      action: {
+        label: 'Retry',
+        onClick: () => {
+          // Retry sync logic will be passed from component
+          console.log('Retry sync');
+        }
+      }
+    });
+  },
+
+  // Wallet removed
+  removed: (walletName: string) => {
+    return toast.success('Wallet Removed', {
+      description: `${walletName} has been removed from your portfolio`,
+      icon: Trash2,
+      duration: 4000
+    });
+  },
+
+  // Portfolio overview
+  portfolioUpdated: (walletsCount: number, totalValue: number, change: number) => {
+    const changeIcon = change >= 0 ? TrendingUp : AlertCircle;
+    const changeText = change >= 0 ? 'increased' : 'decreased';
+    const changeColor = change >= 0 ? 'success' : 'error';
+    
+    return toast.info('Portfolio Updated', {
+      description: `${walletsCount} wallets • $${totalValue.toLocaleString()} • ${changeText} ${Math.abs(change).toFixed(2)}%`,
+      icon: Wallet,
+      duration: 6000
+    });
+  },
+
+  // All wallets synced
+  allSynced: (successCount: number, totalCount: number, totalValue: number) => {
+    if (successCount === totalCount) {
+      return toast.success('All Wallets Synced', {
+        description: `${totalCount} wallets updated • Portfolio value: $${totalValue.toLocaleString()}`,
+        icon: CheckCircle,
+        duration: 6000
+      });
+    } else {
+      return toast.warning('Partial Sync Complete', {
+        description: `${successCount}/${totalCount} wallets synced successfully`,
+        icon: AlertCircle,
+        duration: 8000,
+        action: {
+          label: 'View Issues',
+          onClick: () => {
+            console.log('Show sync issues');
+          }
+        }
+      });
+    }
+  },
+
+  // Rate limit warning
+  rateLimited: () => {
+    return toast.warning('Rate Limit Reached', {
+      description: 'Please wait a moment before syncing again',
+      icon: Clock,
+      duration: 6000
+    });
+  },
+
+  // Configuration error
+  configError: (service: string) => {
+    return toast.error('Configuration Error', {
+      description: `${service} API key not configured. Please check your settings.`,
+      icon: AlertCircle,
+      duration: 10000,
+      action: {
+        label: 'Settings',
+        onClick: () => {
+          window.location.href = '/settings';
+        }
+      }
+    });
+  }
+};
 
 export const useWalletAnalytics = () => {
   const { user } = useAuth();
@@ -93,7 +234,15 @@ export const useWalletAnalytics = () => {
 
     } catch (err: any) {
       setError(err.message);
-      toast.error('Failed to load wallets');
+      toast.error('Failed to Load Wallets', {
+        description: 'Unable to fetch wallet data from database',
+        icon: AlertCircle,
+        duration: 6000,
+        action: {
+          label: 'Retry',
+          onClick: () => loadWallets()
+        }
+      });
     } finally {
       setLoading(false);
     }
@@ -110,12 +259,23 @@ export const useWalletAnalytics = () => {
       const wallet = await WalletService.addWallet(user.id, address, name);
       setWallets(prev => [wallet, ...prev]);
       
-      toast.success('Wallet added successfully');
+      walletToast.connected(name || 'Wallet', address);
       return true;
 
     } catch (err: any) {
       setError(err.message);
-      toast.error('Failed to add wallet');
+      toast.error('Failed to Add Wallet', {
+        description: err.message,
+        icon: AlertCircle,
+        duration: 8000,
+        action: {
+          label: 'Try Again',
+          onClick: () => {
+            // Component can handle retry logic
+            console.log('Retry add wallet');
+          }
+        }
+      });
       return false;
     } finally {
       setLoading(false);
@@ -125,6 +285,9 @@ export const useWalletAnalytics = () => {
   // Remove wallet
   const removeWallet = useCallback(async (walletId: string): Promise<boolean> => {
     if (!user?.id || !selectedWallet) return false;
+
+    const walletToRemove = wallets.find(w => w.id === walletId);
+    if (!walletToRemove) return false;
 
     try {
       setLoading(true);
@@ -142,19 +305,27 @@ export const useWalletAnalytics = () => {
         setSelectedWallet(null);
       }
 
-      toast.success('Wallet removed successfully');
+      walletToast.removed(walletToRemove.name || 'Wallet');
       return true;
 
     } catch (err: any) {
       setError(err.message);
-      toast.error('Failed to remove wallet');
+      toast.error('Failed to Remove Wallet', {
+        description: err.message,
+        icon: AlertCircle,
+        duration: 6000,
+        action: {
+          label: 'Try Again',
+          onClick: () => removeWallet(walletId)
+        }
+      });
       return false;
     } finally {
       setLoading(false);
     }
-  }, [user?.id, selectedWallet]);
+  }, [user?.id, selectedWallet, wallets]);
 
-  // Sync wallet data with improved error handling
+  // Sync wallet data with improved error handling and toast notifications
   const syncWallet = useCallback(async (
     walletId: string, 
     options: SyncOptions = {}
@@ -162,9 +333,14 @@ export const useWalletAnalytics = () => {
     const wallet = wallets.find(w => w.id === walletId);
     if (!wallet) return false;
 
+    let loadingToastId: string | number | undefined;
+
     try {
       setSyncing(prev => ({ ...prev, [walletId]: true }));
       setError(null);
+
+      // Show loading toast
+      loadingToastId = walletToast.syncStarted(wallet.name || 'Wallet');
 
       // Update wallet status to syncing
       await supabase
@@ -175,6 +351,8 @@ export const useWalletAnalytics = () => {
       // Initialize Zerion connection
       const apiKey = process.env.NEXT_PUBLIC_ZERION_API_KEY;
       if (!apiKey) {
+        toast.dismiss(loadingToastId);
+        walletToast.configError('Zerion');
         throw new Error('Zerion API key not configured');
       }
 
@@ -193,8 +371,6 @@ export const useWalletAnalytics = () => {
         throw new Error(syncResult.error || 'Sync failed');
       }
 
-      console.log(syncResult  ) 
-
       // Store data in normalized tables but also maintain compatibility
       if (syncResult.data) {
         await WalletService.updateWalletData(walletId, syncResult.data);
@@ -210,12 +386,23 @@ export const useWalletAnalytics = () => {
           : w
       ));
 
-      toast.success(`Wallet ${wallet.name} synced successfully`);
+      // Dismiss loading toast and show success
+      toast.dismiss(loadingToastId);
+      
+      const tokenCount = syncResult.data?.positions?.length || 0;
+      const totalValue = syncResult.data?.portfolio?.totalValue || 0;
+      walletToast.synced(wallet.name || 'Wallet', tokenCount, totalValue);
+      
       return true;
 
     } catch (err: any) {
       setError(err.message);
       
+      // Dismiss loading toast
+      if (loadingToastId) {
+        toast.dismiss(loadingToastId);
+      }
+
       // Update wallet status to error
       await supabase
         .from('user_wallets')
@@ -231,7 +418,17 @@ export const useWalletAnalytics = () => {
           : w
       ));
 
-      toast.error(`Failed to sync ${wallet.name}: ${err.message}`);
+      // Show error toast with retry option
+      toast.error('Sync Failed', {
+        description: `${wallet.name || 'Wallet'}: ${err.message}`,
+        icon: AlertCircle,
+        duration: 8000,
+        action: {
+          label: 'Retry',
+          onClick: () => syncWallet(walletId, options)
+        }
+      });
+
       return false;
 
     } finally {
@@ -239,11 +436,43 @@ export const useWalletAnalytics = () => {
     }
   }, [wallets, zerionExtension]);
 
-  // Sync all wallets
+  // Sync all wallets with comprehensive progress tracking
   const syncAllWallets = useCallback(async (options: SyncOptions = {}): Promise<void> => {
-    const syncPromises = wallets.map(wallet => syncWallet(wallet.id, options));
-    await Promise.allSettled(syncPromises);
-  }, [wallets, syncWallet]);
+    if (wallets.length === 0) return;
+
+    const loadingToastId = toast.loading('Syncing All Wallets', {
+      description: `Processing ${wallets.length} wallets...`,
+      icon: RefreshCw
+    });
+
+    try {
+      const syncPromises = wallets.map(wallet => syncWallet(wallet.id, options));
+      const results = await Promise.allSettled(syncPromises);
+      
+      const successCount = results.filter(result => 
+        result.status === 'fulfilled' && result.value === true
+      ).length;
+
+      const totalValue = Object.values(walletData).reduce(
+        (sum, data) => sum + (data?.portfolio?.totalValue || 0), 
+        0
+      );
+
+      // Dismiss loading toast
+      toast.dismiss(loadingToastId);
+
+      // Show completion summary
+      walletToast.allSynced(successCount, wallets.length, totalValue);
+
+    } catch (err: any) {
+      toast.dismiss(loadingToastId);
+      toast.error('Sync Failed', {
+        description: 'An error occurred while syncing wallets',
+        icon: AlertCircle,
+        duration: 6000
+      });
+    }
+  }, [wallets, syncWallet, walletData]);
 
   // Get aggregated portfolio data - maintain backward compatibility
   const getAggregatedPortfolio = useCallback((): {
@@ -414,6 +643,11 @@ export const useWalletDetails = (walletId?: string) => {
         setAnalytics(analyticsData);
       } catch (err) {
         console.error('Error loading analytics:', err);
+        toast.error('Analytics Error', {
+          description: 'Unable to load wallet analytics',
+          icon: AlertCircle,
+          duration: 4000
+        });
       } finally {
         setLoadingAnalytics(false);
       }
@@ -422,13 +656,28 @@ export const useWalletDetails = (walletId?: string) => {
     loadAnalytics();
   }, [walletId, getWalletAnalytics, data]); // Include data to refresh when wallet data changes
 
+  const refresh = useCallback(async (): Promise<boolean> => {
+    if (!walletId) return false;
+    
+    const result = await syncWallet(walletId, { forceRefresh: true });
+    if (result && wallet) {
+      // Show refresh success toast
+      toast.success('Wallet Refreshed', {
+        description: `${wallet.name || 'Wallet'} data updated successfully`,
+        icon: RefreshCw,
+        duration: 3000
+      });
+    }
+    return result;
+  }, [walletId, syncWallet, wallet]);
+
   return {
     wallet,
     data,
     analytics,
     loadingAnalytics,
     isLoading: isWalletSyncing(walletId || ''),
-    refresh: () => walletId ? syncWallet(walletId, { forceRefresh: true }) : Promise.resolve(false)
+    refresh
   };
 };
 
