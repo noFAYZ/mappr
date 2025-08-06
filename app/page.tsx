@@ -1,479 +1,556 @@
 'use client'
-import React, { useState, useEffect, useRef } from 'react';
-import { Button } from "@heroui/button";
-import { Badge } from "@heroui/badge";
-import { Link } from "@heroui/link";
+import React, { useState, useEffect, useMemo } from 'react';
+import { Button } from '@heroui/button';
+import { Card, CardBody } from '@heroui/card';
+import { Chip } from '@heroui/chip';
 import { 
   ArrowRight, 
+  Shield, 
+  Zap, 
+  TrendingUp, 
+  Wallet, 
+  BarChart3, 
+  Activity,
+  Users,
+  CheckCircle,
+  ArrowUpRight,
+  Play,
+  Sparkles,
+  Lock,
+  Network,
   ChevronDown,
+  Triangle,
+  Hexagon,
+  Circle,
+  Star,
+  Target,
+  Rocket,
+  Brain,
+  Cpu,
+  FileText,
+  Award,
   Menu,
   X,
-  Sparkles,
-  Zap,
-  TrendingUp,
-  Activity
+  Globe,
+  Database,
+  Gauge
 } from 'lucide-react';
+import { LogoMappr } from '@/components/icons';
 
-const MoneyMapprHomepage = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [cubeHover, setCubeHover] = useState(null);
-  const [particles, setParticles] = useState([]);
-  const containerRef = useRef(null);
+// Constants
+const ANIMATION_DELAYS = {
+  HERO_BADGE: 0,
+  HERO_TITLE: 200,
+  HERO_SUBTITLE: 400,
+  HERO_BUTTONS: 600,
+  FLOATING_BASE: 100
+};
 
-  // Mouse tracking for parallax effects
+// Hooks
+const useScrollDirection = () => {
+  const [scrollDirection, setScrollDirection] = useState('up');
+  const [lastScrollY, setLastScrollY] = useState(0);
+
   useEffect(() => {
-    const handleMouseMove = (e) => {
-      setMousePosition({
-        x: (e.clientX / window.innerWidth - 0.5) * 2,
-        y: (e.clientY / window.innerHeight - 0.5) * 2
-      });
+    const updateScrollDirection = () => {
+      const scrollY = window.pageYOffset;
+      const direction = scrollY > lastScrollY ? 'down' : 'up';
+      if (direction !== scrollDirection && (scrollY - lastScrollY > 10 || scrollY - lastScrollY < -10)) {
+        setScrollDirection(direction);
+      }
+      setLastScrollY(scrollY > 0 ? scrollY : 0);
     };
+    window.addEventListener('scroll', updateScrollDirection);
+    return () => window.removeEventListener('scroll', updateScrollDirection);
+  }, [scrollDirection, lastScrollY]);
 
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, []);
+  return scrollDirection;
+};
 
-  // Page load animation
+// Components
+const NavigationBar: React.FC = () => {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const scrollDirection = useScrollDirection();
+
   useEffect(() => {
-    setTimeout(() => setIsLoaded(true), 100);
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Generate floating particles
-  useEffect(() => {
-    const newParticles = Array.from({ length: 50 }, (_, i) => ({
-      id: i,
-      x: Math.random() * 100,
-      y: Math.random() * 100,
-      size: Math.random() * 4 + 1,
-      speed: Math.random() * 2 + 1,
-      opacity: Math.random() * 0.5 + 0.2
-    }));
-    setParticles(newParticles);
-  }, []);
-
-  // Animate particles
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setParticles(prev => prev.map(particle => ({
-        ...particle,
-        y: particle.y > 100 ? -5 : particle.y + particle.speed * 0.1,
-        x: particle.x + Math.sin(Date.now() * 0.001 + particle.id) * 0.1
-      })));
-    }, 50);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  const cubeData = [
-    { 
-      id: 1, 
-      position: 'top-12 left-12', 
-      size: 'w-20 h-20', 
-      color: 'from-emerald-400 to-teal-500',
-      rotation: '-rotate-12',
-      data: 'Crypto',
-      value: '$127K',
-      change: '+12.5%'
-    },
-    { 
-      id: 2, 
-      position: 'top-12 right-12', 
-      size: 'w-20 h-20', 
-      color: 'from-blue-400 to-indigo-500',
-      rotation: 'rotate-12',
-      data: 'Banking',
-      value: '$89K',
-      change: '+8.2%'
-    },
-    { 
-      id: 3, 
-      position: 'left-0 top-1/2 -translate-y-1/2', 
-      size: 'w-24 h-24', 
-      color: 'from-purple-400 to-violet-500',
-      rotation: '-rotate-6',
-      data: 'Business',
-      value: '$234K',
-      change: '+15.7%'
-    },
-    { 
-      id: 4, 
-      position: 'right-0 top-1/2 -translate-y-1/2', 
-      size: 'w-24 h-24', 
-      color: 'from-pink-400 to-rose-500',
-      rotation: 'rotate-6',
-      data: 'Analytics',
-      value: '$156K',
-      change: '+22.1%'
-    },
-    { 
-      id: 5, 
-      position: 'bottom-12 left-12', 
-      size: 'w-20 h-20', 
-      color: 'from-amber-400 to-orange-500',
-      rotation: 'rotate-12',
-      data: 'DeFi',
-      value: '$67K',
-      change: '+31.4%'
-    },
-    { 
-      id: 6, 
-      position: 'bottom-12 right-12', 
-      size: 'w-20 h-20', 
-      color: 'from-cyan-400 to-blue-500',
-      rotation: '-rotate-12',
-      data: 'NFTs',
-      value: '$43K',
-      change: '+5.9%'
-    }
+  const navigationItems = [
+    { name: 'Portfolio', href: '#portfolio' },
+    { name: 'Analytics', href: '#analytics' },
+    { name: 'Strategies', href: '#strategies' },
+    { name: 'Academy', href: '#academy' }
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-indigo-900 to-slate-900 relative overflow-hidden">
-      
-      {/* Animated Particles */}
-      <div className="absolute inset-0 pointer-events-none">
-        {particles.map(particle => (
-          <div
-            key={particle.id}
-            className="absolute w-1 h-1 bg-white rounded-full animate-pulse"
-            style={{
-              left: `${particle.x}%`,
-              top: `${particle.y}%`,
-              opacity: particle.opacity,
-              transform: `scale(${particle.size})`,
-              animation: `twinkle ${3 + particle.id % 3}s ease-in-out infinite alternate`
-            }}
-          />
-        ))}
-      </div>
-
-      {/* Navigation with glassmorphism */}
-      <nav className={`relative z-50 flex items-center justify-between p-6 lg:px-12 backdrop-blur-xl bg-white/5 border-b border-white/10 transition-all duration-1000 ${isLoaded ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'}`}>
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg flex items-center justify-center relative group cursor-pointer">
-            <div className="w-4 h-4 bg-white rounded-sm transition-transform group-hover:rotate-180 duration-300" />
-            <div className="absolute inset-0 bg-gradient-to-br from-orange-400 to-red-400 rounded-lg blur-lg opacity-0 group-hover:opacity-50 transition-opacity duration-300" />
+    <nav className={`fixed top-4 w-full z-50 transition-all duration-200 bg-transparent ${scrollDirection === 'down' && isScrolled ? '-translate-y-full' : 'translate-y-0'}`}>
+      <div className="max-w-7xl mx-auto px-4 border border-divider bg-content2 rounded-2xl">
+        <div className="flex items-center justify-between h-14 lg:h-16">
+          
+          {/* Logo */}
+          <div className="flex items-center gap-2 group cursor-pointer relative">
+            <div className="relative">
+              <LogoMappr className='w-9 h-9' />
+              <div className="absolute -inset-1 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg blur opacity-0 group-hover:opacity-10 transition-opacity duration-200" />
+            </div>
+            <span className="text-sm lg:text-base font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+              MoneyMappr
+            </span>
+                {/* Status Badge */}
+                <div className="flex items-center gap-2 bg-green-500/10 backdrop-blur-sm rounded-md px-1.5 py-0 border border-green-400/20">
+              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+              <span className="text-[10px] font-medium text-green-300">Beta</span>
+            </div>
           </div>
-        </div>
-
-        <div className="hidden lg:flex items-center gap-8">
-          {['Home', 'Solutions', 'Pricing', 'Resources'].map((item, index) => (
-            <Link 
-              key={item}
-              href="#" 
-              className="text-white/90 hover:text-orange-400 transition-all duration-300 font-medium relative group"
-              style={{ animationDelay: `${index * 100}ms` }}
-            >
-              {item}
-              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-orange-400 transition-all duration-300 group-hover:w-full" />
-            </Link>
-          ))}
-        </div>
-
-        <div className="hidden lg:flex items-center gap-4">
-          <Button 
-            variant="ghost" 
-            className="text-white/90 hover:text-white hover:bg-white/10 font-medium transition-all duration-300"
-          >
-            Login
-          </Button>
-          <Button className="bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-xl px-6 font-medium backdrop-blur-sm transition-all duration-300 hover:scale-105">
-            Sign up
-          </Button>
-        </div>
-
-        <Button
-          isIconOnly
-          variant="ghost"
-          className="lg:hidden text-white hover:bg-white/10 transition-all duration-300"
-          onPress={() => setIsMenuOpen(!isMenuOpen)}
-        >
-          <div className={`transition-transform duration-300 ${isMenuOpen ? 'rotate-180' : ''}`}>
-            {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </div>
-        </Button>
-      </nav>
-
-      {/* Mobile Menu with slide animation */}
-      <div className={`lg:hidden absolute top-20 left-0 right-0 z-40 backdrop-blur-xl bg-slate-900/95 border-b border-white/10 transition-all duration-500 ${isMenuOpen ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'}`}>
-        <div className="p-6 space-y-4">
-          {['Home', 'Solutions', 'Pricing', 'Resources'].map((item, index) => (
-            <Link 
-              key={item}
-              href="#" 
-              className="block text-white/80 hover:text-orange-400 py-2 transition-all duration-300"
-              style={{ animationDelay: `${index * 50}ms` }}
-            >
-              {item}
-            </Link>
-          ))}
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <main className="relative z-10 px-6 lg:px-12" ref={containerRef}>
-        <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center min-h-[80vh]">
+          
+          {/* Desktop Navigation */}
+          <div className="hidden lg:flex items-center gap-8">
+            {navigationItems.map((item, index) => (
+              <a 
+                key={item.name}
+                href={item.href} 
+                className="relative  transition-all duration-200 font-medium group text-sm"
+              >
+                {item.name}
+                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-orange-500 to-orange-600 group-hover:w-full transition-all duration-200" />
+              </a>
+            ))}
             
-            {/* Left Column - Content with staggered animations */}
-            <div className="space-y-8 lg:pr-12">
-              
-              {/* Badge with pulse animation */}
-              <div className={`inline-flex items-center gap-3 bg-white/5 backdrop-blur-sm border border-white/10 rounded-full px-4 py-2 transition-all duration-1000 delay-300 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
-                <Badge size="sm" className="bg-orange-500 text-white text-xs px-2 py-1 rounded-md font-medium animate-pulse">
-                  New
-                </Badge>
-                <span className="text-white/80 text-sm font-medium flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-orange-400 animate-spin" />
-                  Introducing our new most advanced Web3 aggregation
+        
+          </div>
+
+          {/* Mobile Menu Button & CTA */}
+          <div className="flex items-center gap-4">
+            <Button 
+              size="sm"
+              onClick={() => window.location.href = '/dashboard'} // Replace with actual app link
+              radius='md'
+              className="hidden sm:flex bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold shadow-lg hover:shadow-orange-500/25 transition-all duration-200 "
+            >
+              Launch App
+            </Button>
+            
+            <button
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="lg:hidden p-2 text-white hover:text-orange-400 transition-colors duration-300"
+            >
+              {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+          </div>
+        </div>
+        
+        {/* Mobile Menu */}
+        {isMenuOpen && (
+          <div className="lg:hidden absolute top-full left-0 right-0 bg-black/95 backdrop-blur-xl border-b border-white/10 shadow-2xl">
+            <div className="px-4 py-6 space-y-4">
+              {navigationItems.map((item) => (
+                <a
+                  key={item.name}
+                  href={item.href}
+                  className="block text-white/80 hover:text-orange-400 transition-colors duration-300 font-medium py-2"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {item.name}
+                </a>
+              ))}
+              <Button 
+                className="w-full mt-4 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold"
+              >
+                Launch App
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    </nav>
+  );
+};
+
+const FloatingElement: React.FC<{
+  element: {
+    name: string;
+    value: string;
+    icon: React.ReactNode;
+    position: Record<string, string>;
+    color?: string;
+  };
+}> = ({ element }) => (
+  <div
+    className="absolute animate-in fade-in-50  hover:scale-105 transition-transform duration-200"
+    style={element.position}
+  >
+    <Card className="bg-white/5 backdrop-blur-xl border border-white/10 hover:border-orange-400/30 transition-all duration-200 shadow-xl">
+      <CardBody className="p-3 flex items-center gap-2.5">
+        <div className={`${element.color || 'text-orange-400'} flex-shrink-0`}>
+          {element.icon}
+        </div>
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-white truncate">{element.name}</p>
+          <p className="text-xs text-white/60">{element.value}</p>
+        </div>
+      </CardBody>
+    </Card>
+  </div>
+);
+
+const FeatureCard: React.FC<{
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  index: number;
+}> = ({ icon, title, description, index }) => (
+  <Card 
+    className="h-full bg-gradient-to-br from-white/5 via-white/[0.02] to-transparent backdrop-blur-xl border border-white/10 hover:border-orange-400/30 transition-all duration-500 group cursor-pointer shadow-xl hover:shadow-orange-500/10"
+    style={{ animationDelay: `${index * 150}ms` }}
+  >
+    <CardBody className="p-6 lg:p-8 h-full flex flex-col">
+      <div className="w-12 h-12 lg:w-14 lg:h-14 bg-gradient-to-br from-orange-500/20 to-orange-600/20 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+        <div className="text-orange-400 group-hover:text-orange-300 transition-colors duration-300">
+          {icon}
+        </div>
+      </div>
+      
+      <h3 className="text-lg lg:text-xl font-bold mb-3 text-white group-hover:text-orange-100 transition-colors duration-300">
+        {title}
+      </h3>
+      
+      <p className="text-sm lg:text-base text-white/60 mb-4 flex-grow leading-relaxed group-hover:text-white/80 transition-colors duration-300">
+        {description}
+      </p>
+      
+      <div className="flex items-center gap-2 text-orange-400 group-hover:gap-3 transition-all duration-300 mt-auto">
+        <span className="text-sm font-medium">Learn more</span>
+        <ArrowUpRight className="w-4 h-4 group-hover:scale-110 transition-transform duration-300" />
+      </div>
+    </CardBody>
+  </Card>
+);
+
+const StatCard: React.FC<{
+  stat: {
+    label: string;
+    value: string;
+    icon: React.ReactNode;
+    color: string;
+  };
+  index: number;
+}> = ({ stat, index }) => (
+  <div 
+    className="group cursor-pointer animate-in fade-in-50 duration-500"
+    style={{ animationDelay: `${index * 100}ms` }}
+  >
+    <div className="text-center p-4 lg:p-6 rounded-xl bg-white/5 backdrop-blur-sm border border-white/10 hover:border-orange-400/30 transition-all duration-300 hover:scale-105">
+      <div className={`flex items-center justify-center gap-2 mb-2 ${stat.color} group-hover:scale-110 transition-transform duration-300`}>
+        {stat.icon}
+      </div>
+      <p className="text-2xl lg:text-3xl font-bold text-white mb-1 group-hover:text-orange-100 transition-colors duration-300">
+        {stat.value}
+      </p>
+      <p className="text-sm text-white/60 group-hover:text-white/80 transition-colors duration-300">
+        {stat.label}
+      </p>
+    </div>
+  </div>
+);
+
+// Main Component
+const MoneyMapprHomepage: React.FC = () => {
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  useEffect(() => {
+    setIsLoaded(true);
+  }, []);
+
+  const floatingElements = useMemo(() => [
+    { 
+      name: 'Ethereum', 
+      value: '$2,845', 
+      icon: <Triangle className="w-4 h-4" />, 
+      position: { top: '20%', left: '5%' },
+      color: 'text-blue-400'
+    },
+    { 
+      name: 'Polygon', 
+      value: '$1.34', 
+      icon: <Hexagon className="w-4 h-4" />, 
+      position: { top: '30%', right: '8%' },
+      color: 'text-purple-400'
+    },
+    { 
+      name: 'Arbitrum', 
+      value: '$1.89', 
+      icon: <Circle className="w-4 h-4" />, 
+      position: { bottom: '35%', left: '3%' },
+      color: 'text-cyan-400'
+    },
+    { 
+      name: 'Optimism', 
+      value: '$2.15', 
+      icon: <Zap className="w-4 h-4" />, 
+      position: { bottom: '25%', right: '5%' },
+      color: 'text-red-400'
+    }
+  ], []);
+
+  const features = useMemo(() => [
+    {
+      icon: <Wallet className="w-6 h-6 lg:w-7 lg:h-7" />,
+      title: 'Multi-Chain Portfolio',
+      description: 'Track assets across 50+ blockchains with real-time sync and advanced analytics for optimal portfolio management.'
+    },
+    {
+      icon: <Brain className="w-6 h-6 lg:w-7 lg:h-7" />,
+      title: 'AI-Powered Insights',
+      description: 'Get intelligent market analysis, performance predictions, and personalized investment recommendations.'
+    },
+    {
+      icon: <Shield className="w-6 h-6 lg:w-7 lg:h-7" />,
+      title: 'Bank-Grade Security',
+      description: 'Non-custodial architecture with zero-knowledge proofs and end-to-end encryption for ultimate protection.'
+    },
+    {
+      icon: <Network className="w-6 h-6 lg:w-7 lg:h-7" />,
+      title: 'Cross-Chain DeFi',
+      description: 'Execute cross-chain swaps and manage complex DeFi strategies from a single intuitive interface.'
+    },
+    {
+      icon: <BarChart3 className="w-6 h-6 lg:w-7 lg:h-7" />,
+      title: 'Advanced Analytics',
+      description: 'Institutional-grade tools for performance metrics, risk analysis, and yield optimization strategies.'
+    },
+    {
+      icon: <Rocket className="w-6 h-6 lg:w-7 lg:h-7" />,
+      title: 'Strategy Automation',
+      description: 'Automate yield farming, liquidity provision, and rebalancing with customizable risk parameters.'
+    }
+  ], []);
+
+  const stats = useMemo(() => [
+    { label: "Total Value Locked", value: "$12.8B", icon: <TrendingUp className="w-5 h-5" />, color: "text-green-400" },
+    { label: "Active Users", value: "2.1M", icon: <Users className="w-5 h-5" />, color: "text-blue-400" },
+    { label: "Supported Protocols", value: "1,200+", icon: <Network className="w-5 h-5" />, color: "text-purple-400" },
+    { label: "Network Uptime", value: "99.98%", icon: <Activity className="w-5 h-5" />, color: "text-orange-400" }
+  ], []);
+
+  const partners = useMemo(() => [
+    { name: 'Uniswap', logo: '🦄' },
+    { name: 'Aave', logo: '👻' },
+    { name: 'Compound', logo: '🏛️' },
+    { name: 'Curve', logo: '🌊' },
+    { name: 'Balancer', logo: '⚖️' },
+    { name: 'SushiSwap', logo: '🍣' }
+  ], []);
+
+  return (
+    <div className="min-h-screen bg-background overflow-hidden relative">
+      
+      {/* Background Effects */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(249,115,22,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(249,115,22,0.05)_1px,transparent_1px)] bg-[size:50px_50px] opacity-40" />
+        <div className="absolute top-1/4 left-1/3 w-64 h-64 bg-gradient-to-r from-orange-500/10 to-pink-500/10 rounded-full blur-[100px]" />
+        <div className="absolute bottom-1/3 right-1/4 w-80 h-80 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-full blur-[120px]" />
+      </div>
+
+      {/* Navigation */}
+      <NavigationBar />
+
+      {/* Hero Section */}
+      <section className="relative min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8 pt-20">
+        
+        {/* Floating Elements */}
+        <div className="hidden lg:block">
+          {floatingElements.map((element, index) => (
+            <FloatingElement 
+              key={index} 
+              element={element}
+            />
+          ))}
+        </div>
+
+        {/* Main Content */}
+        <div className="text-center max-w-4xl mx-auto relative z-10">
+          
+          {/* Badge */}
+          <div className={`inline-flex items-center gap-2 bg-gradient-to-r from-orange-500/20 to-orange-600/20 backdrop-blur-sm rounded-full px-4 py-2 border border-orange-400/30 mb-6 transition-all duration-1000 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
+            <Sparkles className="w-4 h-4 text-orange-400" />
+            <span className="text-sm font-medium">Next-Gen DeFi Platform</span>
+            <ArrowRight className="w-4 h-4" />
+          </div>
+
+          {/* Main Headline */}
+          <div className={`mb-8 transition-all duration-1000 delay-200 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
+            <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold leading-tight tracking-tight mb-4">
+              Master Your{' '}
+              <span className="bg-gradient-to-r from-orange-400 via-orange-500 to-red-500 bg-clip-text text-transparent">
+                DeFi
+              </span>
+              {' '}Universe
+            </h1>
+            
+            <p className="text-lg lg:text-xl text-white/70 max-w-2xl mx-auto leading-relaxed">
+              Experience next-generation decentralized finance with AI-powered analytics and institutional-grade security
+            </p>
+          </div>
+
+          {/* CTA Buttons */}
+          <div className={`flex flex-col sm:flex-row gap-4 justify-center mb-12 transition-all duration-1000 delay-400 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
+            <Button 
+              size="lg"
+              className="bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold shadow-xl hover:shadow-orange-500/25 transition-all duration-300 hover:scale-105"
+              endContent={<ArrowRight className="w-5 h-5" />}
+            >
+              Launch App
+            </Button>
+            <Button 
+              size="lg"
+              className="bg-white/10 backdrop-blur-sm text-white font-semibold hover:bg-white/20 transition-all duration-300 border border-white/20 hover:border-orange-400/50"
+              startContent={<Play className="w-5 h-5" />}
+            >
+              Watch Demo
+            </Button>
+          </div>
+
+          {/* Scroll Indicator */}
+          <div className={`flex flex-col items-center gap-2 text-white/40 transition-all duration-1000 delay-600 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
+            <ChevronDown className="w-5 h-5 animate-bounce" />
+            <span className="text-sm">Discover More</span>
+          </div>
+        </div>
+      </section>
+
+      {/* Partners Section */}
+      <section className="relative py-12 border-t border-white/10 bg-white/[0.02]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <p className="text-center text-white/60 text-sm font-medium tracking-wide uppercase mb-8">
+            Trusted by Leading DeFi Protocols
+          </p>
+          
+          <div className="flex flex-wrap items-center justify-center gap-8 lg:gap-16 opacity-50 hover:opacity-70 transition-opacity duration-500">
+            {partners.map((partner, index) => (
+              <div 
+                key={index} 
+                className="flex items-center gap-2 hover:scale-110 transition-all duration-300 cursor-pointer group"
+              >
+                <span className="text-xl lg:text-2xl">{partner.logo}</span>
+                <span className="text-white/60 font-semibold group-hover:text-orange-400 transition-colors duration-300">
+                  {partner.name}
                 </span>
               </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
-              {/* Animated headline */}
-              <div className={`space-y-6 transition-all duration-1000 delay-500 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
-                <h1 className="text-5xl lg:text-6xl xl:text-7xl font-bold text-white leading-[1.1] tracking-tight">
-                  <span className="inline-block animate-in slide-in-from-left duration-700">Aggregate on</span>
-                  <br />
-                  <span className="inline-block animate-in slide-in-from-left duration-700 delay-200 bg-gradient-to-r from-orange-400 to-red-400 bg-clip-text text-transparent">decentralized</span>
-                  <br />
-                  <span className="inline-block animate-in slide-in-from-left duration-700 delay-400">financial protocol</span>
-                </h1>
-                
-                <p className="text-lg lg:text-xl text-white/70 leading-relaxed max-w-lg font-medium">
-                  MoneyMappr is a leading provider of cutting-edge decentralized solutions, powering the next 
-                  <span className="text-orange-400 font-semibold"> generation </span>
-                  of DeFi, GameFi, and Metaverse projects.
-                </p>
-              </div>
+      {/* Features Section */}
+      <section className="relative py-16 lg:py-24 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          
+          {/* Section Header */}
+          <div className="text-center mb-12 lg:mb-16">
+            <h2 className="text-3xl lg:text-5xl font-bold mb-4 bg-gradient-to-r from-white via-white to-white/90 bg-clip-text text-transparent">
+              Powerful Features
+            </h2>
+            <p className="text-lg text-white/60 max-w-2xl mx-auto">
+              Everything you need to dominate DeFi with cutting-edge tools and insights
+            </p>
+          </div>
+          
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+            {features.map((feature, index) => (
+              <FeatureCard 
+                key={index}
+                {...feature}
+                index={index}
+              />
+            ))}
+          </div>
+        </div>
+      </section>
 
-              {/* Interactive stats */}
-              <div className={`grid grid-cols-3 gap-4 transition-all duration-1000 delay-700 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
-                {[
-                  { label: 'Active Users', value: '10K+', icon: <Activity className="w-4 h-4" /> },
-                  { label: 'Total Volume', value: '$2.5B', icon: <TrendingUp className="w-4 h-4" /> },
-                  { label: 'Protocols', value: '50+', icon: <Zap className="w-4 h-4" /> }
-                ].map((stat, index) => (
-                  <div 
-                    key={index}
-                    className="bg-white/5 backdrop-blur-sm rounded-xl p-3 border border-white/10 hover:bg-white/10 transition-all duration-300 cursor-pointer group"
-                  >
-                    <div className="flex items-center gap-2 mb-1">
-                      <div className="text-orange-400 group-hover:scale-110 transition-transform duration-300">
-                        {stat.icon}
-                      </div>
-                      <span className="text-xs text-white/60">{stat.label}</span>
-                    </div>
-                    <div className="text-lg font-bold text-white">{stat.value}</div>
-                  </div>
-                ))}
-              </div>
+      {/* Stats Section */}
+      <section className="relative py-16 px-4 sm:px-6 lg:px-8 border-y border-white/10 bg-gradient-to-r from-white/[0.02] to-transparent">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-8">
+            {stats.map((stat, index) => (
+              <StatCard 
+                key={index}
+                stat={stat}
+                index={index}
+              />
+            ))}
+          </div>
+        </div>
+      </section>
 
-              {/* CTA Button with magnetic effect */}
-              <div className={`pt-4 transition-all duration-1000 delay-900 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
+      {/* CTA Section */}
+      <section className="relative py-16 lg:py-24 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto text-center">
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 via-orange-600/10 to-red-500/10 rounded-2xl lg:rounded-3xl blur-2xl" />
+            
+            <div className="relative bg-gradient-to-br from-white/5 via-white/[0.02] to-transparent backdrop-blur-xl rounded-2xl lg:rounded-3xl p-8 lg:p-12 border border-orange-500/20 shadow-2xl">
+              <h2 className="text-3xl lg:text-5xl font-bold mb-6 bg-gradient-to-r from-white via-orange-100 to-orange-200 bg-clip-text text-transparent">
+                Ready to Transform Your Portfolio?
+              </h2>
+              
+              <p className="text-lg text-white/70 mb-8 max-w-2xl mx-auto">
+                Join millions who trust MoneyMappr for DeFi investments. Start your journey today.
+              </p>
+              
+              <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
                 <Button 
-                  size="lg" 
-                  className="bg-white hover:bg-white/90 text-black border-0 rounded-full px-8 py-3 text-base font-semibold flex items-center gap-2 group relative overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl"
-                  style={{
-                    transform: `translate(${mousePosition.x * 2}px, ${mousePosition.y * 2}px)`
-                  }}
+                  size="lg"
+                  className="bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold shadow-xl hover:shadow-orange-500/30 transition-all duration-300 hover:scale-105"
+                  endContent={<Rocket className="w-5 h-5" />}
                 >
-                  <span className="relative z-10">Schedule demo</span>
-                  <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center ml-2 group-hover:bg-orange-600 transition-all duration-300 group-hover:rotate-90 relative z-10">
-                    <ArrowRight className="w-4 h-4 text-white" />
-                  </div>
-                  <div className="absolute inset-0 bg-gradient-to-r from-orange-400 to-red-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
+                  Launch Portfolio
+                </Button>
+                <Button 
+                  size="lg"
+                  className="bg-white text-black font-semibold hover:bg-white/90 transition-all duration-300"
+                  startContent={<FileText className="w-5 h-5" />}
+                >
+                  Documentation
                 </Button>
               </div>
-            </div>
 
-            {/* Right Column - Interactive 3D Visualization */}
-            <div className="relative flex items-center justify-center lg:h-[600px]">
-              
-              <div className="relative w-80 h-80 lg:w-96 lg:h-96">
-                
-                {/* Data connection lines */}
-                <svg className="absolute inset-0 w-full h-full pointer-events-none z-0" viewBox="0 0 400 400">
-                  <defs>
-                    <linearGradient id="connectionGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#FB7185" stopOpacity="0.8"/>
-                      <stop offset="50%" stopColor="#F97316" stopOpacity="0.6"/>
-                      <stop offset="100%" stopColor="#3B82F6" stopOpacity="0.4"/>
-                    </linearGradient>
-                  </defs>
-                  {cubeData.map((cube, index) => (
-                    <line
-                      key={index}
-                      x1="200"
-                      y1="200"
-                      x2={cube.position.includes('left') ? "100" : cube.position.includes('right') ? "300" : "200"}
-                      y2={cube.position.includes('top') ? "100" : cube.position.includes('bottom') ? "300" : "200"}
-                      stroke="url(#connectionGradient)"
-                      strokeWidth="2"
-                      strokeDasharray="5,5"
-                      opacity={cubeHover === cube.id ? "1" : "0.3"}
-                      className="transition-all duration-300"
-                    >
-                      <animate
-                        attributeName="stroke-dashoffset"
-                        values="0;10"
-                        dur="2s"
-                        repeatCount="indefinite"
-                      />
-                    </line>
-                  ))}
-                </svg>
-
-                {/* Interactive Cubes */}
-                {cubeData.map((cube, index) => (
-                  <div
-                    key={cube.id}
-                    className={`absolute ${cube.position} ${cube.size} transform ${cube.rotation} cursor-pointer group z-10 transition-all duration-500`}
-                    style={{ 
-                      perspective: '1000px',
-                      animationDelay: `${index * 200}ms`,
-                      transform: `${cube.rotation} translate(${mousePosition.x * (index + 1) * 2}px, ${mousePosition.y * (index + 1) * 2}px)`
-                    }}
-                    onMouseEnter={() => setCubeHover(cube.id)}
-                    onMouseLeave={() => setCubeHover(null)}
-                  >
-                    <div 
-                      className="w-full h-full relative transform-gpu group-hover:scale-110 transition-all duration-300" 
-                      style={{ 
-                        transformStyle: 'preserve-3d', 
-                        transform: `rotateX(15deg) rotateY(-15deg) ${cubeHover === cube.id ? 'rotateY(25deg)' : ''}` 
-                      }}
-                    >
-                      {/* Front face */}
-                      <div className={`absolute inset-0 bg-gradient-to-br ${cube.color} rounded-lg shadow-2xl group-hover:shadow-orange-500/25`} />
-                      {/* Top face */}
-                      <div className={`absolute inset-0 bg-gradient-to-br ${cube.color.replace('400', '300').replace('500', '400')} rounded-lg origin-bottom transform -skew-x-12 -translate-y-2 shadow-xl opacity-80`} />
-                      {/* Right face */}
-                      <div className={`absolute inset-0 bg-gradient-to-br ${cube.color.replace('400', '500').replace('500', '600')} rounded-lg origin-left transform skew-y-12 translate-x-2 shadow-xl opacity-60`} />
-                      
-                      {/* Data overlay */}
-                      <div className={`absolute inset-0 flex flex-col items-center justify-center text-white text-xs font-bold transition-all duration-300 ${cubeHover === cube.id ? 'opacity-100' : 'opacity-0'}`}>
-                        <div className="text-center">
-                          <div className="mb-1">{cube.data}</div>
-                          <div className="text-orange-200">{cube.value}</div>
-                          <div className="text-green-300">{cube.change}</div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Hover glow effect */}
-                    <div className={`absolute inset-0 bg-gradient-to-br ${cube.color} rounded-lg blur-xl transition-all duration-300 ${cubeHover === cube.id ? 'opacity-50 scale-125' : 'opacity-0'}`} />
+              <div className="flex flex-wrap items-center justify-center gap-6 text-white/50">
+                {[
+                  { icon: <CheckCircle className="w-4 h-4 text-green-400" />, text: "Non-custodial" },
+                  { icon: <Zap className="w-4 h-4 text-yellow-400" />, text: "Lightning Fast" },
+                  { icon: <Award className="w-4 h-4 text-blue-400" />, text: "Industry Leading" },
+                  { icon: <Lock className="w-4 h-4 text-purple-400" />, text: "Bank-Grade Security" }
+                ].map((item, index) => (
+                  <div key={index} className="flex items-center gap-2 hover:text-white/70 transition-colors duration-300">
+                    {item.icon}
+                    <span className="text-sm font-medium">{item.text}</span>
                   </div>
                 ))}
-
-                {/* Center Large Cube - Main Hub */}
-                <div 
-                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 transform rotate-3 cursor-pointer group z-20"
-                  style={{ 
-                    perspective: '1000px',
-                    transform: `rotate(3deg) translate(${mousePosition.x * 5}px, ${mousePosition.y * 5}px)`
-                  }}
-                  onMouseEnter={() => setCubeHover('center')}
-                  onMouseLeave={() => setCubeHover(null)}
-                >
-                  <div 
-                    className="w-full h-full relative transform-gpu group-hover:scale-110 transition-all duration-500" 
-                    style={{ 
-                      transformStyle: 'preserve-3d', 
-                      transform: `rotateX(25deg) rotateY(-25deg) ${cubeHover === 'center' ? 'rotateY(45deg) rotateX(35deg)' : ''}` 
-                    }}
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-br from-orange-400 to-red-500 rounded-xl shadow-2xl group-hover:shadow-orange-500/50" />
-                    <div className="absolute inset-0 bg-gradient-to-br from-orange-300 to-red-400 rounded-xl origin-bottom transform -skew-x-12 -translate-y-4 shadow-xl opacity-80" />
-                    <div className="absolute inset-0 bg-gradient-to-br from-orange-500 to-red-600 rounded-xl origin-left transform skew-y-12 translate-x-4 shadow-xl opacity-60" />
-                    
-                    {/* Center icon */}
-                    <div className="absolute inset-0 flex items-center justify-center text-white">
-                      <div className={`transition-all duration-300 ${cubeHover === 'center' ? 'animate-spin' : ''}`}>
-                        <Zap className="w-8 h-8" />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Intense glow for center */}
-                  <div className={`absolute inset-0 bg-gradient-to-br from-orange-400 to-red-500 rounded-xl blur-2xl transition-all duration-500 ${cubeHover === 'center' ? 'opacity-70 scale-150' : 'opacity-30 scale-110'}`} />
-                </div>
-
-                {/* Ambient lighting effects */}
-                <div className="absolute inset-0 bg-gradient-radial from-orange-500/20 via-transparent to-transparent rounded-full blur-3xl animate-pulse" />
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-gradient-radial from-purple-500/10 via-transparent to-transparent rounded-full blur-2xl" />
               </div>
             </div>
           </div>
         </div>
-      </main>
+      </section>
 
-      {/* Interactive Scroll Indicator */}
-      <div className="absolute bottom-8 right-8 z-20">
-        <Button
-          isIconOnly
-          variant="ghost"
-          className="w-12 h-12 rounded-full border border-white/20 text-white hover:bg-white/10 transition-all duration-300 hover:scale-110 group"
-        >
-          <ChevronDown className="w-5 h-5 group-hover:animate-bounce" />
-        </Button>
-      </div>
-
-      {/* Dynamic Background Effects */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {/* Responsive gradient orbs */}
-        <div 
-          className="absolute w-96 h-96 bg-orange-500/10 rounded-full blur-3xl transition-all duration-1000"
-          style={{
-            top: `${25 + mousePosition.y * 5}%`,
-            left: `${25 + mousePosition.x * 5}%`
-          }}
-        />
-        <div 
-          className="absolute w-96 h-96 bg-purple-500/10 rounded-full blur-3xl transition-all duration-1000"
-          style={{
-            bottom: `${25 - mousePosition.y * 5}%`,
-            right: `${25 - mousePosition.x * 5}%`
-          }}
-        />
-        <div 
-          className="absolute w-64 h-64 bg-blue-500/10 rounded-full blur-2xl transition-all duration-1000"
-          style={{
-            top: `${50 + mousePosition.y * 3}%`,
-            right: `${33 + mousePosition.x * 3}%`
-          }}
-        />
-        
-        {/* Subtle Grid */}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.01)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.01)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_110%)]" />
-      </div>
-
+      {/* CSS Animations */}
       <style jsx>{`
-        .bg-gradient-radial {
-          background: radial-gradient(circle, var(--tw-gradient-stops));
-        }
-        
-        @keyframes twinkle {
-          0% { opacity: 0.2; transform: scale(0.5); }
-          50% { opacity: 1; transform: scale(1.2); }
-          100% { opacity: 0.2; transform: scale(0.5); }
-        }
-        
         .animate-in {
-          animation: slideIn 0.7s ease-out forwards;
+          animation-fill-mode: both;
         }
         
-        .slide-in-from-left {
-          transform: translateX(-50px);
-          opacity: 0;
+        .fade-in-50 {
+          animation: fadeIn 0.6s ease-out;
         }
         
-        @keyframes slideIn {
-          to {
-            transform: translateX(0);
-            opacity: 1;
-          }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
     </div>

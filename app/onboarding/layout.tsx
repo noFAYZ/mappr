@@ -1,15 +1,18 @@
-import { AuthGuard } from '@/components/shared/AuthGuard';
 import React from 'react';
+import { OnboardingProvider } from '@/contexts/OnboardingContext';
 
+interface OnboardingLayoutProps {
+  children: React.ReactNode;
+}
 
-const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-
-
-    return (
-      
-            <AuthGuard>{children} </AuthGuard>
-        
-    );
-};
-
-export default Layout;
+export default function OnboardingLayout({ children }: OnboardingLayoutProps) {
+  return (
+    <OnboardingProvider>
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-secondary/5 to-background">
+        <div className="relative z-10">
+          {children}
+        </div>
+      </div>
+    </OnboardingProvider>
+  );
+}

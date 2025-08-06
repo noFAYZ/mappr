@@ -1,4 +1,3 @@
-// components/WalletAnalytics/WalletDetails.tsx
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -213,7 +212,7 @@ const TransactionHistory = ({
     return transactions.filter(tx => tx.type === filter).slice(0, 10);
   }, [transactions, filter]);
 
-  const getTransactionIcon = (type: string) => {
+  const getTransactionIcon = useCallback((type: string) => {
     switch (type) {
       case 'send': return <Send className="w-4 h-4 text-danger-500" />;
       case 'receive': return <Download className="w-4 h-4 text-success-500" />;
@@ -221,10 +220,11 @@ const TransactionHistory = ({
       case 'approve': return <CheckCircle2 className="w-4 h-4 text-primary-500" />;
       default: return <Activity className="w-4 h-4 text-default-500" />;
     }
-  };
+  }, []);
 
-  const formatValue = (value: number) => 
-    showBalances ? `$${value?.toLocaleString() || '0'}` : '••••••';
+  const formatValue = useCallback((value: number) => 
+    showBalances ? `$${value?.toLocaleString() || '0'}` : '••••••'
+  , [showBalances]);
 
   if (!filteredTransactions.length) {
     return (
@@ -335,7 +335,23 @@ const WalletDetails: React.FC<WalletDetailsProps> = ({
   isRefreshing = false,
   isLoading = false
 }) => {
+  // All hooks must be called consistently at the top level
   const [selectedTab, setSelectedTab] = useState<TabKey>('tokens');
+
+  // Extract positions data - handle different data structures
+  // This useMemo must ALWAYS be called, regardless of data state
+  const positions = useMemo(() => {
+    if (!data) return [];
+    
+    // Try different possible data structures
+    if (Array.isArray(data.positions)) return data.positions;
+    if (Array.isArray(data.data)) return data.data;
+    if (data.portfolio?.positions && Array.isArray(data.portfolio.positions)) return data.portfolio.positions;
+    if (data.lastSyncData?.positions && Array.isArray(data.lastSyncData.positions)) return data.lastSyncData.positions;
+    
+    console.warn('WalletDetails: Unable to extract positions from data structure:', data);
+    return [];
+  }, [data]);
   
   // Reset tab when wallet changes
   useEffect(() => {
@@ -355,93 +371,37 @@ const WalletDetails: React.FC<WalletDetailsProps> = ({
     }
   }, [onRefresh, isRefreshing]);
 
-  // Show loading state if no data and currently loading
-  if (isLoading || (isRefreshing && !data)) {
-    return (
-      <Card className="border-none h-full">
-        <CardBody className="text-center py-16">
-          <div className="w-16 h-16 bg-gradient-to-br from-default-100 to-default-200 dark:from-default-800 dark:to-default-900 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <RefreshCw className="w-8 h-8 text-default-400 animate-spin" />
-          </div>
-          <h3 className="text-lg font-semibold mb-2">Loading wallet data...</h3>
-          <p className="text-default-500 mb-4">Fetching portfolio information for {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}</p>
-          <div className="flex items-center justify-center gap-2">
-            <Spinner size="sm" />
-            <span className="text-sm text-default-400">This may take a few moments</span>
-          </div>
-        </CardBody>
-      </Card>
-    );
-  }
-
-  // Show no data state only if not loading and no data
-  if (!isLoading && !data) {
-    return (
-      <Card className="border-none h-full">
-        <CardBody className="text-center py-16">
-          <div className="w-16 h-16 bg-gradient-to-br from-default-100 to-default-200 dark:from-default-800 dark:to-default-900 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <Clock className="w-8 h-8 text-default-400" />
-          </div>
-          <h3 className="text-lg font-semibold mb-2">No data available</h3>
-          <p className="text-default-500 mb-4">
-            Sync this wallet to view detailed portfolio information
-          </p>
-          <Button 
-            color="primary" 
-            onPress={handleRefresh} 
-            isLoading={isRefreshing}
-            startContent={!isRefreshing ? <RefreshCw className="w-4 h-4" /> : undefined}
-          >
-            {isRefreshing ? 'Syncing...' : 'Sync Wallet Now'}
-          </Button>
-        </CardBody>
-      </Card>
-    );
-  }
-
-  // Extract positions data - handle different data structures
-  const positions = useMemo(() => {
-    if (!data) return [];
-    
-    // Try different possible data structures
-    if (Array.isArray(data.positions)) return data.positions;
-    if (Array.isArray(data.data)) return data.data;
-    if (data.portfolio?.positions && Array.isArray(data.portfolio.positions)) return data.portfolio.positions;
-    if (data.lastSyncData?.positions && Array.isArray(data.lastSyncData.positions)) return data.lastSyncData.positions;
-    
-    console.warn('WalletDetails: Unable to extract positions from data structure:', data);
-    return [];
-  }, [data]);
+  console.log("Selected Tab:", data);
 
   return (
     <div className="space-y-6 h-full">
       {/* Portfolio Overview */}
       <WalletHeader 
+      
         data={data}
         address={wallet.address}
         showBalance={showBalances}
         onRefresh={handleRefresh}
-        refreshing={isRefreshing}    />
+        refreshing={isRefreshing || isLoading}
+        isLoading={isLoading}
+      />
 
       {/* Modern Tabbed Content */}
- 
-           {/* Modern Tabbed Content */}
       <ModernTabs
         selectedTab={selectedTab}
         onTabChange={setSelectedTab}
         nftCount={data?.nftPortfolio?.length || 0}
         tokenCount={positions.length}
-      
       >
         {selectedTab === 'tokens' && (
          <TokensList 
-         walletId={wallet.id}
-         positions={positions}
-         showBalance={showBalances}
-         isLoading={isLoading}
-         isRefreshing={isRefreshing}
-         onRefresh={handleRefresh}
-       />
+           walletId={wallet.id}
+           positions={positions}
+           showBalance={showBalances}
+           isLoading={isLoading}
+           isRefreshing={isRefreshing}
+           onRefresh={handleRefresh}
+         />
         )}
 
         {selectedTab === 'nfts' && (
@@ -457,12 +417,14 @@ const WalletDetails: React.FC<WalletDetailsProps> = ({
             showBalances={showBalances} 
           />
         )}
+
+        {selectedTab === 'analytics' && (
+          <AnalyticsTab 
+            data={data} 
+            showBalances={showBalances} 
+          />
+        )}
       </ModernTabs>
-
-
-
-        
-   
     </div>
   );
 };

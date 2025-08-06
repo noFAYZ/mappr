@@ -1,15 +1,14 @@
-import { AuthGuard } from '@/components/shared/AuthGuard';
 import React from 'react';
+import { DashboardProvider } from '@/contexts/DashboardContext';
 
+interface DashboardLayoutProps {
+  children: React.ReactNode;
+}
 
-const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-
-
-    return (
-      
-            <AuthGuard>{children} </AuthGuard>
-        
-    );
-};
-
-export default Layout;
+export default function DashboardLayout({ children }: DashboardLayoutProps) {
+  return (
+    <DashboardProvider>
+      {children}
+    </DashboardProvider>
+  );
+}

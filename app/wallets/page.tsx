@@ -1,276 +1,325 @@
-'use client'
+'use client';
+
 import React, { useState, useMemo, useCallback } from 'react';
-import { Card, CardBody, CardHeader } from '@heroui/card';
+import { Card, CardBody } from '@heroui/card';
 import { Button } from '@heroui/button';
 import { Input } from '@heroui/input';
 import { Chip } from '@heroui/chip';
 import { useDisclosure } from '@heroui/modal';
-import { Spinner } from '@heroui/spinner';
-import { Avatar } from '@heroui/avatar';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from '@heroui/dropdown';
-import { Progress } from '@heroui/progress';
 import { Tooltip } from '@heroui/tooltip';
 import { Divider } from '@heroui/divider';
-import { 
-  Eye, 
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Eye,
   EyeOff,
-  Plus, 
-  RefreshCw, 
+  Plus,
+  RefreshCw,
   Search,
   Filter,
+  SortAsc,
+  MoreVertical,
+  Wallet,
   TrendingUp,
   TrendingDown,
-  Wallet,
-  Coins,
-  MoreVertical,
-  Trash2,
-  Copy,
-  ExternalLink,
-  AlertTriangle,
   Activity,
-  BarChart3,
   Globe,
-  DollarSign,
-  ArrowUpRight,
-  ArrowDownRight,
-  Clock,
-  ChevronDown,
   CheckCircle2,
   AlertCircle,
-  SortAsc
+  Clock,
+  ChevronDown
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { toast } from 'sonner';
+
 import { useWalletAnalytics, usePortfolioOverview } from '@/lib/hooks/useWalletAnalytics';
-import { useUIStore } from '@/stores/ui';
 import AddWalletModal from '@/components/wallets/AddWalletModal';
 import WalletDetails from '@/components/wallets/WalletDetails';
 import WalletCard from '@/components/wallets/WalletCard';
 import WalletPageLoader from '@/components/wallets/WalletPageLoader';
 import EmptyState from '@/components/wallets/EmptyState';
 import PortfolioOverview from '@/components/wallets/PortfolioOverviewCards';
+import { Spinner } from '@heroui/spinner';
+import { SolarWalletBoldDuotone } from '@/components/icons/icons';
+
+// Types
+interface FilterOptions {
+  status: 'all' | 'synced' | 'error' | 'pending';
+  sortBy: 'name' | 'value' | 'lastSync' | 'created';
+  sortOrder: 'asc' | 'desc';
+}
+
+// Portfolio Header Component
+const PortfolioHeader: React.FC<{
+  portfolioSummary: any;
+  showBalances: boolean;
+  onRefreshAll: () => void;
+  isRefreshing: boolean;
+  onToggleBalances: () => void;
+  onAddWallet: () => void;
+}> = ({
+  portfolioSummary,
+  showBalances,
+  onRefreshAll,
+  isRefreshing,
+  onToggleBalances,
+  onAddWallet
+}) => {
+  return (
+    <Card className="border-none bg-transparent shadow-none ">
+   
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+          {/* Portfolio Overview */}
+          <div className="flex-1">
+            <PortfolioOverview
+              summary={portfolioSummary}
+              showBalances={showBalances}
+              onRefreshAll={onRefreshAll}
+              isRefreshing={isRefreshing}
+            />
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center gap-3">
+            <Tooltip content={showBalances ? 'Hide balances' : 'Show balances'}>
+              <Button
+                variant="faded"
+                size="sm"
+                isIconOnly
+                onPress={onToggleBalances}
+                className="bg-background/50 backdrop-blur-sm rounded-full"
+              >
+                {showBalances ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+              </Button>
+            </Tooltip>
+
+            <Tooltip content="Sync all wallets">
+              <Button
+                variant="faded"
+                size="sm"
+                isIconOnly
+                onPress={onRefreshAll}
+                isLoading={isRefreshing}
+                className="bg-background/50 backdrop-blur-sm rounded-full"
+              >
+                <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              </Button>
+            </Tooltip>
+
+            <Button
+              color="primary"
+              size="sm"
+              startContent={<Plus className="w-4 h-4" />}
+              onPress={onAddWallet}
+              className="bg-gradient-to-r from-primary-500 to-pink-500 text-white"
+            >
+              Add Wallet
+            </Button>
+          </div>
+        </div>
+     
+    </Card>
+  );
+};
+
+// Filters Component
+const WalletFilters: React.FC<{
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
+  filters: FilterOptions;
+  onFiltersChange: (filters: FilterOptions) => void;
+  walletCount: number;
+}> = ({ searchQuery, onSearchChange, filters, onFiltersChange, walletCount }) => {
+  const statusOptions = [
+    { key: 'all', label: 'All Wallets' },
+    { key: 'synced', label: 'Synced' },
+    { key: 'error', label: 'Error' },
+    { key: 'pending', label: 'Pending' }
+  ];
+
+  const sortOptions = [
+    { key: 'name', label: 'Name' },
+    { key: 'value', label: 'Value' },
+    { key: 'lastSync', label: 'Last Sync' },
+    { key: 'created', label: 'Date Added' }
+  ];
+
+  return (
+   
+        <div className="flex flex-col sm:flex-row gap-4">
+          {/* Search */}
+          <div className="flex-1">
+            <Input
+              placeholder="Search wallets..."
+              value={searchQuery}
+              onValueChange={onSearchChange}
+              startContent={<Search className="w-4 h-4 text-default-400 " />}
+              variant="faded"
+              size='md'
+              className="w-full border-divider "
+            />
+          </div>
+
+          {/* Filters */}
+          <div className="flex items-center gap-2">
+            {/* Status Filter */}
+            <Dropdown>
+              <DropdownTrigger>
+                <Button
+                  variant="faded"
+                  size="sm"
+                  endContent={<ChevronDown className="w-4 h-4" />}
+                  className="capitalize"
+                >
+                  <Filter className="w-4 h-4 mr-1" />
+                  {statusOptions.find(opt => opt.key === filters.status)?.label}
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu
+                selectedKeys={[filters.status]}
+                onSelectionChange={(keys) => 
+                  onFiltersChange({ ...filters, status: Array.from(keys)[0] as any })
+                }
+              >
+                {statusOptions.map(option => (
+                  <DropdownItem key={option.key}>{option.label}</DropdownItem>
+                ))}
+              </DropdownMenu>
+            </Dropdown>
+
+            {/* Sort */}
+            <Dropdown>
+              <DropdownTrigger>
+                <Button
+                  variant="faded"
+                  size="sm"
+                  endContent={<ChevronDown className="w-4 h-4" />}
+                  className="capitalize"
+                >
+                  <SortAsc className="w-4 h-4 mr-1" />
+                  {sortOptions.find(opt => opt.key === filters.sortBy)?.label}
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu
+                selectedKeys={[filters.sortBy]}
+                onSelectionChange={(keys) => 
+                  onFiltersChange({ ...filters, sortBy: Array.from(keys)[0] as any })
+                }
+              >
+                {sortOptions.map(option => (
+                  <DropdownItem key={option.key}>{option.label}</DropdownItem>
+                ))}
+              </DropdownMenu>
+            </Dropdown>
+
+            {/* Sort Order */}
+            <Button
+              variant="faded"
+              size="sm"
+              radius="full"
+              isIconOnly
+              onPress={() => 
+                onFiltersChange({ 
+                  ...filters, 
+                  sortOrder: filters.sortOrder === 'asc' ? 'desc' : 'asc' 
+                })
+              }
+              className="capitalize"
+            >
+              <TrendingUp className={`w-4 h-4 transition-transform ${filters.sortOrder === 'desc' ? 'rotate-180' : ''}`} />
+            </Button>
+          </div>
+        </div>
 
 
-// Left Panel - Wallets List
-const WalletsList = ({ 
-  wallets, 
-  walletData, 
-  selectedWallet, 
-  onSelectWallet, 
-  showBalances, 
-  searchQuery, 
-  onSearchChange,
-  filterStatus,
-  onFilterChange,
-  sortBy, 
-  onSortChange,
+    
+  );
+};
+
+// Wallets List Component
+const WalletsList: React.FC<{
+  wallets: any[];
+  selectedWallet: any;
+  onSelectWallet: (wallet: any) => void;
+  showBalances: boolean;
+  onSyncWallet: (walletId: string) => void;
+  onRemoveWallet: (walletId: string) => void;
+  isWalletSyncing: (walletId: string) => boolean;
+}> = ({
+  wallets,
+  selectedWallet,
+  onSelectWallet,
+  showBalances,
   onSyncWallet,
   onRemoveWallet,
   isWalletSyncing
 }) => {
-  const formatValue = (value) => showBalances ? `$${value?.toLocaleString() || '0'}` : '••••••';
-  const formatPercent = (value) => {
-    if (!showBalances) return '••%';
-    const sign = value >= 0 ? '+' : '';
-    return `${sign}${value?.toFixed(2) || '0'}%`;
-  };
-
-  const filteredWallets = useMemo(() => {
-    let filtered = wallets.filter(wallet => {
-      const matchesSearch = !searchQuery || 
-        wallet.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        wallet.address.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesFilter = filterStatus === 'all' || wallet.sync_status === filterStatus;
-      return matchesSearch && matchesFilter;
-    });
-
-    filtered.sort((a, b) => {
-      const aData = walletData[a.id];
-      const bData = walletData[b.id];
-      
-      switch (sortBy) {
-        case 'value':
-          return (bData?.portfolio?.totalValue || 0) - (aData?.portfolio?.totalValue || 0);
-        case 'name':
-          return (a.name || '').localeCompare(b.name || '');
-        case 'change':
-          return (bData?.portfolio?.totalChange || 0) - (aData?.portfolio?.totalChange || 0);
-        default:
-          return 0;
-      }
-    });
-
-    return filtered;
-  }, [wallets, walletData, searchQuery, filterStatus, sortBy]);
-
+  if (wallets.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 text-center">
+        <Search className="w-12 h-12 text-default-300 mb-4" />
+        <h3 className="text-lg font-semibold mb-2">No wallets found</h3>
+        <p className="text-default-500 text-sm">
+          Try adjusting your search or filter criteria
+        </p>
+      </div>
+    );
+  }
+ 
   return (
-    <div className=" flex flex-col space-y-2">
-        {/* Enhanced Header */}
-        <div
-      >
-        {/* Search Bar */}
-        <div className="mb-1">
-          <Input
-          variant='faded'
-            placeholder="Search wallets by name or address..."
-            value={searchQuery}
-            onValueChange={onSearchChange}
-            startContent={<Search className="w-4 h-4 text-default-400" />}
-            classNames={{
-            
-            }}
-            isClearable
-            size="md"
-          />
-        </div>
-   
-        {/* Controls Row */}
-        <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
-          <div className="flex gap-2 flex-wrap">
-            <Dropdown classNames={{
-              content:'max-w-fit text-xs',
-            }}>
-              <DropdownTrigger>
-                <Button 
-                  size="sm" 
-                  variant="faded" 
-                  startContent={<Filter className="w-3.5 h-3.5 text-default-600" />}
-                  endContent={<ChevronDown className="w-3.5 h-3.5 text-default-600" />}
-                  className=" text-default-600"
-                >
-                  {filterStatus === 'all' ? 'All' : filterStatus}
-                </Button>
-              </DropdownTrigger>
-              <DropdownMenu
-                selectedKeys={[filterStatus]}
-                onSelectionChange={(keys) => onFilterChange(Array.from(keys)[0])}
-                
-              >
-                <DropdownItem key="all">All Status</DropdownItem>
-                <DropdownItem key="success" startContent={<CheckCircle2 className="w-3.5 h-3.5 text-success" />}>
-                  Synced
-                </DropdownItem>
-                <DropdownItem key="syncing" startContent={<RefreshCw className="w-3.5 h-3.5 text-warning" />}>
-                  Syncing
-                </DropdownItem>
-                <DropdownItem key="error" startContent={<AlertCircle className="w-3.5 h-3.5 text-danger" />}>
-                  Error
-                </DropdownItem>
-              </DropdownMenu>
-            </Dropdown>
-   
-            <Dropdown>
-              <DropdownTrigger>
-                <Button 
-                  size="sm" 
-                  variant="faded" 
-                  startContent={<SortAsc className="w-3.5 h-3.5" />}
-                  endContent={<ChevronDown className="w-3.5 h-3.5" />}
-                  className="text-default-600"
-                >
-                  Sort
-                </Button>
-              </DropdownTrigger>
-              <DropdownMenu
-                selectedKeys={[sortBy]}
-                onSelectionChange={(keys) => onSortChange(Array.from(keys)[0])}
-                className="min-w-36"
-              >
-                <DropdownItem key="value" startContent={<TrendingUp className="w-3.5 h-3.5" />}>
-                  Portfolio Value
-                </DropdownItem>
-                <DropdownItem key="name" startContent={<Wallet className="w-3.5 h-3.5" />}>
-                  Name
-                </DropdownItem>
-                <DropdownItem key="change" startContent={<TrendingUp className="w-3.5 h-3.5" />}>
-                  Change %
-                </DropdownItem>
-              </DropdownMenu>
-            </Dropdown>
-          </div>
-   
-          <div className="text-xs text-default-500 font-medium">
-            {filteredWallets.length} wallet{filteredWallets.length !== 1 ? 's' : ''}
-          </div>
-        </div>
-      </div>
-      {/* Wallets List */}
-      <div className="flex-1 space-y-2">
-        <AnimatePresence>
-          {filteredWallets.map((wallet, index) => {
-            const data = walletData[wallet.id];
-            const isSelected = selectedWallet?.id === wallet.id;
-            const isSyncing = isWalletSyncing(wallet.id);
-
-            return (
-              <motion.div
-                key={wallet.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.2, delay: index * 0.05 }}
-              >
-                <WalletCard
-                  wallet={wallet}
-                  data={data}
-                  isSelected={isSelected}
-                  isSyncing={isSyncing}
-                  showBalances={showBalances}
-                  onSelect={onSelectWallet}
-                  onSync={onSyncWallet}
-                  onRemove={onRemoveWallet}
-              
-                />
-            
-              </motion.div>
-            );
-          })}
-        </AnimatePresence>
-
-        {filteredWallets.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-64 text-center p-6">
-            <Search className="w-12 h-12 text-default-300 mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No wallets found</h3>
-            <p className="text-default-600 text-sm mb-4">
-              Try adjusting your search or filter criteria
-            </p>
-          </div>
-        )}
-      </div>
+    <div className="space-y-3">
+      <AnimatePresence mode="popLayout">
+        {wallets.map((wallet, index) => (
+          <motion.div
+            key={wallet.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.2, delay: index * 0.05 }}
+          >
+            <WalletCard
+              wallet={wallet}
+              data={ wallet?.wallet_portfolio_summary} // Data will be loaded when selected
+              isSelected={selectedWallet?.id === wallet.id}
+              isSyncing={isWalletSyncing(wallet.id)}
+              showBalances={showBalances}
+              onSelect={onSelectWallet}
+              onSync={onSyncWallet}
+              onRemove={onRemoveWallet}
+              viewMode="list"
+            />
+          </motion.div>
+        ))}
+      </AnimatePresence>
     </div>
   );
 };
 
-// Right Panel - Wallet Details Container
-const WalletDetailsPanel = ({ wallet, data, showBalances, onRefresh, isRefreshing }) => {
-  // Format helper functions
-  const formatCurrency = (value) => {
-    if (!showBalances) return '••••••';
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(value || 0);
-  };
-
-  const formatPercentage = (value) => {
-    if (!showBalances) return '•••%';
-    const sign = value >= 0 ? '+' : '';
-    return `${sign}${(value || 0).toFixed(2)}%`;
-  };
-
-  if (!wallet) {
+// Wallet Details Panel Component
+const WalletDetailsPanel: React.FC<{
+  wallet: any;
+  data: any;
+  showBalances: boolean;
+  onRefresh: () => void;
+  isRefreshing: boolean;
+  isLoading?: boolean;
+}> = ({ wallet, data, showBalances, onRefresh, isRefreshing, isLoading }) => {
+  if (!wallet && !data) {
     return (
-      <div className=" flex items-center justify-center text-center p-8">
-        <div>
-          <Wallet className="w-16 h-16 text-default-300 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold mb-2">Select a wallet</h3>
-          <p className="text-default-600">Choose a wallet from the list to view its details</p>
-        </div>
-      </div>
+      <Card className="border-none bg-content1 h-full">
+        <CardBody className="flex items-center justify-center p-12">
+          <div className="text-center">
+            <SolarWalletBoldDuotone className="w-16 h-16 text-default-300 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Select a wallet</h3>
+            <p className="text-default-500">
+              Choose a wallet from the list to view its details
+            </p>
+          </div>
+        </CardBody>
+      </Card>
     );
   }
+
+
+  
 
   return (
     <WalletDetails
@@ -279,146 +328,135 @@ const WalletDetailsPanel = ({ wallet, data, showBalances, onRefresh, isRefreshin
       showBalances={showBalances}
       onRefresh={onRefresh}
       isRefreshing={isRefreshing}
-      formatCurrency={formatCurrency}
-      formatPercentage={formatPercentage}
+      isLoading={isLoading}
+      
     />
   );
 };
 
 // Main Wallets Page Component
 export default function WalletsPage() {
+  // State
   const [showBalances, setShowBalances] = useState(true);
-
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
-  const [sortBy, setSortBy] = useState('value');
-  
-  const { isOpen: isAddModalOpen, onOpen: onAddModalOpen, onOpenChange: onAddModalOpenChange } = useDisclosure();
-  const { addNotification } = useUIStore();
+  const [filters, setFilters] = useState<FilterOptions>({
+    status: 'all',
+    sortBy: 'lastSync',
+    sortOrder: 'desc'
+  });
 
+  // Hooks
+  const { isOpen: isAddModalOpen, onOpen: onAddModalOpen, onOpenChange: onAddModalOpenChange } = useDisclosure();
+  
   const {
     wallets,
+    selectedWallet,
+    selectedWalletData,
     loading,
+    loadingWallets,
+
     error,
     addWallet,
     removeWallet,
     syncWallet,
     syncAllWallets,
     isWalletSyncing,
-    setSelectedWallet,
-    selectedWallet,
-    syncing,
-
-
-    walletData
+    selectWallet
   } = useWalletAnalytics();
 
   const { portfolioSummary } = usePortfolioOverview();
 
 
-  
-  // Format helper functions
-  const formatCurrency = useCallback((value) => {
-    if (!showBalances) return '••••••';
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(value || 0);
-  }, [showBalances]);
-
-  const formatPercentage = useCallback((value) => {
-    if (!showBalances) return '•••%';
-    const sign = value >= 0 ? '+' : '';
-    return `${sign}${(value || 0).toFixed(2)}%`;
-  }, [showBalances]);
 
   // Handlers
-  const handleSyncWallet = useCallback(async (walletId) => {
+  const handleAddWallet = useCallback(async (address: string, name?: string): Promise<void> => {
     try {
-      await syncWallet(walletId);
-      addNotification({
-        type: 'success',
-        title: 'Wallet Synced',
-        message: 'Wallet data has been updated successfully.'
-      });
-    } catch (error) {
-      addNotification({
-        type: 'error',
-        title: 'Sync Failed',
-        message: error.message || 'Failed to sync wallet data.'
-      });
-    }
-  }, [syncWallet, addNotification]);
-
-  const handleSyncAll = useCallback(async () => {
-    try {
-      await syncAllWallets();
-      addNotification({
-        type: 'success',
-        title: 'All Wallets Synced',
-        message: 'All wallet data has been updated successfully.'
-      });
-    } catch (error) {
-      addNotification({
-        type: 'error',
-        title: 'Sync Failed',
-        message: 'Some wallets failed to sync. Please try again.'
-      });
-    }
-  }, [syncAllWallets, addNotification]);
-
-  const handleRemoveWallet = useCallback(async (walletId) => {
-    try {
-      await removeWallet(walletId);
-      if (selectedWallet?.id === walletId) {
-        setSelectedWallet(null);
-      }
-      addNotification({
-        type: 'success',
-        title: 'Wallet Removed',
-        message: 'Wallet has been removed from your portfolio.'
-      });
-    } catch (error) {
-      addNotification({
-        type: 'error',
-        title: 'Remove Failed',
-        message: error.message || 'Failed to remove wallet.'
-      });
-    }
-  }, [removeWallet, selectedWallet, addNotification]);
-
-  const handleAddWallet = useCallback(async (address, name) => {
-
-    
-    try {
-      const newWallet = await addWallet(address, name);
-      if (newWallet) {
-        setSelectedWallet(newWallet);
-        addNotification({
-          type: 'success',
-          title: 'Wallet Added',
-          message: 'Wallet has been added to your portfolio.'
-        });
+      const success = await addWallet(address, name);
+      if (success) {
+        onAddModalOpenChange(false);
       }
     } catch (error) {
-      addNotification({
-        type: 'error',
-        title: 'Add Failed',
-        message: error.message || 'Failed to add wallet.'
-      });
-      throw error; // Re-throw so modal can handle it
+      throw error; // Let modal handle the error
     }
-  }, [addWallet, addNotification]);
+  }, [addWallet, onAddModalOpenChange]);
+
+  const handleSyncWallet = useCallback(async (walletId: string): Promise<void> => {
+    await syncWallet(walletId,{chartPeriod:'week'});
+  }, [syncWallet]);
+
+  const handleSyncAll = useCallback(async (): Promise<void> => {
+    await syncAllWallets();
+  }, [syncAllWallets]);
+
+  const handleRemoveWallet = useCallback(async (walletId: string): Promise<void> => {
+    await removeWallet(walletId);
+  }, [removeWallet]);
+
+  const handleSelectWallet = useCallback((wallet: any): void => {
+    selectWallet(wallet);
+  }, [selectWallet]);
+
+  // Computed values
+  const filteredAndSortedWallets = useMemo(() => {
+    let filtered = wallets.filter(wallet => {
+      // Search filter
+      const matchesSearch = !searchQuery || 
+        wallet.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        wallet.address?.toLowerCase().includes(searchQuery.toLowerCase());
+
+      // Status filter
+      const matchesStatus = filters.status === 'all' || wallet.sync_status === filters.status;
+
+      return matchesSearch && matchesStatus;
+    });
+
+    // Sort
+    filtered.sort((a, b) => {
+      let aValue, bValue;
+
+      switch (filters.sortBy) {
+        case 'name':
+          aValue = a.name || a.address;
+          bValue = b.name || b.address;
+          break;
+        case 'lastSync':
+          aValue = a.last_sync_at ? new Date(a.last_sync_at).getTime() : 0;
+          bValue = b.last_sync_at ? new Date(b.last_sync_at).getTime() : 0;
+          break;
+        case 'created':
+          aValue = new Date(a.created_at).getTime();
+          bValue = new Date(b.created_at).getTime();
+          break;
+        default:
+          aValue = 0;
+          bValue = 0;
+      }
+
+      if (typeof aValue === 'string') {
+        return filters.sortOrder === 'asc' 
+          ? aValue.localeCompare(bValue as string)
+          : (bValue as string).localeCompare(aValue);
+      }
+
+      return filters.sortOrder === 'asc' 
+        ? (aValue as number) - (bValue as number)
+        : (bValue as number) - (aValue as number);
+    });
+
+    return filtered;
+  }, [wallets, searchQuery, filters]);
+
+  const isAnySyncing = useMemo(() => {
+    return wallets.some(wallet => isWalletSyncing(wallet.id));
+  }, [wallets, isWalletSyncing]);
 
   // Loading state
-  if (loading ) {
+  if (loadingWallets ) {
     return <WalletPageLoader />;
   }
 
   // Empty state
-  if (wallets?.length<0 && !loading) {
+  if (wallets.length === 0 && !loading) {
     return (
       <div className="p-6">
         <EmptyState onAddWallet={onAddModalOpen} />
@@ -432,98 +470,55 @@ export default function WalletsPage() {
   }
 
   return (
-    <div className="space-y-4">
-      {/* Portfolio Overview */}
-
-      
-     
-      <Card className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 px-6 py-2 rounded-2xl border border-divider ">
-        <div className="flex items-center gap-2">
-    
-           <PortfolioOverview
-        summary={portfolioSummary}
+    <div className="p-6 space-y-6">
+      {/* Portfolio Header */}
+      <PortfolioHeader
+        portfolioSummary={portfolioSummary}
         showBalances={showBalances}
         onRefreshAll={handleSyncAll}
-        isRefreshing={syncing}
+        isRefreshing={isAnySyncing}
+        onToggleBalances={() => setShowBalances(!showBalances)}
+        onAddWallet={onAddModalOpen}
       />
-     
-        </div>
 
-        <div className="flex items-center justify-center gap-2">
-          <Tooltip content={showBalances ? 'Hide balances' : 'Show balances'}>
-            <Button
-             variant="faded"
-             size='sm'
-             radius='full'
-              isIconOnly
-            
-              onPress={() => setShowBalances(!showBalances)}
-            >
-              {showBalances ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-            </Button>
-          </Tooltip>
-          <Tooltip content={'Sync All'}>
-          <Button
-            variant="faded"
-            size='sm'
-            radius='full'
-            startContent={<RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />}
-            onPress={handleSyncAll}
-           
-            isIconOnly
-          >
-          
-          </Button>  
-           </Tooltip>
+      {/* Filters
+      <WalletFilters
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        filters={filters}
+        onFiltersChange={setFilters}
+        walletCount={filteredAndSortedWallets.length}
+      /> */}
 
-           <Button
-            color="primary"
-            size='sm'
-            startContent={<Plus className="w-4 h-4" />}
-            onPress={onAddModalOpen}
-            className="bg-gradient-to-br from-primary-500 to-pink-500 h-8 rounded-none"
-          >
-            Add Wallet
-          </Button>
-        </div>
-      </Card>
-
-      {/* Split Pane Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-280px)]">
+      {/* Main Content - Split Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[calc(100vh-400px)]">
         {/* Left Panel - Wallets List */}
         <div className="lg:col-span-4 xl:col-span-4">
-      
-         
+          <Card className="border-none bg-content1 ">
+            <CardBody className="p-4">
               <WalletsList
                 wallets={wallets}
-                walletData={walletData}
-                selectedWallet={selectedWallet}
-                onSelectWallet={setSelectedWallet}
+                selectedWallet={selectedWalletData}
+                onSelectWallet={handleSelectWallet}
                 showBalances={showBalances}
-                searchQuery={searchQuery}
-                onSearchChange={setSearchQuery}
-                filterStatus={filterStatus}
-                onFilterChange={setFilterStatus}
-                sortBy={sortBy}
-                onSortChange={setSortBy}
                 onSyncWallet={handleSyncWallet}
                 onRemoveWallet={handleRemoveWallet}
                 isWalletSyncing={isWalletSyncing}
               />
-         
+            </CardBody>
+          </Card>
         </div>
 
         {/* Right Panel - Wallet Details */}
-        <div className="lg:col-span-8 xl:col-span-8">
-    
-              <WalletDetailsPanel
-                wallet={selectedWallet}
-                data={selectedWallet ? walletData[selectedWallet.id] : null}
-                showBalances={showBalances}
-                onRefresh={() => selectedWallet && handleSyncWallet(selectedWallet.id)}
-                isRefreshing={selectedWallet ? isWalletSyncing(selectedWallet.id) : false}
-              />
-     
+        <div className="lg:col-span-8 xl:col-span-8 ">
+          <WalletDetailsPanel
+            wallet={selectedWallet}
+            data={selectedWalletData}
+            showBalances={showBalances}
+            onRefresh={() => selectedWallet && handleSyncWallet(selectedWallet.id)}
+            isRefreshing={selectedWallet ? isWalletSyncing(selectedWallet.id) : false}
+            isLoading={loading}
+          />
         </div>
       </div>
 
@@ -531,39 +526,24 @@ export default function WalletsPage() {
       <AddWalletModal
         isOpen={isAddModalOpen}
         onOpenChange={onAddModalOpenChange}
-        onAddWallet={handleAddWallet}
+        onAdd={handleAddWallet}
       />
-     
 
       {/* Error Display */}
       {error && (
         <motion.div
-          initial={{ opacity: 0, y: 50 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 50 }}
-          className="fixed bottom-6 left-6 right-6 lg:left-auto lg:w-96"
+          className="fixed bottom-6 right-6 z-50"
         >
-          <Card className="border-l-4 border-l-danger bg-danger-50 dark:bg-danger-950">
+          <Card className="border-danger bg-danger-50 dark:bg-danger-950">
             <CardBody className="p-4">
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="w-5 h-5 text-danger-600 dark:text-danger-400 flex-shrink-0 mt-0.5" />
-                <div className="flex-1">
-                  <p className="font-medium text-danger-700 dark:text-danger-300">
-                    Error loading wallets
-                  </p>
-                  <p className="text-sm text-danger-600 dark:text-danger-400 mt-1">
-                    {error}
-                  </p>
+              <div className="flex items-center gap-3">
+                <AlertCircle className="w-5 h-5 text-danger" />
+                <div>
+                  <p className="text-sm font-medium text-danger">Error</p>
+                  <p className="text-xs text-danger-600">{error}</p>
                 </div>
-                <Button
-                  isIconOnly
-                  size="sm"
-                  variant="light"
-                  color="danger"
-                  onPress={() => window.location.reload()}
-                >
-                  <RefreshCw className="w-4 h-4" />
-                </Button>
               </div>
             </CardBody>
           </Card>

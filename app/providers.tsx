@@ -2,21 +2,17 @@
 
 import * as React from "react";
 import { HeroUIProvider } from "@heroui/react";
-import { useRouter } from "next/navigation";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ErrorBoundary } from "@/components/layout/ErrorBoundary";
 
-export interface ProvidersProps {
-  children: React.ReactNode;
-}
-
-// Create a stable QueryClient instance
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 60 * 1000, // 1 minute
-      refetchOnWindowFocus: false,
-      retry: 1,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes
+      retry: 3,
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
     },
     mutations: {
       retry: 1,
@@ -24,21 +20,26 @@ const queryClient = new QueryClient({
   },
 });
 
-export function Providers({ children }: ProvidersProps) {
-  const router = useRouter();
+export interface ProvidersProps {
+  children: React.ReactNode;
+}
 
+export function Providers({ children }: ProvidersProps) {
   return (
-    <QueryClientProvider client={queryClient}>
-      <HeroUIProvider navigate={router.push}>
-        <NextThemesProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          themes={['light', 'dark']}
-        >
-          {children}
-        </NextThemesProvider>
-      </HeroUIProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <HeroUIProvider>
+          <NextThemesProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            {children}
+           
+          </NextThemesProvider>
+        </HeroUIProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }

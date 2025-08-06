@@ -37,22 +37,9 @@ interface WalletCardProps {
     name?: string;
     sync_status: 'synced' | 'syncing' | 'error' | 'stale';
     isWatchOnly?: boolean;
+    wallet_portfolio_summary?: any;
   };
-  data?: {
-    portfolio?: {
-      totalValue?: {
-        positions?: number;
-      };
-      dayChangePercent?: number;
-    };
-    metadata?: {
-      positionsCount?: number;
-      chainsCount?: number;
-      nftsCount?: number;
-      lastSyncAt?: string;
-    };
-    networks?: string[];
-  };
+
   showBalances?: boolean;
   isSelected?: boolean;
   onSelect?: (wallet: any) => void;
@@ -123,13 +110,16 @@ const PerformanceIndicator: React.FC<PerformanceIndicatorProps> = ({ change24h, 
 
   const isPositive = change24h >= 0;
   const color = isPositive ? 'text-success-600' : 'text-danger-700';
-  const bgColor = isPositive ? 'bg-success-100 dark:bg-success-900' : 'bg-danger-100 dark:bg-danger-400/20';
+  const bgColor = isPositive ? 'bg-success-200/50 dark:bg-success-100' : 'bg-danger-100 dark:bg-danger-400/20';
   const Icon = isPositive ? TrendingUp : TrendingDown;
 
   return (
     <Chip 
 
-      className={`flex items-center  h-5 px-0 rounded-md text-[10px] font-semibold ${bgColor} ${color}`}
+      className={`flex items-center  h-5 px-0 rounded-md text-[10px] font-bold ${bgColor} ${color}`}
+      classNames={{
+        content: 'font-medium',
+      }}
      
     >
     
@@ -362,7 +352,7 @@ const WalletActions: React.FC<{
 // Grid View Component - Fixed button nesting issue
 const GridView: React.FC<WalletCardProps> = ({
   wallet,
-  data,
+
   showBalances = true,
   isSelected = false,
   onSelect,
@@ -385,13 +375,20 @@ const GridView: React.FC<WalletCardProps> = ({
     return count?.toString() || '0';
   }, [showBalances]);
 
-  const portfolioValue = data?.portfolio?.totalValue?.positions || 0;
-  const change24h = data?.portfolio?.dayChangePercent;
-  const positionsCount = data?.metadata?.positionsCount || 0;
-  const chainsCount = data?.metadata?.chainsCount || 0;
-  const nftsCount = data?.metadata?.nftsCount || 0;
-  const lastSyncAt = data?.metadata?.lastSyncAt;
-  const networks = data?.networks || ['ethereum'];
+  const portfolioValue = wallet?.wallet_portfolio_summary
+  ?.totalValue?.positions || 0;
+  const change24h = wallet?.wallet_portfolio_summary
+  ?.dayChangePercent;
+  const positionsCount = wallet?.wallet_portfolio_summary
+  ?.positionsCount || 0;
+  const chainsCount = wallet?.wallet_portfolio_summary
+  ?.chainsCount || 0;
+  const nftsCount = wallet?.wallet_portfolio_summary
+  ?.nftsCount || 0;
+  const lastSyncAt = wallet?.wallet_portfolio_summary
+  ?.lastSyncAt;
+  const networks = wallet?.wallet_portfolio_summary
+  || ['ethereum'];
 
   const avatarGradient = useMemo(() => {
     const gradients = [
@@ -584,7 +581,7 @@ const GridView: React.FC<WalletCardProps> = ({
 // List View Component - Fixed button nesting issue
 const ListView: React.FC<WalletCardProps> = ({
   wallet,
-  data,
+
   showBalances = true,
   isSelected = false,
   onSelect,
@@ -607,11 +604,11 @@ const ListView: React.FC<WalletCardProps> = ({
     return count?.toString() || '0';
   }, [showBalances]);
 
-  const portfolioValue = data?.portfolio?.totalValue || 0;
-  const change24h = data?.portfolio?.dayChangePercent;
-  const positionsCount = data?.metadata?.positionsCount || 0;
-  const chainsCount = data?.metadata?.chainsCount || 0;
-  const nftsCount = data?.metadata?.nftsCount || 0;
+  const portfolioValue = wallet?.wallet_portfolio_summary?.total_value || 0;
+  const change24h = wallet?.wallet_portfolio_summary?.day_change_percent || 0;
+  const positionsCount = wallet?.wallet_portfolio_summary?.positions_count || 0;
+  const chainsCount = wallet?.wallet_portfolio_summary?.chains_count || 0;
+  const nftsCount = wallet?.wallet_portfolio_summary?.nft_count || 0;
 
   const avatarGradient = useMemo(() => {
     const gradients = [
@@ -641,7 +638,7 @@ const ListView: React.FC<WalletCardProps> = ({
     onSelect?.(wallet);
     onViewDetails?.(wallet);
   }, [onSelect, wallet]);
-
+ 
 
   return (
     <motion.div

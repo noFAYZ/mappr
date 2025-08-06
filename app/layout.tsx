@@ -13,6 +13,8 @@ import { NavigationProvider } from "@/contexts/NavigationContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { Toaster } from "@/components/ui/sonner";
 import ModernToastProvider from "@/components/ui/Toaster";
+import { LayoutManager } from "@/components/layout/LayoutManager";
+import { AuthDebugPanel } from "@/components/dev/AuthDebugPanel";
 
 // Premium font configuration
 const spaceGrotesk = Space_Grotesk({
@@ -76,13 +78,13 @@ function LayoutContent({ children }: LayoutContentProps) {
   if (shouldHideSidebar && !isOnboardingPage) {
     return (
       <div className="min-h-screen bg-background">
-        {/* Enhanced Background for auth pages */}
+        {/* Enhanced Background for auth pages
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute inset-0 bg-gradient-to-br from-primary-500/5 via-transparent to-secondary-500/5" />
           <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_110%)]" />
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary-500/3 rounded-full blur-3xl animate-pulse" />
           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-secondary-500/3 rounded-full blur-3xl animate-pulse delay-1000" />
-        </div>
+        </div> */}
         
         <div className="relative z-10">
           {children}
@@ -122,12 +124,7 @@ function LayoutContent({ children }: LayoutContentProps) {
     <div className="relative flex min-h-screen w-full">
       
       {/* Enhanced Background Patterns */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary-500/5 via-transparent to-secondary-500/5" />
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_110%)]" />
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary-500/3 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-secondary-500/3 rounded-full blur-3xl animate-pulse delay-1000" />
-      </div>
+
 
       {/* Sidebar with enhanced glass effect */}
       <Sidebar 
@@ -180,7 +177,6 @@ export default function RootLayout({ children }: RootLayoutProps) {
         <meta name="description" content={siteConfig.description} />
         <meta name="keywords" content="data aggregation, financial dashboard, crypto analytics, business intelligence, portfolio management, SaaS platform" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-       
       </head>
       <body
         className={clsx(
@@ -189,18 +185,19 @@ export default function RootLayout({ children }: RootLayoutProps) {
         )}
       >
         <Providers>
-        <ModernToastProvider>
-          <AuthProvider>
-            <NavigationProvider>
-              <LayoutContent>
-                {children}
+          <ModernToastProvider>
+            <AuthProvider>
+              <NavigationProvider>
+                <LayoutManager>
+                  {children}
+                </LayoutManager>
                 <Toaster />
-
-              </LayoutContent>
-            </NavigationProvider>
-          </AuthProvider>
+              </NavigationProvider> <AuthDebugPanel />
+            </AuthProvider>
           </ModernToastProvider>
         </Providers>
+       
+
       </body>
     </html>
   );

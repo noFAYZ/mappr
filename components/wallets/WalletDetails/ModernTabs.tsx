@@ -35,9 +35,9 @@ const ModernTabs: React.FC<{
         color: 'warning'
       }
     ];
-  
+ 
     return (
-      <div className='w-full rounded-2xl lg:rounded-3xl border border-divider bg-gradient-to-br from-white/5 via-white/[0.02] to-transparent backdrop-blur-xl animate-in fade-in-0 duration-100 slide-in-from-bottom-6 p-4 pb-0'>
+      <div className='w-full rounded-2xl lg:rounded-3xl border border-divider bg-gradient-to-br from-white/5 via-white/[0.02] to-transparent backdrop-blur-xl animate-in fade-in-0 duration-100 slide-in-from-bottom-6 p-4'>
                  {/* Gradient overlay */}
                  <div className="absolute inset-0 rounded-2xl lg:rounded-3xl  bg-gradient-to-br from-orange-500/5 via-transparent to-pink-500/5" />
         <div className="pb-0">

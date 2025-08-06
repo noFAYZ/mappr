@@ -26,6 +26,8 @@ import {
   Lock,
   EyeOff
 } from 'lucide-react';
+import useWalletAnalyticsToasts from '@/lib/toast/useWalletAnalyticsToasts';
+import useToastManager from '@/lib/toast/useToastManager';
 
 const ToastTestPage = () => {
   const [toastCount, setToastCount] = useState(0);
@@ -38,47 +40,34 @@ const ToastTestPage = () => {
 
   // Helper function to increment toast count
   const incrementToastCount = () => setToastCount(prev => prev + 1);
-
+  const toastManager = useToastManager();
   // Enhanced toast utilities for testing
   const testToasts = {
     // Basic toasts
     basic: {
       success: () => {
-        toast.success('Operation Successful', {
-          description: 'Your action has been completed successfully.',
-          duration: 5000
-        });
+        toastManager.success('Toast 1','rare')
         incrementToastCount();
       },
       
       error: () => {
-        toast.error('Operation Failed', {
-          description: 'Something went wrong. Please try again.',
-          duration: 8000
-        });
+        toastManager.error('Operation Failed');
         incrementToastCount();
       },
       
       warning: () => {
-        toast.warning('Warning Notice', {
-          description: 'Please review your settings before continuing.',
-          duration: 6000
-        });
+        toastManager.warning('Warning Notice');
         incrementToastCount();
       },
       
       info: () => {
-        toast.info('Information', {
-          description: 'Here is some useful information for you.',
-          duration: 5000
-        });
+        toastManager.info('Information','Here is some useful information for you.');
         incrementToastCount();
       },
       
       loading: () => {
-        const id = toast.loading('Processing...', {
-          description: 'Please wait while we process your request.'
-        });
+        const id = toastManager.loading('Processing...','Please wait while we process your request.'
+      );
         
         setTimeout(() => {
           toast.dismiss(id);
@@ -362,7 +351,7 @@ const ToastTestPage = () => {
       ...(hasAction && {
         action: {
           label: 'Custom Action',
-          onClick: () => toast.success('Custom action executed!')
+          onClick: () => toastManager.onAchievement('Toast 1','rare')
         }
       })
     };
@@ -389,7 +378,7 @@ const ToastTestPage = () => {
 
   const showMultipleToasts = () => {
     const toasts = [
-      () => toast.success('Toast 1', { description: 'First toast' }),
+      () => toastManager.onAchievement('Toast 1','rare'),
       () => toast.info('Toast 2', { description: 'Second toast' }),
       () => toast.warning('Toast 3', { description: 'Third toast' }),
       () => toast.error('Toast 4', { description: 'Fourth toast' }),

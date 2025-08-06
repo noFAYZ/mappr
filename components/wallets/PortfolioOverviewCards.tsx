@@ -21,7 +21,7 @@ import {
   Layers
 } from 'lucide-react';
 import clsx from 'clsx';
-import { SolarWalletBoldDuotone, SolarWalletOutline } from '../icons/icons';
+import {  HugeiconsBlockchain06, SolarWalletBoldDuotone, SolarWalletOutline } from '../icons/icons';
 
 // Types
 interface PortfolioSummary {
@@ -185,8 +185,8 @@ const MetricDisplay: React.FC<{
     >
       <div className=" px-3  ">
         <div className="flex items-center justify-between gap-2">
-          <div className="p-2.5 rounded-xl bg-default-200 group-hover:bg-default-200 transition-colors">
-            <Icon className="w-5 h-5 text-default-600" />
+          <div className="p-2.5 rounded-xl bg-primary-500/25 group-hover:bg-primary-500/30 transition-colors ">
+            <Icon className="w-5 h-5 text-primary-900" />
           </div>
           
           {trend !== undefined && showBalances && (
@@ -237,7 +237,7 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({
       value: summary?.totalPositions || 0,
     },
     {
-      icon: Network,
+      icon: HugeiconsBlockchain06,
       label: "Networks",
       value: summary?.totalChains || 0,
     }

@@ -32,6 +32,7 @@ import {
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUIStore } from '@/stores';
+import { LogoLoader } from '@/components/icons';
 
 // Password strength checker
 const getPasswordStrength = (password: string) => {
@@ -230,12 +231,14 @@ export default function SignUpPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-default-500">Checking authentication...</p>
-        </div>
-      </div>
+      <div className="flex flex-col gap-3 items-center justify-center min-h-screen">
+      <Card className='flex flex-col  items-center justify-center  p-8 md:px-10 border border-divider rounded-2xl'>
+      <LogoLoader className='w-12 h-12 mb-6' />
+
+      <h1 className='text-medium leading-tight font-semibold'>Authenticating..</h1>
+      <p className='text-sm text-default-600'>Please wait while log you in.</p>
+     </Card>
+    </div>
     );
   }
 

@@ -85,19 +85,76 @@ export const authHelpers = {
   },
 
   /**
-   * Sign out
+   * Enhanced sign out with error handling
    */
   async signOut() {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
+    try {
+      // First try normal sign out
+      const { error } = await supabase.auth.signOut();
+      
+      if (error && !error.message.includes('Auth session missing!')) {
+        console.error('Sign out error:', error);
+      }
+    } catch (error: any) {
+      // Ignore session missing errors
+      if (!error.message?.includes('Auth session missing!')) {
+        console.error('Sign out error:', error);
+      }
+    }
+    
+    // Always clear local storage regardless of API success
+    if (typeof window !== 'undefined') {
+      try {
+        Object.keys(localStorage).forEach(key => {
+          if (key.startsWith('supabase.auth.token') || 
+              key.startsWith('sb-') ||
+              key.includes('supabase')) {
+            localStorage.removeItem(key);
+          }
+        });
+        
+        Object.keys(sessionStorage).forEach(key => {
+          if (key.startsWith('supabase.auth.token') || 
+              key.startsWith('sb-') ||
+              key.includes('supabase')) {
+            sessionStorage.removeItem(key);
+          }
+        });
+      } catch (storageError) {
+        console.error('Error clearing storage:', storageError);
+      }
+    }
   },
 
   /**
-   * Get current session
+   * Get current session with error handling
    */
   async getSession() {
-    const { data, error } = await supabase.auth.getSession();
-    if (error) throw error;
-    return data;
+    try {
+      const { data, error } = await supabase.auth.getSession();
+      
+      if (error) {
+        console.error('Get session error:', error);
+        return { session: null, error };
+      }
+      
+      return { session: data.session, error: null };
+    } catch (error) {
+      console.error('Get session error:', error);
+      return { session: null, error };
+    }
+  },
+
+  /**
+   * Check if user is authenticated (with error handling)
+   */
+  async isAuthenticated(): Promise<boolean> {
+    try {
+      const { session } = await this.getSession();
+      return !!session?.user;
+    } catch (error) {
+      console.error('Auth check error:', error);
+      return false;
+    }
   },
 };

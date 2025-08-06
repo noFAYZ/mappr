@@ -317,7 +317,7 @@ const ToastItem: React.FC<{ toast: Toast; onDismiss: (id: string) => void }> = (
       initial={animation.initial}
       animate={animation.animate}
       exit={animation.exit}
-      transition={{ type: "spring", stiffness: 300, damping: 25 }}
+      
       className="w-full max-w-md"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -328,29 +328,20 @@ const ToastItem: React.FC<{ toast: Toast; onDismiss: (id: string) => void }> = (
       <motion.div
         animate={controls}
         className={`
-          relative overflow-hidden rounded-xl backdrop-blur-xl
-          bg-white/90 dark:bg-gray-900/90 
-          border ${variant.borderColor}
+          relative overflow-hidden rounded-2xl backdrop-blur-xl 
+        
           shadow-xl hover:shadow-2xl
-          transition-all duration-300 ease-out
-          ${isHovered ? 'scale-[1.02] -translate-y-1' : ''}
+           ease-out 
+           
+         
         `}
       >
-        {/* Gradient Accent */}
-        <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${variant.gradient}`} />
+   
         
-        {/* Progress Bar */}
-        {!toast.persistent && toast.duration && (
-          <div className="absolute top-1 left-0 right-0 h-0.5 bg-gray-200 dark:bg-gray-700">
-            <div 
-              className={`h-full bg-gradient-to-r ${variant.gradient} transition-all duration-100 ease-linear`}
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-        )}
+  
 
         {/* Main Content */}
-        <div className="p-4">
+        <div className="px-4 py-2">
           {/* Header */}
           <div className="flex items-start gap-3">
             {/* Icon/Avatar */}
@@ -359,17 +350,17 @@ const ToastItem: React.FC<{ toast: Toast; onDismiss: (id: string) => void }> = (
                 <Avatar src={toast.avatar} size="sm" />
               ) : (
                 <div className={`
-                  p-2 rounded-lg bg-gradient-to-br ${variant.gradient}
-                  ${toast.variant === 'loading' ? 'animate-spin' : ''}
+                  p-2 rounded-xl bg-gradient-to-br ${variant.gradient}
+                 
                 `}>
-                  <IconComponent className="w-4 h-4 text-white" />
+                  <IconComponent className={`w-4 h-4 text-white ${toast.variant === 'loading' ? 'animate-spin' : ''}`} />
                 </div>
               )}
             </div>
 
             {/* Content */}
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex items-center gap-1">
                 <h4 className="font-semibold text-sm text-foreground truncate">
                   {toast.title}
                 </h4>
@@ -382,14 +373,14 @@ const ToastItem: React.FC<{ toast: Toast; onDismiss: (id: string) => void }> = (
               </div>
               
               {toast.description && (
-                <p className="text-xs text-default-600 leading-relaxed mb-2">
+                <p className="text-xs text-default-600 leading-relaxed ">
                   {toast.description}
                 </p>
               )}
 
               {/* Metadata */}
               {toast.metadata && (
-                <div className="flex items-center gap-3 mb-2 text-xs text-default-500">
+                <div className="flex items-center gap-3  text-xs text-default-500">
                   {toast.metadata.amount && (
                     <div className="flex items-center gap-1">
                       <DollarSign className="w-3 h-3" />
@@ -424,7 +415,7 @@ const ToastItem: React.FC<{ toast: Toast; onDismiss: (id: string) => void }> = (
 
               {/* Progress */}
               {toast.progress && (
-                <div className="mb-3">
+                <div className="">
                   <div className="flex justify-between items-center mb-1">
                     <span className="text-xs text-default-600">
                       {toast.progress.label || 'Progress'}
@@ -444,7 +435,7 @@ const ToastItem: React.FC<{ toast: Toast; onDismiss: (id: string) => void }> = (
 
               {/* Actions */}
               {toast.actions && toast.actions.length > 0 && (
-                <div className="flex items-center gap-2 mt-3">
+                <div className="flex items-center gap-2 ">
                   {toast.actions.map((action, index) => (
                     <Button
                       key={index}

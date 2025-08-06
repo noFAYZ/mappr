@@ -211,13 +211,13 @@ export default function SignInPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 ">
-          <LogoLoader className='w-12 h-12' />
-          </div>
-          <p className="text-default-500">Checking authentication...</p>
-        </div>
+      <div className="flex flex-col gap-3 items-center justify-center min-h-screen">
+        <Card className='flex flex-col  items-center justify-center  p-8 md:px-10 border border-divider rounded-2xl'>
+        <LogoLoader className='w-12 h-12 mb-6' />
+
+        <h1 className='text-medium leading-tight font-semibold'>Authenticating..</h1>
+        <p className='text-sm text-default-600'>Please wait while log you in.</p>
+       </Card>
       </div>
     );
   }

@@ -5,6 +5,8 @@ import { ErrorHandler } from '@/lib/utils/error-handler';
 import { CacheManager } from '@/lib/utils/cache-manager';
 import ZerionSDK from 'zerion-sdk-ts';
 import { supabase } from '@/lib/supabase';
+import { formatBusinessTime, formatTime, toTimestampz } from '@/lib/utils/time';
+import { SyncOptions } from '@/lib/hooks/useWalletAnalytics';
 
 export interface ZerionCredentials {
   apiKey: string;
@@ -44,6 +46,17 @@ export interface SyncResult {
   error?: string;
   syncedAt: string;
   syncDuration: number;
+}
+
+export interface OHLCDataPoint {
+  chart_timestamp: string;
+  open_value: number;
+  high_value: number;
+  low_value: number;
+  close_value: number;
+  avg_value: number;
+  volume: number;
+  period_label: string;
 }
 
 export class ZerionExtension extends BaseExtension {
@@ -147,7 +160,7 @@ export class ZerionExtension extends BaseExtension {
       }
 
       if (options.includeChart) {
-        apiCalls.push(this.sdk.wallets.getChart(address, options.chartPeriod || 'month'));
+        apiCalls.push(this.sdk.wallets.getChart(address, options.chartPeriod || 'week'));
       }
 
       if (false) {
@@ -308,7 +321,7 @@ export class WalletService {
   }
 
   // Updated method to store data in normalized tables
-  static async updateWalletData(walletId: string, data: WalletData): Promise<void> {
+  static async updateWalletData(walletId: string, data: WalletData, options:SyncOptions): Promise<void> {
     try {
       // Begin transaction
       const updates = [];
@@ -455,10 +468,12 @@ export class WalletService {
       if (data.chart?.length) {
         const chartDataToInsert = data.chart.map(point => ({
           wallet_id: walletId,
-          timestamp: new Date(point.timestamp).toISOString(),
+          timestamp:  toTimestampz(point.timestamp),
           value: point.value,
-          period: 'hour' // Default period, can be made configurable
+          period: options?.chartPeriod || 'week' // Default period, can be made configurable
         }));
+
+        
 
         updates.push(
           supabase
@@ -503,6 +518,22 @@ export class WalletService {
     }
   }
 
+ static async getChartData(walletId: string, period: string): Promise<OHLCDataPoint[]> {
+    const { data, error } = await supabase
+      .rpc('get_ohlc_chart_data', {
+        p_wallet_id: walletId,
+        p_period: period
+      });
+  
+    if (error) {
+      ErrorHandler.handle(error, 'WalletService.getChartData');
+      console.error('Chart data error:', error);
+      return [];
+    }
+  
+    return data || [];
+  };
+
   // Retrieve wallet data from normalized tables
   static async getWalletData(walletId: string): Promise<WalletData | null> {
     try {
@@ -543,14 +574,18 @@ export class WalletService {
       if (txError) throw txError;
 
       // Get chart data
-      const { data: chartData, error: chartError } = await supabase
+     /*  const { data: chartData, error: chartError } = await supabase
         .from('wallet_chart_data')
         .select('*')
         .eq('wallet_id', walletId)
-        .order('timestamp', { ascending: false })
-        .limit(168); // Last week of hourly data
+        .order('timestamp', { ascending: true })
+        .limit(168); // Last week of hourly data */
+        // Usage function
 
-      if (chartError) throw chartError;
+        const chartData = await this.getChartData(walletId, 'week') || [];
+ 
+
+  
 
       // Get wallet info
       const { data: wallet, error: walletError } = await supabase
@@ -587,10 +622,7 @@ export class WalletService {
           realized: 0,
           unrealized: summary?.total_value || 0
         },
-        chart: chartData?.map(d => ({
-          timestamp: d.timestamp,
-          value: d.value
-        })) || [],
+        chart: chartData || [],
         metadata: {
           lastSyncAt: summary?.last_sync_at || new Date().toISOString(),
           positionsCount: summary?.positions_count || 0,
