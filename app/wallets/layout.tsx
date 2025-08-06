@@ -1,16 +1,14 @@
-import { AuthGuard } from '@/components/shared/AuthGuard';
 import React from 'react';
+import { DashboardProvider } from '@/contexts/DashboardContext';
 
+interface DashboardLayoutProps {
+  children: React.ReactNode;
+}
 
-const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-
-
-    return (
-      <div className='w-full flex justify-center'>
-     
-            <AuthGuard>{children} </AuthGuard></div>
-    
-    );
-};
-
-export default Layout;
+export default function DashboardLayout({ children }: DashboardLayoutProps) {
+  return (
+    <DashboardProvider>
+      {children}
+    </DashboardProvider>
+  );
+}

@@ -127,9 +127,7 @@ function LayoutContent({ children }: LayoutContentProps) {
 
 
       {/* Sidebar with enhanced glass effect */}
-      <Sidebar 
-       
-      />
+      <Sidebar />
       
       {/* Main Content Wrapper with enhanced styling */}
       <div className="flex-1 flex flex-col min-w-0 w-full relative">
@@ -188,7 +186,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
           <ModernToastProvider>
             <AuthProvider>
               <NavigationProvider>
-                <LayoutManager>
+                <LayoutManager >
                   {children}
                 </LayoutManager>
                 <Toaster />

@@ -85,7 +85,7 @@ const PortfolioHeader: React.FC<{
                 size="sm"
                 isIconOnly
                 onPress={onToggleBalances}
-                className="bg-background/50 backdrop-blur-sm rounded-full"
+                className="bg-background/50 backdrop-blur-sm rounded-full shadow-lg"
               >
                 {showBalances ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
               </Button>
@@ -98,7 +98,7 @@ const PortfolioHeader: React.FC<{
                 isIconOnly
                 onPress={onRefreshAll}
                 isLoading={isRefreshing}
-                className="bg-background/50 backdrop-blur-sm rounded-full"
+                className="bg-background/50 backdrop-blur-sm rounded-full shadow-lg"
               >
                 <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
               </Button>
@@ -109,7 +109,7 @@ const PortfolioHeader: React.FC<{
               size="sm"
               startContent={<Plus className="w-4 h-4" />}
               onPress={onAddWallet}
-              className="bg-gradient-to-r from-primary-500 to-pink-500 text-white"
+              className="bg-gradient-to-r from-primary-500 to-pink-500 text-white shadow-lg rounded-none"
             >
               Add Wallet
             </Button>

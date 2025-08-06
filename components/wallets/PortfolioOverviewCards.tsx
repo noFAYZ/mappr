@@ -106,12 +106,12 @@ const HeroValueDisplay: React.FC<{
       transition={{ duration: 0.6, ease: "easeOut" }}
     >
       <motion.p 
-        className="text-xs font-medium uppercase tracking-widest text-default-400 mb-2"
+        className="text-xs font-medium uppercase tracking-wide text-default-400 mb-2"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
       >
-        Total Portfolio Value
+        Total Value
       </motion.p>
       
       <div className="relative flex items-baseline gap-2">
@@ -185,8 +185,8 @@ const MetricDisplay: React.FC<{
     >
       <div className=" px-3  ">
         <div className="flex items-center justify-between gap-2">
-          <div className="p-2.5 rounded-xl bg-primary-500/25 group-hover:bg-primary-500/30 transition-colors ">
-            <Icon className="w-5 h-5 text-primary-900" />
+          <div className="p-2.5 rounded-xl bg-primary-500/15 group-hover:bg-primary-500/20 transition-colors ">
+            <Icon className="w-5 h-5 text-primary-700" />
           </div>
           
           {trend !== undefined && showBalances && (

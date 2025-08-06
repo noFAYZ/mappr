@@ -233,21 +233,23 @@ export default function SignInPage() {
         <Button
           as={NextLink}
           href="/"
-          variant="flat"
+          variant="faded"
           startContent={<ArrowLeft className="w-4 h-4" />}
-          className="mb-6 bg-background/50 backdrop-blur-sm"
+          size='sm'
+          className="mb-4  backdrop-blur-sm shadow-md"
+          disableRipple
         >
-          Back to Home
+          Back 
         </Button>
 
-        <Card className="bg-background/80 backdrop-blur-xl border-default-200/50 shadow-2xl">
+        <Card className=" backdrop-blur-xl border border-divider shadow-2xl rounded-xl">
           <CardHeader className="pb-4 pt-8 px-8">
             <div className="text-center w-full">
               <div className="flex items-center justify-center mb-4">
                <LogoMappr className='w-12 h-12' />
               </div>
          
-              <h1 className="text-default-500">
+              <h1 className="text-default-600 text-sm">
                 Sign in to your MoneyMappr account
               </h1>
             </div>
@@ -256,23 +258,25 @@ export default function SignInPage() {
           <CardBody className="px-8 pb-8">
             
             {/* Social Sign In */}
-            <div className="space-y-3 mb-6">
+            <div className="flex gap-4 mb-6">
               <Button
-                className="w-full bg-white hover:bg-gray-50 text-gray-900 border border-gray-300"
+                className="w-full bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 text-xs shadow-md"
                 startContent={<Chrome className="w-4 h-4" />}
                 isLoading={socialLoading === 'google'}
                 onPress={() => handleSocialAuth('google')}
+                disableRipple
               >
-                Continue with Google
+                Signin with Google
               </Button>
               
               <Button
-                className="w-full bg-gray-900 hover:bg-gray-800 text-white"
+                className="w-full shadow-md bg-gray-900 text-xs hover:bg-gray-800 text-white"
                 startContent={<Github className="w-4 h-4" />}
                 isLoading={socialLoading === 'github'}
                 onPress={() => handleSocialAuth('github')}
+                disableRipple
               >
-                Continue with GitHub
+                Signin with GitHub
               </Button>
             </div>
 
@@ -395,10 +399,10 @@ export default function SignInPage() {
             </div>
 
             {/* Security Notice */}
-            <div className="mt-6 py-2 px-3 bg-default-50 border border-default-200 rounded-xl">
+            <div className="mt-6 py-2 px-3 bg-success-50 border border-success-50 rounded-lg">
               <div className="flex items-start gap-2">
-                <ShieldCheck className="w-4 h-4 text-success-600 flex-shrink-0" />
-                <div className="text-xs text-default-600">
+                <ShieldCheck className="w-4 h-4 text-success-700 flex-shrink-0" />
+                <div className="text-xs text-success-700">
                   <strong>Secure Sign In:</strong> Your data is protected with bank-level encryption. 
                   We never store your passwords in plain text.
                 </div>
@@ -409,9 +413,9 @@ export default function SignInPage() {
             <div className="mt-4 text-center">
               <p className="text-xs text-default-400">
                 By signing in, you agree to our{' '}
-                <Link href="/terms" size="sm" className="text-primary-600">Terms of Service</Link>
+                <Link href="/terms" size="sm" className="text-primary-600 text-xs">Terms of Service</Link>
                 {' '}and{' '}
-                <Link href="/privacy" size="sm" className="text-primary-600">Privacy Policy</Link>
+                <Link href="/privacy" size="sm" className="text-primary-600 text-xs">Privacy Policy</Link>
               </p>
             </div>
           </CardBody>
