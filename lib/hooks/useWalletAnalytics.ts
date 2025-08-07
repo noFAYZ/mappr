@@ -1,7 +1,8 @@
 // lib/hooks/useWalletAnalytics.ts
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { ZerionExtension, WalletService, WalletData } from '@/lib/extensions/crypto/zerion';
-import { toast } from '@/lib/toast';
+import { useToast } from "@/components/ui/Toaster";
+
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 
@@ -56,7 +57,8 @@ export interface PortfolioSummary {
 // Main Hook Implementation
 export const useWalletAnalytics = () => {
   const { user } = useAuth();
-  
+  const toast = useToast();
+
   // Core State
   const [wallets, setWallets] = useState<UserWallet[]>([]);
 
@@ -109,10 +111,10 @@ export const useWalletAnalytics = () => {
       toast.error('Failed to Load Wallets', {
         description: errorMessage,
         duration: 6000,
-        action: {
+        actions: [{
           label: 'Retry',
-          onClick: () => loadWallets()
-        }
+          handler: () => loadWallets()
+        }]
       });
     } finally {
       setLoadingWallets(false);
@@ -143,10 +145,10 @@ export const useWalletAnalytics = () => {
       toast.error('Failed to Load Wallets', {
         description: errorMessage,
         duration: 6000,
-        action: {
+        actions: [{
           label: 'Retry',
-          onClick: () => loadWallets()
-        }
+          handler: () => loadWallets()
+        }]
       });
     } finally {
       
@@ -196,10 +198,10 @@ export const useWalletAnalytics = () => {
       
       toast.success('Wallet Added Successfully', {
         description: `${name || 'Wallet'} has been added to your portfolio`,
-        action: {
+        actions: [{
           label: 'View Wallet',
-          onClick: () => setSelectedWallet(wallet)
-        }
+          handler: () => setSelectedWallet(wallet)
+        }]
       });
 
       return true;
@@ -211,10 +213,10 @@ export const useWalletAnalytics = () => {
       toast.error('Failed to Add Wallet', {
         description: errorMessage,
         duration: 8000,
-        action: {
+        actions: [{
           label: 'Try Again',
-          onClick: () => addWallet(address, name)
-        }
+          handler: () => addWallet(address, name)
+        }]
       });
 
       return false;
@@ -263,10 +265,10 @@ export const useWalletAnalytics = () => {
       toast.error('Failed to Remove Wallet', {
         description: errorMessage,
         duration: 6000,
-        action: {
+        actions: [{
           label: 'Try Again',
-          onClick: () => removeWallet(walletId)
-        }
+          handler: () => removeWallet(walletId)
+        }]
       });
 
       return false;
@@ -347,13 +349,15 @@ export const useWalletAnalytics = () => {
       ));
 
       // Dismiss loading toast and show success
-      toast.dismiss(syncingToastId);
+      toast.removeToast(syncingToastId);
+    
+
       toast.success('Wallet Synced Successfully', {
         description: `${wallet.name || 'Wallet'} data has been updated`,
-        action: {
+        actions: [{
           label: 'View Details',
-          onClick: () => setSelectedWallet(wallet)
-        }
+          handler: () => setSelectedWallet(wallet)
+        }]
       });
 
       return true;
@@ -380,10 +384,10 @@ export const useWalletAnalytics = () => {
       toast.error('Sync Failed', {
         description: `Failed to sync ${wallet.name || 'wallet'}: ${errorMessage}`,
         duration: 8000,
-        action: {
+        actions: [{
           label: 'Retry',
-          onClick: () => syncWallet(walletId, options)
-        }
+          handler: () => syncWallet(walletId, options)
+        }]
       });
 
       return false;

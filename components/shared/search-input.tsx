@@ -40,7 +40,7 @@ import {
   TrendingDown,
   Command
 } from "lucide-react";
-import { ArcticonsEssentialSpace, HugeiconsAiBrain01, MdiSpaceInvaders, RiSpaceShipFill, SiDashboardCustomizeLine, SolarWalletBoldDuotone } from "../icons/icons";
+import { ArcticonsEssentialSpace, DuoIconsBank, HugeiconsAiBrain01,  MdiSpaceInvaders, RiSpaceShipFill, SiDashboardCustomizeLine, SolarWalletBoldDuotone } from "../icons/icons";
 
 
 
@@ -193,7 +193,7 @@ const quickActions: QuickAction[] = [
   {
     label: "Connect Bank",
     href: "/extensions/banking/connect",
-    icon: <Building2 className="w-5 h-5" />,
+    icon: <DuoIconsBank className="w-6 h-6" />,
     description: "Link bank accounts securely",
     gradient: "from-green-500 to-emerald-500",
     category: "Extensions"

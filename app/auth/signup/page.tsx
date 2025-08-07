@@ -26,13 +26,16 @@ import {
   CheckCircle2,
   AlertTriangle,
   Building2,
-  Sparkles
+  Sparkles,
+  StepBackIcon,
+  SendToBack
 } from 'lucide-react';
 
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUIStore } from '@/stores';
-import { LogoLoader } from '@/components/icons';
+import { LogoLoader, LogoMappr } from '@/components/icons';
+import { FamiconsReturnUpBack, OouiCheckAll } from '@/components/icons/icons';
 
 // Password strength checker
 const getPasswordStrength = (password: string) => {
@@ -252,27 +255,27 @@ export default function SignUpPage() {
         <Button
           as={NextLink}
           href="/"
-          variant="flat"
+          variant="faded"
           startContent={<ArrowLeft className="w-4 h-4" />}
-          className="mb-6 bg-background/50 backdrop-blur-sm"
+          size='sm'
+          className="mb-4  backdrop-blur-sm shadow-md"
+          disableRipple
         >
           Back to Home
         </Button>
 
-        <Card className="bg-background/80 backdrop-blur-xl border-default-200/50 shadow-2xl">
+        <Card className="backdrop-blur-xl border border-divider shadow-xl rounded-2xl">
           <CardHeader className="pb-4 pt-8 px-8">
             <div className="text-center w-full">
-              <div className="flex items-center justify-center mb-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-xl flex items-center justify-center relative overflow-hidden">
-                  <span className="text-white font-bold text-xl relative z-10">DA</span>
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary-400 to-secondary-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-                </div>
+            <div className="flex items-center justify-center mb-4">
+               <LogoMappr className='w-12 h-12' />
               </div>
+
               
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-                Join DataAggregator
+              <h1 className="text-md font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                Join MoneyMappr
               </h1>
-              <p className="text-default-500 mt-2">
+              <p className="text-default-500 text-xs">
                 Create your account and start aggregating data
               </p>
 
@@ -289,7 +292,7 @@ export default function SignUpPage() {
               {inviteCode && (
                 <div className="mt-2 p-3 bg-success-50 border border-success-200 rounded-lg">
                   <p className="text-sm text-success-700 font-medium">
-                    ✨ You've been invited to join DataAggregator
+                    ✨ You've been invited to join MoneyMappr
                   </p>
                 </div>
               )}
@@ -310,89 +313,95 @@ export default function SignUpPage() {
               </div>
               <Progress 
                 value={(currentStep / totalSteps) * 100} 
-                color="primary"
+                   color="secondary"
                 className="h-2"
               />
             </div>
 
             {currentStep === 1 && (
               <>
-                {/* Social Sign Up */}
-                <div className="space-y-3 mb-6">
-                  <Button
-                    className="w-full bg-white hover:bg-gray-50 text-gray-900 border border-gray-300"
-                    startContent={<Chrome className="w-4 h-4" />}
-                    isLoading={socialLoading === 'google'}
-                    onPress={() => handleSocialAuth('google')}
-                  >
-                    Continue with Google
-                  </Button>
-                  
-                  <Button
-                    className="w-full bg-gray-900 hover:bg-gray-800 text-white"
-                    startContent={<Github className="w-4 h-4" />}
-                    isLoading={socialLoading === 'github'}
-                    onPress={() => handleSocialAuth('github')}
-                  >
-                    Continue with GitHub
-                  </Button>
-                </div>
+                {/* Social Sign In */}
+                <div className="flex gap-4 mb-6">
+              <Button
+                className="w-full bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 text-xs shadow-md"
+                startContent={<Chrome className="w-4 h-4" />}
+                isLoading={socialLoading === 'google'}
+                onPress={() => handleSocialAuth('google')}
+                disableRipple
+              >
+                Signin with Google
+              </Button>
+              
+              <Button
+                className="w-full shadow-md bg-gray-900 text-xs hover:bg-gray-800 text-white"
+                startContent={<Github className="w-4 h-4" />}
+                isLoading={socialLoading === 'github'}
+                onPress={() => handleSocialAuth('github')}
+                disableRipple
+              >
+                Signin with GitHub
+              </Button>
+            </div>
 
-                <div className="relative my-6">
-                  <Divider />
-                  <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-background px-3 text-sm text-default-500">
-                    or continue with email
-                  </span>
-                </div>
+            <div className="relative my-6">
+              <Divider />
+              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-background px-3 text-sm text-default-500">
+                or continue with email
+              </span>
+            </div>
 
                 {/* Step 1: Basic Info */}
                 <div className="space-y-4">
                   <Input
                     {...register('fullName')}
-                    label="Full Name"
+                    
                     placeholder="Enter your full name"
                     startContent={<User className="w-4 h-4 text-default-400" />}
-                    variant="bordered"
+                    variant="faded"
                     isInvalid={!!errors.fullName}
                     errorMessage={errors.fullName?.message}
-                    classNames={{
-                      input: "text-sm",
-                      inputWrapper: "border-default-200 hover:border-default-300 group-data-[focused=true]:border-primary-500"
-                    }}
+                    labelPlacement='outside'
+                  classNames={{
+                    input: "text-sm",
+                    inputWrapper: "border border-default-200 hover:border-default-300 group-data-[focused=true]:border-primary-500"
+                  }}
                   />
 
                   <Input
                     {...register('email')}
                     type="email"
-                    label="Email Address"
+                
                     placeholder="Enter your email"
                     startContent={<Mail className="w-4 h-4 text-default-400" />}
-                    variant="bordered"
+                    variant="faded"
                     isInvalid={!!errors.email}
                     errorMessage={errors.email?.message}
+                    labelPlacement='outside'
                     classNames={{
                       input: "text-sm",
-                      inputWrapper: "border-default-200 hover:border-default-300 group-data-[focused=true]:border-primary-500"
+                      inputWrapper: "border border-default-200 hover:border-default-300 group-data-[focused=true]:border-primary-500"
                     }}
                   />
 
                   <Input
                     {...register('company')}
-                    label="Company (Optional)"
+                    
                     placeholder="Enter your company name"
                     startContent={<Building2 className="w-4 h-4 text-default-400" />}
-                    variant="bordered"
+                    variant="faded"
+                    labelPlacement='outside'
                     classNames={{
                       input: "text-sm",
-                      inputWrapper: "border-default-200 hover:border-default-300 group-data-[focused=true]:border-primary-500"
+                      inputWrapper: "border border-default-200 hover:border-default-300 group-data-[focused=true]:border-primary-500"
                     }}
                   />
 
                   <Button
                     color="primary"
                     className="w-full font-semibold"
-                    size="lg"
+                    size="md"
                     onPress={nextStep}
+                     variant='faded'
                   >
                     Continue
                   </Button>
@@ -435,10 +444,10 @@ export default function SignUpPage() {
                     {passwordStrength && password && (
                       <div className="mt-2 space-y-2">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs text-default-600">Password strength</span>
+                          <span className="text-xs font-medium text-default-600">Password strength</span>
                           <span className={`text-xs font-medium ${
-                            passwordStrength.strength === 'weak' ? 'text-danger' :
-                            passwordStrength.strength === 'medium' ? 'text-warning' : 'text-success'
+                            passwordStrength.strength === 'weak' ? 'text-danger-600' :
+                            passwordStrength.strength === 'medium' ? 'text-warning-600' : 'text-success-600'
                           }`}>
                             {passwordStrength.strength.charAt(0).toUpperCase() + passwordStrength.strength.slice(1)}
                           </span>
@@ -453,8 +462,8 @@ export default function SignUpPage() {
                         />
                         <div className="grid grid-cols-2 gap-2 text-xs">
                           {Object.entries(passwordStrength.checks).map(([key, passed]) => (
-                            <div key={key} className={`flex items-center gap-1 ${passed ? 'text-success' : 'text-default-400'}`}>
-                              <CheckCircle2 className={`w-3 h-3 ${passed ? 'text-success' : 'text-default-300'}`} />
+                            <div key={key} className={`flex items-center gap-1 ${passed ? 'text-success-600' : 'text-default-400'}`}>
+                              <OouiCheckAll className={`w-3 h-3 ${passed ? 'text-success-600' : 'text-default-300'}`} />
                               {key === 'length' && '8+ characters'}
                               {key === 'lowercase' && 'Lowercase'}
                               {key === 'uppercase' && 'Uppercase'}
@@ -499,16 +508,17 @@ export default function SignUpPage() {
                       {...register('agreeToTerms')}
                       size="sm"
                       isInvalid={!!errors.agreeToTerms}
+                      color='warning'
                       classNames={{
-                        label: "text-sm text-default-600"
+                        label: "text-sm text-black"
                       }}
                     >
                       I agree to the{' '}
-                      <Link href="/terms" size="sm" className="text-primary-600">
+                      <Link href="/terms" size="sm" className="text-sm text-primary-600">
                         Terms of Service
                       </Link>
                       {' '}and{' '}
-                      <Link href="/privacy" size="sm" className="text-primary-600">
+                      <Link href="/privacy" size="sm" className="text-sm text-primary-600">
                         Privacy Policy
                       </Link>
                     </Checkbox>
@@ -523,6 +533,7 @@ export default function SignUpPage() {
                       classNames={{
                         label: "text-sm text-default-600"
                       }}
+                       color='warning'
                     >
                       Send me product updates and marketing emails
                     </Checkbox>
@@ -531,16 +542,21 @@ export default function SignUpPage() {
                   {/* Navigation Buttons */}
                   <div className="flex gap-3">
                     <Button
-                      variant="flat"
-                      className="flex-1"
+                      variant="faded"
+                      className="flex-1 rounded-lg"
                       onPress={prevStep}
+                      size='sm'
+                      startContent={<FamiconsReturnUpBack className="w-4 h-4" />}
+                      disableRipple
                     >
                       Back
                     </Button>
                     <Button
                       type="submit"
-                      color="primary"
-                      className="flex-1 font-semibold"
+                      variant="faded"
+                         className="group relative justify-start  bg-gradient-to-br from-orange-400/90 via-orange-600/90 to-pink-400/90 rounded-lg text-white shadow-md hover:shadow-lg "
+                         size='sm'
+                         disableRipple
                       isLoading={isLoading}
                       isDisabled={!isValid}
                     >
@@ -558,7 +574,7 @@ export default function SignUpPage() {
                 <Link
                   as={NextLink}
                   href={`/auth/signin${redirectTo !== '/onboarding' ? `?redirect=${encodeURIComponent(redirectTo)}` : ''}`}
-                  className="text-primary-600 hover:text-primary-700 font-medium"
+                  className="text-sm text-primary-600 hover:text-primary-700 font-medium"
                 >
                   Sign in here
                 </Link>
@@ -566,7 +582,7 @@ export default function SignUpPage() {
             </div>
 
             {/* Security Notice */}
-            <div className="mt-6 p-3 bg-default-50 border border-default-200 rounded-lg">
+            <div className="mt-6 p-2 bg-default-50 border border-default-200 rounded-xl">
               <div className="flex items-start gap-2">
                 <Shield className="w-4 h-4 text-success-600 mt-0.5 flex-shrink-0" />
                 <div className="text-xs text-default-600">

@@ -245,19 +245,21 @@ export const TokensList: React.FC<TokensListProps> = ({
   // Loading state
   if (isLoading || localLoading) {
     return (
-      <Card className="border-none shadow-sm">
-        <CardBody className="py-20">
-          <div className="text-center">
-            <div className="relative mb-6">
-              <GooeyLoader />
-              <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-full blur-xl animate-pulse"></div>
-            </div>
-            <p className="text-default-500 font-medium">Loading tokens...</p>
-            <p className="text-xs text-default-400 mt-2 flex items-center justify-center gap-1">
+      <Card className=" border-none shadow-sm rounded-3xl">
+        <CardBody className=" py-32">
+        <div className="fixed inset-0 bg-blur   backdrop-blur-sm z-50 flex items-center justify-center">
+          <Card className="border border-divider shadow-lg">
+            <CardBody className="flex items-center gap-1 p-6">
+              <LogoLoader className='w-10 h-10'  />
+              <span className="text-sm font-medium mt-6 text-default-600">Loading tokens...</span>
+              <p className="text-xs text-default-400 flex items-center justify-center gap-1">
               <Sparkles className="w-3 h-3" />
               Analyzing portfolio for wallet
             </p>
-          </div>
+            </CardBody>
+          </Card>
+        </div>
+    
         </CardBody>
       </Card>
     );

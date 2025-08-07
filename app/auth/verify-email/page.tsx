@@ -10,6 +10,7 @@ import { Mail, RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react';
 
 import { supabase } from '@/lib/supabase';
 import { useUIStore } from '@/stores';
+import { FamiconsReturnUpBack } from '@/components/icons/icons';
 
 export default function VerifyEmailPage() {
   const router = useRouter();
@@ -79,25 +80,25 @@ export default function VerifyEmailPage() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-primary-500/10 via-transparent to-secondary-500/10">
       <div className="w-full max-w-md">
-        <Card className="bg-background/80 backdrop-blur-xl border-default-200/50 shadow-2xl">
+        <Card className="backdrop-blur-xl border border-divider shadow-xl rounded-2xl">
           <CardBody className="p-8 text-center">
             <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-6">
               <Mail className="w-8 h-8 text-primary-600" />
             </div>
             
-            <h1 className="text-2xl font-bold mb-2">Check your email</h1>
-            <p className="text-default-600 mb-6">
+            <h1 className="text-xl font-bold mb-2">Check your email</h1>
+            <p className="text-default-600 mb-6 text-sm text-pretty text-ellipsis">
               We've sent a verification link to{' '}
-              <span className="font-medium text-foreground">{email}</span>
+              <span className="font-medium text-foreground bg-default-200 rounded-lg p-1">{email}</span>
             </p>
 
             <div className="space-y-4 mb-6">
-              <div className="p-4 bg-warning-50 border border-warning-200 rounded-lg">
+              <div className="p-2 bg-warning-50 border border-warning-200 rounded-lg">
                 <div className="flex items-start gap-3">
-                  <AlertCircle className="w-5 h-5 text-warning-600 mt-0.5 flex-shrink-0" />
+                  <AlertCircle className="w-5 h-5 text-warning-700 mt-0.5 flex-shrink-0" />
                   <div className="text-left">
-                    <h3 className="font-medium text-warning-800 text-sm">Important</h3>
-                    <p className="text-warning-700 text-xs mt-1">
+                    <h3 className="font-medium text-warning-700 text-sm">Important</h3>
+                    <p className="text-warning-600 text-xs mt-1">
                       Please check your spam folder if you don't see the email in your inbox.
                     </p>
                   </div>
@@ -105,35 +106,42 @@ export default function VerifyEmailPage() {
               </div>
             </div>
 
-            <div className="space-y-3">
+            <div className="flex gap-2 justify-between">
+      
+              
+              <Button
+                as={NextLink}
+                href="/auth/signin"
+                variant="faded"
+                className="w-full"
+                size='sm'
+                startContent={<FamiconsReturnUpBack className='w-4 h-4' />}
+              >
+                Back to Sign In
+              </Button>
+
               <Button
                 color="primary"
-                className="w-full"
+                variant='flat'
+                className="w-full bg-primary-500/20"
                 startContent={<RefreshCw className="w-4 h-4" />}
                 onPress={resendVerification}
                 isLoading={isResending}
                 isDisabled={resendCooldown > 0}
+                size='sm'
+                
               >
                 {resendCooldown > 0 
                   ? `Resend in ${resendCooldown}s` 
                   : 'Resend verification email'
                 }
               </Button>
-              
-              <Button
-                as={NextLink}
-                href="/auth/signin"
-                variant="flat"
-                className="w-full"
-              >
-                Back to Sign In
-              </Button>
             </div>
 
             <div className="mt-6 text-center">
               <p className="text-xs text-default-500">
                 Need help?{' '}
-                <Link href="/support" size="sm" className="text-primary-600">
+                <Link href="/support" size="sm" className="text-xs text-primary-600" underline='hover'>
                   Contact Support
                 </Link>
               </p>

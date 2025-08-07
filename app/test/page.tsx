@@ -1,798 +1,833 @@
 'use client'
-import React, { useState } from 'react';
-import { toast } from 'sonner';
-import { 
-  CheckCircle, 
-  AlertCircle, 
-  AlertTriangle, 
-  Info, 
-  Loader2,
-  Copy,
-  ExternalLink,
-  RefreshCw,
-  Trash2,
+import React, { useState, useEffect } from 'react';
+import { Card, CardBody, CardHeader } from '@heroui/card';
+import { Button } from '@heroui/button';
+import { Input } from '@heroui/input';
+import { Select, SelectItem } from '@heroui/select';
+import { Textarea } from '@heroui/input';
+import { Switch } from '@heroui/switch';
+import { Slider } from '@heroui/slider';
+import { Chip } from '@heroui/chip';
+import { Badge } from '@heroui/badge';
+import { Divider } from '@heroui/divider';
+import { Tabs, Tab } from '@heroui/tabs';
+import { Kbd } from '@heroui/kbd';
+import { Code } from '@heroui/code';
+import { Spinner } from '@heroui/spinner';
+import { motion } from 'framer-motion';
+import {
+  Zap,
+  Crown,
   Wallet,
   TrendingUp,
-  Clock,
+  Activity,
   Settings,
-  Download,
-  Upload,
-  Zap,
+  Play,
+  Pause,
+  RotateCcw,
+  Trash2,
+  Eye,
+  FileText,
+  Copy,
+  ExternalLink,
+  Sparkles,
+  CheckCircle,
+  XCircle,
+  AlertTriangle,
+  Info,
+  Loader2,
+  Gift,
   Star,
-  Bell,
+  Award,
   Shield,
-  Database,
-  CreditCard,
-  Lock,
-  EyeOff
-} from 'lucide-react';
-import useWalletAnalyticsToasts from '@/lib/toast/useWalletAnalyticsToasts';
-import useToastManager from '@/lib/toast/useToastManager';
+  Globe,
+  Users,
+  BarChart3,
+  Building2,
+  Calculator,
+  Upload,
+  Download,
+  RefreshCw,
+  Bell,
+  Mail,
+  Heart,
+  Target,
+  Gamepad2,
+  CodeIcon} from 'lucide-react'
+import ToastDemo, { useToast } from '@/components/ui/Toaster';
 
-const ToastTestPage = () => {
-  const [toastCount, setToastCount] = useState(0);
-  const [customTitle, setCustomTitle] = useState('Custom Toast');
-  const [customDescription, setCustomDescription] = useState('This is a custom toast message');
-  const [customDuration, setCustomDuration] = useState('5000');
-  const [customType, setCustomType] = useState('info');
-  const [hasAction, setHasAction] = useState(false);
-  const [isDismissible, setIsDismissible] = useState(true);
+// Import your toast system
 
-  // Helper function to increment toast count
-  const incrementToastCount = () => setToastCount(prev => prev + 1);
-  const toastManager = useToastManager();
-  // Enhanced toast utilities for testing
-  const testToasts = {
-    // Basic toasts
-    basic: {
-      success: () => {
-        toastManager.success('Toast 1','rare')
-        incrementToastCount();
+// Test Categories
+const testCategories = {
+  basic: {
+    title: 'Basic Toasts',
+    icon: <Info className="w-4 h-4" />,
+    color: 'primary',
+    tests: [
+      {
+        name: 'Success',
+        description: 'Standard success notification',
+        action: (toast: any, counter: number) => 
+          toast.success('Operation Successful!', {
+            description: `Task completed successfully (#${counter})`,
+            duration: 4000
+          })
       },
-      
-      error: () => {
-        toastManager.error('Operation Failed');
-        incrementToastCount();
+      {
+        name: 'Error',
+        description: 'Error notification with retry action',
+        action: (toast: any, counter: number) => 
+          toast.error('Something went wrong', {
+            description: `An error occurred during operation (#${counter})`,
+            actions: [{
+              label: 'Retry',
+              handler: () => console.log('Retry clicked'),
+              variant: 'primary',
+              icon: <RefreshCw className="w-3 h-3" />
+            }]
+          })
       },
-      
-      warning: () => {
-        toastManager.warning('Warning Notice');
-        incrementToastCount();
+      {
+        name: 'Warning',
+        description: 'Warning message',
+        action: (toast: any, counter: number) => 
+          toast.warning('Attention Required', {
+            description: `Please review your settings (#${counter})`,
+            duration: 6000
+          })
       },
-      
-      info: () => {
-        toastManager.info('Information','Here is some useful information for you.');
-        incrementToastCount();
+      {
+        name: 'Info',
+        description: 'Information notification',
+        action: (toast: any, counter: number) => 
+          toast.info('New Information', {
+            description: `System update available (#${counter})`,
+            actions: [{
+              label: 'Learn More',
+              handler: () => console.log('Learn more clicked'),
+              variant: 'ghost',
+              icon: <ExternalLink className="w-3 h-3" />
+            }]
+          })
       },
-      
-      loading: () => {
-        const id = toastManager.loading('Processing...','Please wait while we process your request.'
-      );
-        
-        setTimeout(() => {
-          toast.dismiss(id);
-          toast.success('Processing Complete!');
-          incrementToastCount();
-        }, 3000);
-        incrementToastCount();
-      }
-    },
-
-    // Wallet-specific toasts
-    wallet: {
-      connected: () => {
-        toast.success('Wallet Connected', {
-          description: 'MetaMask connected successfully',
-          action: {
-            label: 'Copy Address',
-            onClick: () => {
-              navigator.clipboard.writeText('0x1234567890abcdef...');
-              toast.success('Address Copied', {
-                description: 'Wallet address copied to clipboard',
-                duration: 2000
-              });
+      {
+        name: 'Loading',
+        description: 'Persistent loading toast',
+        action: (toast: any, counter: number) => {
+          const id = toast.loading('Processing...', {
+            description: `Operation in progress (#${counter})`,
+            progress: 0
+          });
+          
+          // Simulate progress
+          let progress = 0;
+          const interval = setInterval(() => {
+            progress += 10;
+            toast.updateToast(id, { progress });
+            
+            if (progress >= 100) {
+              clearInterval(interval);
+              setTimeout(() => {
+                toast.updateToast(id, {
+                  variant: 'success',
+                  title: 'Complete!',
+                  description: 'Operation finished successfully',
+                  duration: 3000,
+                  progress: undefined
+                });
+              }, 500);
             }
-          }
-        });
-        incrementToastCount();
-      },
-      
-      synced: () => {
-        toast.success('Wallet Synced', {
-          description: 'Portfolio • 15 tokens • $12,450.00',
-          action: {
-            label: 'View Details',
-            onClick: () => console.log('Navigate to wallet details')
-          }
-        });
-        incrementToastCount();
-      },
-      
-      removed: () => {
-        toast.success('Wallet Removed', {
-          description: 'MetaMask has been removed from your portfolio',
-          duration: 4000
-        });
-        incrementToastCount();
-      },
-      
-      syncError: () => {
-        toast.error('Sync Failed', {
-          description: 'Unable to sync wallet: Network timeout',
-          duration: 8000,
-          action: {
-            label: 'Retry',
-            onClick: () => toast.loading('Retrying sync...')
-          }
-        });
-        incrementToastCount();
+          }, 200);
+        }
       }
-    },
+    ]
+  },
+  
+  wallet: {
+    title: 'Wallet Analytics',
+    icon: <Wallet className="w-4 h-4" />,
+    color: 'success',
+    tests: [
+      {
+        name: 'Analytics Update',
+        description: 'Portfolio data refreshed',
+        action: (toast: any) => toast.onAnalyticsUpdate(Math.floor(Math.random() * 10) + 1)
+      },
+      {
+        name: 'Wallet Sync Success',
+        description: 'Successful wallet synchronization',
+        action: (toast: any) => {
+          const wallets = ['MetaMask', 'Trust Wallet', 'Coinbase Wallet', 'WalletConnect', 'Phantom'];
+          const balances = ['$12,543.21', '$8,907.45', '$23,104.87', '$5,432.10', '$41,209.33'];
+          const wallet = wallets[Math.floor(Math.random() * wallets.length)];
+          const balance = balances[Math.floor(Math.random() * balances.length)];
+          toast.onWalletSyncSuccess(wallet, balance);
+        }
+      },
+      {
+        name: 'Wallet Sync Error',
+        description: 'Failed wallet synchronization',
+        action: (toast: any) => {
+          const wallets = ['MetaMask', 'Trust Wallet', 'Ledger', 'Trezor'];
+          const errors = ['Network timeout', 'Invalid signature', 'Connection lost', 'Rate limit exceeded'];
+          const wallet = wallets[Math.floor(Math.random() * wallets.length)];
+          const error = errors[Math.floor(Math.random() * errors.length)];
+          toast.onWalletError(wallet, error);
+        }
+      },
+      {
+        name: 'Portfolio Milestone',
+        description: 'Achievement notification',
+        action: (toast: any) => {
+          const achievements = [
+            { text: 'First Wallet Added!', rarity: 'common' },
+            { text: 'Portfolio Diversified', rarity: 'rare' },
+            { text: 'Diamond Hands 💎', rarity: 'rare' },
+            { text: 'Crypto Millionaire! 🚀', rarity: 'legendary' }
+          ];
+          const achievement = achievements[Math.floor(Math.random() * achievements.length)];
+          toast.onAchievement(achievement.text, achievement.rarity);
+        }
+      }
+    ]
+  },
+  
+  premium: {
+    title: 'Premium Features',
+    icon: <Crown className="w-4 h-4" />,
+    color: 'warning',
+    tests: [
+      {
+        name: 'Premium Feature',
+        description: 'Promote premium features',
+        action: (toast: any) => {
+          const features = ['Advanced Analytics', 'Unlimited Wallets', 'Real-time Alerts', 'Portfolio Insights', 'Tax Reports'];
+          const feature = features[Math.floor(Math.random() * features.length)];
+          toast.onPremiumFeature(feature);
+        }
+      },
+      {
+        name: 'Premium Glow',
+        description: 'Premium toast with glow effect',
+        action: (toast: any) => 
+          toast.premium('Upgrade to Pro', {
+            description: 'Unlock advanced analytics and unlimited wallets',
+            animation: 'glow',
+            actions: [{
+              label: 'Upgrade Now',
+              handler: () => console.log('Upgrade clicked'),
+              variant: 'primary',
+              icon: <Crown className="w-3 h-3" />
+            }, {
+              label: 'Learn More',
+              handler: () => console.log('Learn more clicked'),
+              variant: 'ghost',
+              icon: <ExternalLink className="w-3 h-3" />
+            }]
+          })
+      },
+      {
+        name: 'Trial Expiring',
+        description: 'Trial expiration notice',
+        action: (toast: any) => 
+          toast.warning('Trial Expiring Soon', {
+            description: 'Your premium trial expires in 3 days',
+            animation: 'bounce',
+            actions: [{
+              label: 'Upgrade Now',
+              handler: () => console.log('Upgrade clicked'),
+              variant: 'primary',
+              icon: <Crown className="w-3 h-3" />
+            }]
+          })
+      }
+    ]
+  },
+  
+  advanced: {
+    title: 'Advanced Features',
+    icon: <Settings className="w-4 h-4" />,
+    color: 'secondary',
+    tests: [
+      {
+        name: 'Multiple Actions',
+        description: 'Toast with multiple action buttons',
+        action: (toast: any) => 
+          toast.info('New Feature Available', {
+            description: 'Advanced portfolio analytics is now live!',
+            actions: [
+              {
+                label: 'Try Now',
+                handler: () => console.log('Try now clicked'),
+                variant: 'primary',
+                icon: <Sparkles className="w-3 h-3" />
+              },
+              {
+                label: 'Watch Demo',
+                handler: () => console.log('Demo clicked'),
+                variant: 'secondary',
+                icon: <Play className="w-3 h-3" />
+              },
+              {
+                label: 'Later',
+                handler: () => console.log('Later clicked'),
+                variant: 'ghost'
+              }
+            ]
+          })
+      },
+      {
+        name: 'With Avatar',
+        description: 'Toast with user avatar',
+        action: (toast: any) => 
+          toast.success('Welcome back!', {
+            description: 'Your last login was 2 hours ago',
+            avatar: 'https://i.pravatar.cc/150?img=1',
+            duration: 6000
+          })
+      },
+      {
+        name: 'With Image',
+        description: 'Toast with preview image',
+        action: (toast: any) => 
+          toast.info('Portfolio Report Ready', {
+            description: 'Your monthly portfolio analysis is now available',
+            image: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=400&h=200&fit=crop',
+            actions: [{
+              label: 'Download',
+              handler: () => console.log('Download clicked'),
+              variant: 'primary',
+              icon: <Download className="w-3 h-3" />
+            }]
+          })
+      },
+      {
+        name: 'Different Position',
+        description: 'Toast in different positions',
+        action: (toast: any) => {
+          const positions = ['top-left', 'top-center', 'bottom-left', 'bottom-center', 'bottom-right'];
+          const position = positions[Math.floor(Math.random() * positions.length)];
+          toast.success(`Toast at ${position}`, {
+            description: 'Testing different positions',
+            position: position,
+            duration: 4000
+          });
+        }
+      }
+    ]
+  },
+  
+  stress: {
+    title: 'Stress Tests',
+    icon: <Activity className="w-4 h-4" />,
+    color: 'danger',
+    tests: [
+      {
+        name: 'Rapid Fire',
+        description: 'Show 10 toasts rapidly',
+        action: (toast: any) => {
+          for (let i = 1; i <= 10; i++) {
+            setTimeout(() => {
+              toast.info(`Rapid Toast #${i}`, {
+                description: `Testing rapid toast generation`,
+                duration: 3000
+              });
+            }, i * 100);
+          }
+        }
+      },
+      {
+        name: 'Long Content',
+        description: 'Toast with very long content',
+        action: (toast: any) => 
+          toast.warning('System Maintenance Notice', {
+            description: 'We will be performing scheduled maintenance on our servers from 2:00 AM to 4:00 AM EST. During this time, some features may be temporarily unavailable. We apologize for any inconvenience and appreciate your patience.',
+            duration: 10000,
+            actions: [{
+              label: 'More Details',
+              handler: () => console.log('More details clicked'),
+              variant: 'ghost'
+            }]
+          })
+      },
+      {
+        name: 'Persistent Spam',
+        description: 'Multiple persistent toasts',
+        action: (toast: any) => {
+          const types = ['success', 'error', 'warning', 'info'];
+          types.forEach((type, index) => {
+            setTimeout(() => {
+              toast[type](`Persistent ${type}`, {
+                description: `This is a persistent ${type} toast`,
+                persistent: true
+              });
+            }, index * 200);
+          });
+        }
+      }
+    ]
+  }
+};
 
-    // System toasts
-    system: {
-      newFeature: () => {
-        toast.info('New Feature Available', {
-          description: 'Portfolio Analytics: Advanced charts and insights',
-          action: {
-            label: 'Learn More',
-            onClick: () => window.open('/docs/features', '_blank')
-          }
-        });
-        incrementToastCount();
-      },
-      
-      maintenance: () => {
-        toast.warning('Scheduled Maintenance', {
-          description: 'System maintenance tonight at 2:00 AM (2 hours)',
-          duration: 10000
-        });
-        incrementToastCount();
-      },
-      
-      limitReached: () => {
-        toast.warning('Usage Limit Reached', {
-          description: "You've reached your API request limit",
-          action: {
-            label: 'Upgrade Plan',
-            onClick: () => console.log('Navigate to billing')
-          }
-        });
-        incrementToastCount();
-      },
-      
-      configError: () => {
-        toast.error('Configuration Error', {
-          description: 'API key not configured. Please check your settings.',
-          duration: 10000,
-          action: {
-            label: 'Settings',
-            onClick: () => console.log('Navigate to settings')
-          }
-        });
-        incrementToastCount();
-      }
-    },
-
-    // Data operations
-    data: {
-      exportSuccess: () => {
-        toast.success('Export Complete', {
-          description: 'Data exported as CSV (2.4 MB)',
-          action: {
-            label: 'Download',
-            onClick: () => console.log('Trigger download')
-          }
-        });
-        incrementToastCount();
-      },
-      
-      importSuccess: () => {
-        toast.success('Import Complete', {
-          description: 'Successfully imported 1,247 records',
-          duration: 6000
-        });
-        incrementToastCount();
-      },
-      
-      syncComplete: () => {
-        toast.success('Data Synchronized', {
-          description: '1,247 records updated from Plaid Banking',
-          duration: 5000
-        });
-        incrementToastCount();
-      },
-      
-      validationError: () => {
-        toast.error('Validation Failed', {
-          description: '5 error(s) found in your data',
-          action: {
-            label: 'View Details',
-            onClick: () => console.log('Show validation errors')
-          }
-        });
-        incrementToastCount();
-      }
-    },
-
-    // Financial operations
-    financial: {
-      transactionSuccess: () => {
-        toast.success('Transaction Successful', {
-          description: 'Sent 0.5 ETH to 0x1234...5678',
-          action: {
-            label: 'View on Explorer',
-            onClick: () => window.open('https://etherscan.io/tx/0x...', '_blank')
-          }
-        });
-        incrementToastCount();
-      },
-      
-      paymentReceived: () => {
-        toast.success('Payment Received', {
-          description: '$1,250.00 from client payment',
-          duration: 6000
-        });
-        incrementToastCount();
-      },
-      
-      budgetAlert: () => {
-        toast.warning('Budget Alert', {
-          description: "You've spent 80% of your monthly budget",
-          action: {
-            label: 'View Budget',
-            onClick: () => console.log('Navigate to budget')
-          }
-        });
-        incrementToastCount();
-      },
-      
-      subscriptionRenewal: () => {
-        toast.info('Subscription Renewal', {
-          description: 'Your Pro plan renews in 3 days ($29.99)',
-          action: {
-            label: 'Manage Billing',
-            onClick: () => console.log('Navigate to billing')
-          }
-        });
-        incrementToastCount();
-      }
-    },
-
-    // Promise-based toasts
-    promises: {
-      successPromise: () => {
-        const promise = new Promise((resolve) => {
-          setTimeout(() => resolve('Success data'), 2000);
-        });
-        
-        toast.promise(promise, {
-          loading: 'Processing request...',
-          success: 'Request completed successfully!',
-          error: 'Request failed!'
-        });
-        incrementToastCount();
-      },
-      
-      errorPromise: () => {
-        const promise = new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('Network error')), 2000);
-        });
-        
-        toast.promise(promise, {
-          loading: 'Attempting connection...',
-          success: 'Connected successfully!',
-          error: 'Connection failed!'
-        });
-        incrementToastCount();
-      },
-      
-      randomPromise: () => {
-        const promise = new Promise((resolve, reject) => {
-          setTimeout(() => {
-            Math.random() > 0.5 ? resolve('Success!') : reject('Failed!');
-          }, 2000);
-        });
-        
-        toast.promise(promise, {
-          loading: 'Rolling the dice...',
-          success: 'Lucky you!',
-          error: 'Better luck next time!'
-        });
-        incrementToastCount();
-      }
-    },
-
-    // Advanced features
-    advanced: {
-      persistent: () => {
-        toast.success('Persistent Toast', {
-          description: "This toast won't auto-dismiss",
-          duration: Infinity
-        });
-        incrementToastCount();
-      },
-      
-      noClose: () => {
-        toast.info('No Close Button', {
-          description: 'This toast cannot be manually closed',
-          dismissible: false,
-          duration: 5000
-        });
-        incrementToastCount();
-      },
-      
-      customAction: () => {
-        toast.warning('Custom Actions', {
-          description: 'This toast has multiple actions',
-          action: {
-            label: 'Primary Action',
-            onClick: () => toast.success('Primary action clicked!')
-          }
-        });
-        incrementToastCount();
-      },
-      
-      longContent: () => {
-        toast.info('Long Content Example', {
-          description: 'This is a very long description that demonstrates how the toast handles extended content. It should wrap properly and maintain good readability while providing comprehensive information to the user about what has occurred.',
-          duration: 8000
-        });
-        incrementToastCount();
-      }
-    }
-  };
+// Custom Toast Configuration Panel
+const CustomToastPanel: React.FC<{ toast: any }> = ({ toast }) => {
+  const [title, setTitle] = useState('Custom Toast Title');
+  const [description, setDescription] = useState('This is a custom toast description');
+  const [variant, setVariant] = useState('success');
+  const [position, setPosition] = useState('top-right');
+  const [duration, setDuration] = useState(5000);
+  const [dismissible, setDismissible] = useState(true);
+  const [persistent, setPersistent] = useState(false);
+  const [animation, setAnimation] = useState('slide');
+  const [hasAction, setHasAction] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [showProgress, setShowProgress] = useState(false);
 
   const showCustomToast = () => {
-    const toastConfig = {
-      description: customDescription,
-      duration: parseInt(customDuration),
-      dismissible: isDismissible,
-      ...(hasAction && {
-        action: {
-          label: 'Custom Action',
-          onClick: () => toastManager.onAchievement('Toast 1','rare')
-        }
-      })
+    const options: any = {
+      description,
+      position,
+      duration: persistent ? 0 : duration,
+      dismissible,
+      persistent,
+      animation,
     };
 
-    switch (customType) {
-      case 'success':
-        toast.success(customTitle, toastConfig);
-        break;
-      case 'error':
-        toast.error(customTitle, toastConfig);
-        break;
-      case 'warning':
-        toast.warning(customTitle, toastConfig);
-        break;
-      case 'loading':
-        toast.loading(customTitle, toastConfig);
-        break;
-      default:
-        toast.info(customTitle, toastConfig);
+    if (showProgress) {
+      options.progress = progress;
     }
-    
-    incrementToastCount();
+
+    if (hasAction) {
+      options.actions = [{
+        label: 'Custom Action',
+        handler: () => console.log('Custom action clicked'),
+        variant: 'primary',
+        icon: <Zap className="w-3 h-3" />
+      }];
+    }
+
+    toast[variant](title, options);
   };
-
-  const showMultipleToasts = () => {
-    const toasts = [
-      () => toastManager.onAchievement('Toast 1','rare'),
-      () => toast.info('Toast 2', { description: 'Second toast' }),
-      () => toast.warning('Toast 3', { description: 'Third toast' }),
-      () => toast.error('Toast 4', { description: 'Fourth toast' }),
-      () => toast.loading('Toast 5', { description: 'Fifth toast' })
-    ];
-
-    toasts.forEach((toastFn, index) => {
-      setTimeout(toastFn, index * 200);
-    });
-    
-    setToastCount(prev => prev + 5);
-  };
-
-  const clearAllToasts = () => {
-    toast.dismiss();
-    setToastCount(0);
-  };
-
-  const TestButton = ({ onClick, children, className = "", icon }) => (
-    <button
-      onClick={onClick}
-      className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 hover:scale-105 active:scale-95 ${className}`}
-    >
-      {icon && <span className="w-4 h-4">{icon}</span>}
-      {children}
-    </button>
-  );
-
-  const TestSection = ({ title, children, description }) => (
-    <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-lg border border-slate-200 dark:border-slate-700 mb-6">
-      <div className="mb-4">
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{title}</h3>
-        {description && (
-          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">{description}</p>
-        )}
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-        {children}
-      </div>
-    </div>
-  );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 p-4">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-slate-900 dark:text-slate-100 mb-4">
-            Toast Testing Suite
-          </h1>
-          <p className="text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto mb-6">
-            Comprehensive testing interface for all toast notification types and features.
-            Test different scenarios and customize toast behavior.
-          </p>
-          
-          <div className="flex items-center justify-center gap-4 mb-6">
-            <div className="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 px-4 py-2 rounded-lg font-medium">
-              Toasts Shown: {toastCount}
-            </div>
-            <button
-              onClick={clearAllToasts}
-              className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors"
-            >
-              <Trash2 className="w-4 h-4" />
-              Clear All Toasts
-            </button>
+    <Card>
+      <CardHeader>
+        <h3 className="text-lg font-semibold">Custom Toast Builder</h3>
+      </CardHeader>
+      <CardBody className="space-y-4">
+        <Input
+          label="Title"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Enter toast title"
+        />
+        
+        <Textarea
+          label="Description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Enter toast description"
+          rows={2}
+        />
+
+        <div className="grid grid-cols-2 gap-4">
+          <Select
+            label="Variant"
+            selectedKeys={[variant]}
+            onSelectionChange={(keys) => setVariant(Array.from(keys)[0] as string)}
+          >
+            <SelectItem key="success">Success</SelectItem>
+            <SelectItem key="error">Error</SelectItem>
+            <SelectItem key="warning">Warning</SelectItem>
+            <SelectItem key="info">Info</SelectItem>
+            <SelectItem key="loading">Loading</SelectItem>
+            <SelectItem key="premium">Premium</SelectItem>
+          </Select>
+
+          <Select
+            label="Position"
+            selectedKeys={[position]}
+            onSelectionChange={(keys) => setPosition(Array.from(keys)[0] as string)}
+          >
+            <SelectItem key="top-left">Top Left</SelectItem>
+            <SelectItem key="top-center">Top Center</SelectItem>
+            <SelectItem key="top-right">Top Right</SelectItem>
+            <SelectItem key="bottom-left">Bottom Left</SelectItem>
+            <SelectItem key="bottom-center">Bottom Center</SelectItem>
+            <SelectItem key="bottom-right">Bottom Right</SelectItem>
+          </Select>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <Select
+            label="Animation"
+            selectedKeys={[animation]}
+            onSelectionChange={(keys) => setAnimation(Array.from(keys)[0] as string)}
+          >
+            <SelectItem key="slide">Slide</SelectItem>
+            <SelectItem key="fade">Fade</SelectItem>
+            <SelectItem key="bounce">Bounce</SelectItem>
+            <SelectItem key="glow">Glow</SelectItem>
+          </Select>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Duration (ms)</label>
+            <Slider
+              value={[duration]}
+              onValueChange={(value) => setDuration(value[0])}
+              min={1000}
+              max={10000}
+              step={500}
+              isDisabled={persistent}
+              className="w-full"
+            />
+            <div className="text-xs text-default-500">{duration}ms</div>
           </div>
         </div>
 
-        {/* Custom Toast Builder */}
-        <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-lg border border-slate-200 dark:border-slate-700 mb-8">
-          <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-6">Custom Toast Builder</h2>
+        <div className="flex flex-wrap gap-4">
+          <Switch
+            isSelected={dismissible}
+            onValueChange={setDismissible}
+          >
+            Dismissible
+          </Switch>
           
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  Toast Title
-                </label>
-                <input
-                  type="text"
-                  value={customTitle}
-                  onChange={(e) => setCustomTitle(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
-                  placeholder="Enter toast title"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  Description
-                </label>
-                <textarea
-                  value={customDescription}
-                  onChange={(e) => setCustomDescription(e.target.value)}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
-                  placeholder="Enter toast description"
-                />
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                    Toast Type
-                  </label>
-                  <select
-                    value={customType}
-                    onChange={(e) => setCustomType(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
-                  >
-                    <option value="success">Success</option>
-                    <option value="error">Error</option>
-                    <option value="warning">Warning</option>
-                    <option value="info">Info</option>
-                    <option value="loading">Loading</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                    Duration (ms)
-                  </label>
-                  <input
-                    type="number"
-                    value={customDuration}
-                    onChange={(e) => setCustomDuration(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
-                    placeholder="5000"
-                  />
-                </div>
-              </div>
-              
-              <div className="flex gap-6">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={hasAction}
-                    onChange={(e) => setHasAction(e.target.checked)}
-                    className="rounded"
-                  />
-                  <span className="text-sm text-slate-700 dark:text-slate-300">Include Action Button</span>
-                </label>
-                
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={isDismissible}
-                    onChange={(e) => setIsDismissible(e.target.checked)}
-                    className="rounded"
-                  />
-                  <span className="text-sm text-slate-700 dark:text-slate-300">Dismissible</span>
-                </label>
-              </div>
-            </div>
-            
-            <div className="flex items-center justify-center">
-              <button
-                onClick={showCustomToast}
-                className="flex items-center gap-2 px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium text-lg transition-colors"
-              >
-                <Zap className="w-5 h-5" />
-                Show Custom Toast
-              </button>
-            </div>
+          <Switch
+            isSelected={persistent}
+            onValueChange={setPersistent}
+          >
+            Persistent
+          </Switch>
+          
+          <Switch
+            isSelected={hasAction}
+            onValueChange={setHasAction}
+          >
+            Add Action
+          </Switch>
+          
+          <Switch
+            isSelected={showProgress}
+            onValueChange={setShowProgress}
+          >
+            Show Progress
+          </Switch>
+        </div>
+
+        {showProgress && (
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Progress</label>
+            <Slider
+              value={[progress]}
+              onValueChange={(value) => setProgress(value[0])}
+              min={0}
+              max={100}
+              step={5}
+              className="w-full"
+            />
+            <div className="text-xs text-default-500">{progress}%</div>
           </div>
-        </div>
+        )}
 
-        {/* Basic Toast Types */}
-        <TestSection 
-          title="Basic Toast Types"
-          description="Standard toast notifications with different severity levels"
+        <Button
+          color="primary"
+          className="w-full"
+          onPress={showCustomToast}
+          startContent={<Play className="w-4 h-4" />}
         >
-          <TestButton 
-            onClick={testToasts.basic.success} 
-            className="bg-emerald-500 hover:bg-emerald-600 text-white"
-            icon={<CheckCircle />}>
-            Success Toast
-          </TestButton>
-          <TestButton 
-            onClick={testToasts.basic.error} 
-            className="bg-red-500 hover:bg-red-600 text-white"
-            icon={<AlertCircle />}>
-            Error Toast
-          </TestButton>
-          <TestButton 
-            onClick={testToasts.basic.warning} 
-            className="bg-amber-500 hover:bg-amber-600 text-white"
-            icon={<AlertTriangle />}>
-            Warning Toast
-          </TestButton>
-          <TestButton 
-            onClick={testToasts.basic.info} 
-            className="bg-blue-500 hover:bg-blue-600 text-white"
-            icon={<Info />}>
-            Info Toast
-          </TestButton>
-          <TestButton 
-            onClick={testToasts.basic.loading} 
-            className="bg-slate-500 hover:bg-slate-600 text-white"
-            icon={<Loader2 />}>
-            Loading Toast
-          </TestButton>
-        </TestSection>
-
-        {/* Wallet Operations */}
-        <TestSection 
-          title="Wallet Operations"
-          description="Toast notifications for cryptocurrency wallet interactions"
-        >
-          <TestButton 
-            onClick={testToasts.wallet.connected} 
-            className="bg-emerald-500 hover:bg-emerald-600 text-white"
-            icon={<Wallet />}>
-            Wallet Connected
-          </TestButton>
-          <TestButton 
-            onClick={testToasts.wallet.synced} 
-            className="bg-blue-500 hover:bg-blue-600 text-white"
-            icon={<RefreshCw />}>
-            Wallet Synced
-          </TestButton>
-          <TestButton 
-            onClick={testToasts.wallet.removed} 
-            className="bg-slate-500 hover:bg-slate-600 text-white"
-            icon={<Trash2 />}>
-            Wallet Removed
-          </TestButton>
-          <TestButton 
-            onClick={testToasts.wallet.syncError} 
-            className="bg-red-500 hover:bg-red-600 text-white"
-            icon={<AlertCircle />}>
-            Sync Error
-          </TestButton>
-        </TestSection>
-
-        {/* System Notifications */}
-        <TestSection 
-          title="System Notifications"
-          description="Application-level notifications and announcements"
-        >
-          <TestButton 
-            onClick={testToasts.system.newFeature} 
-            className="bg-blue-500 hover:bg-blue-600 text-white"
-            icon={<Star />}>
-            New Feature
-          </TestButton>
-          <TestButton 
-            onClick={testToasts.system.maintenance} 
-            className="bg-amber-500 hover:bg-amber-600 text-white"
-            icon={<Settings />}>
-            Maintenance Notice
-          </TestButton>
-          <TestButton 
-            onClick={testToasts.system.limitReached} 
-            className="bg-amber-500 hover:bg-amber-600 text-white"
-            icon={<Clock />}>
-            Limit Reached
-          </TestButton>
-          <TestButton 
-            onClick={testToasts.system.configError} 
-            className="bg-red-500 hover:bg-red-600 text-white"
-            icon={<Shield />}>
-            Config Error
-          </TestButton>
-        </TestSection>
-
-        {/* Data Operations */}
-        <TestSection 
-          title="Data Operations"
-          description="Toast notifications for data import, export, and sync operations"
-        >
-          <TestButton 
-            onClick={testToasts.data.exportSuccess} 
-            className="bg-emerald-500 hover:bg-emerald-600 text-white"
-            icon={<Download />}>
-            Export Success
-          </TestButton>
-          <TestButton 
-            onClick={testToasts.data.importSuccess} 
-            className="bg-emerald-500 hover:bg-emerald-600 text-white"
-            icon={<Upload />}>
-            Import Success
-          </TestButton>
-          <TestButton 
-            onClick={testToasts.data.syncComplete} 
-            className="bg-blue-500 hover:bg-blue-600 text-white"
-            icon={<Database />}>
-            Sync Complete
-          </TestButton>
-          <TestButton 
-            onClick={testToasts.data.validationError} 
-            className="bg-red-500 hover:bg-red-600 text-white"
-            icon={<AlertTriangle />}>
-            Validation Error
-          </TestButton>
-        </TestSection>
-
-        {/* Financial Operations */}
-        <TestSection 
-          title="Financial Operations"
-          description="Toast notifications for financial transactions and alerts"
-        >
-          <TestButton 
-            onClick={testToasts.financial.transactionSuccess} 
-            className="bg-emerald-500 hover:bg-emerald-600 text-white"
-            icon={<TrendingUp />}>
-            Transaction Success
-          </TestButton>
-          <TestButton 
-            onClick={testToasts.financial.paymentReceived} 
-            className="bg-emerald-500 hover:bg-emerald-600 text-white"
-            icon={<CreditCard />}>
-            Payment Received
-          </TestButton>
-          <TestButton 
-            onClick={testToasts.financial.budgetAlert} 
-            className="bg-amber-500 hover:bg-amber-600 text-white"
-            icon={<AlertTriangle />}>
-            Budget Alert
-          </TestButton>
-          <TestButton 
-            onClick={testToasts.financial.subscriptionRenewal} 
-            className="bg-blue-500 hover:bg-blue-600 text-white"
-            icon={<Bell />}>
-            Subscription Renewal
-          </TestButton>
-        </TestSection>
-
-        {/* Promise-based Toasts */}
-        <TestSection 
-          title="Promise-based Toasts"
-          description="Toast notifications that track async operations"
-        >
-          <TestButton 
-            onClick={testToasts.promises.successPromise} 
-            className="bg-emerald-500 hover:bg-emerald-600 text-white"
-            icon={<CheckCircle />}>
-            Success Promise
-          </TestButton>
-          <TestButton 
-            onClick={testToasts.promises.errorPromise} 
-            className="bg-red-500 hover:bg-red-600 text-white"
-            icon={<AlertCircle />}>
-            Error Promise
-          </TestButton>
-          <TestButton 
-            onClick={testToasts.promises.randomPromise} 
-            className="bg-purple-500 hover:bg-purple-600 text-white"
-            icon={<Zap />}>
-            Random Promise
-          </TestButton>
-        </TestSection>
-
-        {/* Advanced Features */}
-        <TestSection 
-          title="Advanced Features"
-          description="Special toast behaviors and configurations"
-        >
-          <TestButton 
-            onClick={testToasts.advanced.persistent} 
-            className="bg-slate-500 hover:bg-slate-600 text-white"
-            icon={<Lock />}>
-            Persistent Toast
-          </TestButton>
-          <TestButton 
-            onClick={testToasts.advanced.noClose} 
-            className="bg-slate-500 hover:bg-slate-600 text-white"
-            icon={<EyeOff />}>
-            No Close Button
-          </TestButton>
-          <TestButton 
-            onClick={testToasts.advanced.customAction} 
-            className="bg-purple-500 hover:bg-purple-600 text-white"
-            icon={<Zap />}>
-            Custom Actions
-          </TestButton>
-          <TestButton 
-            onClick={testToasts.advanced.longContent} 
-            className="bg-blue-500 hover:bg-blue-600 text-white"
-            icon={<Info />}>
-            Long Content
-          </TestButton>
-        </TestSection>
-
-        {/* Bulk Operations */}
-        <TestSection 
-          title="Bulk Operations"
-          description="Test multiple toasts and bulk actions"
-        >
-          <TestButton 
-            onClick={showMultipleToasts} 
-            className="bg-purple-500 hover:bg-purple-600 text-white"
-            icon={<Zap />}>
-            Show 5 Toasts
-          </TestButton>
-          <TestButton 
-            onClick={clearAllToasts} 
-            className="bg-red-500 hover:bg-red-600 text-white"
-            icon={<Trash2 />}>
-            Clear All
-          </TestButton>
-        </TestSection>
-
-        {/* Footer */}
-        <div className="text-center mt-12 p-6 bg-slate-100 dark:bg-slate-800 rounded-xl">
-          <p className="text-slate-600 dark:text-slate-400">
-            Toast notifications should appear in the top-right corner with smooth animations.
-            Try different combinations to test the stacking behavior and responsiveness.
-          </p>
-        </div>
-      </div>
-    </div>
+          Show Custom Toast
+        </Button>
+      </CardBody>
+    </Card>
   );
 };
 
-export default ToastTestPage;
+// Statistics Panel
+const StatsPanel: React.FC<{ toast: any, totalTests: number }> = ({ toast, totalTests }) => {
+  const activeCount = toast.toasts.length;
+  const successCount = toast.toasts.filter((t: any) => t.variant === 'success').length;
+  const errorCount = toast.toasts.filter((t: any) => t.variant === 'error').length;
+  const warningCount = toast.toasts.filter((t: any) => t.variant === 'warning').length;
+  const premiumCount = toast.toasts.filter((t: any) => t.variant === 'premium').length;
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center gap-2">
+          <BarChart3 className="w-5 h-5" />
+          <h3 className="text-lg font-semibold">Toast Statistics</h3>
+        </div>
+      </CardHeader>
+      <CardBody>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <div className="text-center">
+            <div className="text-2xl font-bold text-default-600">{activeCount}</div>
+            <div className="text-xs text-default-500">Active</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-success-500">{successCount}</div>
+            <div className="text-xs text-default-500">Success</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-danger-500">{errorCount}</div>
+            <div className="text-xs text-default-500">Errors</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-warning-500">{warningCount}</div>
+            <div className="text-xs text-default-500">Warnings</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-primary-500">{premiumCount}</div>
+            <div className="text-xs text-default-500">Premium</div>
+          </div>
+        </div>
+        
+        <Divider className="my-4" />
+        
+        <div className="text-center">
+          <div className="text-sm text-default-600 mb-2">Total Tests Run: {totalTests}</div>
+          <div className="flex gap-2 justify-center">
+            <Button
+              size="sm"
+              variant="flat"
+              onPress={toast.dismissAll}
+              startContent={<Pause className="w-3 h-3" />}
+            >
+              Dismiss All
+            </Button>
+            <Button
+              size="sm"
+              variant="flat"
+              color="danger"
+              onPress={toast.clearAll}
+              startContent={<Trash2 className="w-3 h-3" />}
+            >
+              Clear All
+            </Button>
+          </div>
+        </div>
+      </CardBody>
+    </Card>
+  );
+};
+
+// Main Test Page Component
+const ToastTestPage: React.FC = () => {
+  const toast = useToast();
+  const [totalTests, setTotalTests] = useState(0);
+  const [selectedCategory, setSelectedCategory] = useState('basic');
+
+  const runTest = (testAction: Function) => {
+    setTotalTests(prev => prev + 1);
+    testAction(toast, totalTests + 1);
+  };
+
+  const runAllTests = () => {
+    Object.values(testCategories).forEach((category) => {
+      category.tests.forEach((test, index) => {
+        setTimeout(() => {
+          runTest(test.action);
+        }, index * 300);
+      });
+    });
+  };
+
+  const runCategoryTests = (categoryKey: string) => {
+    const category = testCategories[categoryKey];
+    category.tests.forEach((test, index) => {
+      setTimeout(() => {
+        runTest(test.action);
+      }, index * 200);
+    });
+  };
+
+  return (
+    <div className="min-h-screen bg-background p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="text-center">
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <h1 className="text-4xl font-bold text-foreground mb-2">
+              🧪 Toast Testing Suite
+            </h1>
+            <p className="text-default-600 text-lg">
+              Comprehensive testing interface for the HeroUI toast system
+            </p>
+            <div className="flex justify-center gap-2 mt-4">
+              <Chip color="primary" variant="flat">HeroUI Integration</Chip>
+              <Chip color="success" variant="flat">Professional Grade</Chip>
+              <Chip color="warning" variant="flat">Zero Errors</Chip>
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Statistics Panel */}
+        <StatsPanel toast={toast} totalTests={totalTests} />
+
+        {/* Quick Actions */}
+        <Card>
+          <CardBody>
+            <div className="flex flex-wrap gap-3 justify-center">
+              <Button
+                color="primary"
+                variant="solid"
+                onPress={runAllTests}
+                startContent={<Sparkles className="w-4 h-4" />}
+                className="font-medium"
+              >
+                Run All Tests
+              </Button>
+              
+              {Object.entries(testCategories).map(([key, category]) => (
+                <Button
+                  key={key}
+                  color={category.color as any}
+                  variant="flat"
+                  onPress={() => runCategoryTests(key)}
+                  startContent={category.icon}
+                >
+                  {category.title}
+                </Button>
+              ))}
+            </div>
+          </CardBody>
+        </Card>
+
+        {/* Main Content */}
+        <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+          {/* Test Categories */}
+          <div className="xl:col-span-3">
+            <Tabs
+              selectedKey={selectedCategory}
+              onSelectionChange={(key) => setSelectedCategory(key as string)}
+              className="w-full"
+            >
+              {Object.entries(testCategories).map(([key, category]) => (
+                <Tab
+                  key={key}
+                  title={
+                    <div className="flex items-center gap-2">
+                      {category.icon}
+                      {category.title}
+                    </div>
+                  }
+                >
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+                    {category.tests.map((test, index) => (
+                      <motion.div
+                        key={test.name}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                      >
+                        <Card className="h-full hover:shadow-lg transition-shadow">
+                          <CardBody className="p-4">
+                            <h4 className="font-semibold text-foreground mb-2">
+                              {test.name}
+                            </h4>
+                            <p className="text-sm text-default-600 mb-4 flex-grow">
+                              {test.description}
+                            </p>
+                            <Button
+                              size="sm"
+                              color={category.color as any}
+                              variant="flat"
+                              className="w-full"
+                              onPress={() => runTest(test.action)}
+                              startContent={<Play className="w-3 h-3" />}
+                            >
+                              Test
+                            </Button>
+                          </CardBody>
+                        </Card>
+                      </motion.div>
+                    ))}
+                  </div>
+                </Tab>
+              ))}
+            </Tabs>
+          </div>
+
+          {/* Custom Toast Builder */}
+          <div className="xl:col-span-1">
+            <CustomToastPanel toast={toast} />
+          </div>
+        </div>
+
+        {/* Usage Examples */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <CodeIcon className="w-5 h-5" />
+              <h3 className="text-lg font-semibold">Usage Examples</h3>
+            </div>
+          </CardHeader>
+          <CardBody>
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm text-default-600 mb-2">Basic Usage:</p>
+                <Code className="text-xs">
+                  {`const toast = useToast();
+toast.success('Success!', { description: 'Operation completed' });`}
+                </Code>
+              </div>
+              
+              <div>
+                <p className="text-sm text-default-600 mb-2">Wallet Analytics:</p>
+                <Code className="text-xs">
+                  {`toast.onWalletSyncSuccess('MetaMask', '$12,543.21');
+toast.onAnalyticsUpdate(3);`}
+                </Code>
+              </div>
+              
+              <div>
+                <p className="text-sm text-default-600 mb-2">Premium Features:</p>
+                <Code className="text-xs">
+                  {`toast.onPremiumFeature('Advanced Analytics');
+toast.onAchievement('First Million!', 'legendary');`}
+                </Code>
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+
+        {/* Keyboard Shortcuts */}
+        <Card>
+          <CardHeader>
+            <h3 className="text-lg font-semibold">Keyboard Shortcuts</h3>
+          </CardHeader>
+          <CardBody>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div className="flex items-center gap-2">
+                <Kbd keys={['cmd', 'enter']}>⌘ Enter</Kbd>
+                <span className="text-default-600">Show Success</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Kbd keys={['cmd', 'e']}>⌘ E</Kbd>
+                <span className="text-default-600">Show Error</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Kbd keys={['cmd', 'w']}>⌘ W</Kbd>
+                <span className="text-default-600">Show Warning</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Kbd keys={['esc']}>ESC</Kbd>
+                <span className="text-default-600">Clear All</span>
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+      </div>
+
+      <ToastDemo />
+    </div>
+  );
+};
+export default ToastTestPage; 
+
