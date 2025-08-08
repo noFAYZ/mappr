@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useMemo } from 'react';
-import { FixedSizeList as List, ListChildComponentProps } from 'react-window';
+import React, { useMemo } from "react";
+import { FixedSizeList as List, ListChildComponentProps } from "react-window";
 
-import { ChatMessage } from './index';
-import { type Message } from './types';
+import { type Message } from "./types";
+
+import { ChatMessage } from "./index";
 
 interface MessageVirtualizerProps {
   messages: Message[];
@@ -13,7 +14,7 @@ interface MessageVirtualizerProps {
   onCopy: (content: string) => void;
   onRegenerate?: (messageId: string) => void;
   onEdit?: (messageId: string, content: string) => void;
-  onFeedback?: (messageId: string, type: 'positive' | 'negative') => void;
+  onFeedback?: (messageId: string, type: "positive" | "negative") => void;
   className?: string;
 }
 
@@ -29,23 +30,25 @@ export const MessageVirtualizer: React.FC<MessageVirtualizerProps> = ({
   onRegenerate,
   onEdit,
   onFeedback,
-  className
+  className,
 }) => {
   const MessageItem = useMemo(() => {
     return ({ index, style }: ListChildComponentProps) => {
       const message = messages[index];
-      
+
       if (!message) return null;
 
       return (
-        <div style={style} className="px-4 py-2">
+        <div className="px-4 py-2" style={style}>
           <ChatMessage
             message={message}
+            showActions={true}
             onCopy={onCopy}
-            onRegenerate={onRegenerate ? () => onRegenerate(message.id) : undefined}
             onEdit={onEdit}
             onFeedback={onFeedback}
-            showActions={true}
+            onRegenerate={
+              onRegenerate ? () => onRegenerate(message.id) : undefined
+            }
           />
         </div>
       );
@@ -58,8 +61,8 @@ export const MessageVirtualizer: React.FC<MessageVirtualizerProps> = ({
         height={height}
         itemCount={messages.length}
         itemSize={itemHeight}
-        width="100%"
         overscanCount={5}
+        width="100%"
       >
         {MessageItem}
       </List>

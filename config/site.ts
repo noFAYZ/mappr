@@ -2,8 +2,9 @@ export type SiteConfig = typeof siteConfig;
 
 export const siteConfig = {
   name: "MoneyMappr Pro",
-  description: "The ultimate data aggregation platform for crypto, banking, and business intelligence.",
-  
+  description:
+    "The ultimate data aggregation platform for crypto, banking, and business intelligence.",
+
   navItems: [
     {
       label: "Dashboard",
@@ -14,7 +15,7 @@ export const siteConfig = {
       href: "/extensions",
     },
     {
-      label: "Portfolios", 
+      label: "Portfolios",
       href: "/portfolios",
     },
     {
@@ -26,7 +27,7 @@ export const siteConfig = {
       href: "/analytics",
     },
   ],
-  
+
   navMenuItems: [
     {
       label: "Dashboard",
@@ -65,7 +66,7 @@ export const siteConfig = {
       href: "/logout",
     },
   ],
-  
+
   links: {
     github: "https://github.com/dataaggregator/platform",
     twitter: "https://twitter.com/dataaggregator",
@@ -73,7 +74,7 @@ export const siteConfig = {
     discord: "https://discord.gg/dataaggregator",
     support: "https://support.dataaggregator.com",
   },
-  
+
   authLinks: {
     profile: "/profile",
     settings: "/settings",
@@ -88,22 +89,22 @@ export const siteConfig = {
       maxExtensions: 2,
       maxPortfolios: 1,
       aiQueries: 50,
-      exportFormats: ['csv'],
-      support: 'community',
+      exportFormats: ["csv"],
+      support: "community",
     },
     pro: {
       maxExtensions: 10,
       maxPortfolios: -1, // unlimited
       aiQueries: 500,
-      exportFormats: ['csv', 'json', 'pdf'],
-      support: 'email',
+      exportFormats: ["csv", "json", "pdf"],
+      support: "email",
     },
     enterprise: {
       maxExtensions: -1, // unlimited
       maxPortfolios: -1, // unlimited
       aiQueries: -1, // unlimited
-      exportFormats: ['csv', 'json', 'pdf', 'xlsx'],
-      support: 'priority',
+      exportFormats: ["csv", "json", "pdf", "xlsx"],
+      support: "priority",
     },
   },
 };

@@ -1,12 +1,18 @@
-import { create } from 'zustand';
-import { devtools, persist } from 'zustand/middleware';
+import { create } from "zustand";
+import { devtools } from "zustand/middleware";
 
 export interface Extension {
   id: string;
   name: string;
   slug: string;
   description: string;
-  category: 'crypto' | 'banking' | 'ecommerce' | 'accounting' | 'file' | 'other';
+  category:
+    | "crypto"
+    | "banking"
+    | "ecommerce"
+    | "accounting"
+    | "file"
+    | "other";
   provider: string;
   logoUrl?: string;
   apiConfig: Record<string, any>;
@@ -29,7 +35,7 @@ export interface UserExtension {
   configuration: Record<string, any>;
   isEnabled: boolean;
   lastSyncAt?: string;
-  syncStatus: 'pending' | 'syncing' | 'success' | 'error';
+  syncStatus: "pending" | "syncing" | "success" | "error";
   syncError?: string;
   syncMetadata: Record<string, any>;
   createdAt: string;
@@ -43,12 +49,12 @@ interface ExtensionState {
   selectedExtension: Extension | null;
   isLoading: boolean;
   error: string | null;
-  
+
   // Filters and search
   searchQuery: string;
   selectedCategory: string;
   showConnectedOnly: boolean;
-  
+
   // Actions
   setExtensions: (extensions: Extension[]) => void;
   setUserExtensions: (userExtensions: UserExtension[]) => void;
@@ -58,13 +64,20 @@ interface ExtensionState {
   setSearchQuery: (query: string) => void;
   setSelectedCategory: (category: string) => void;
   setShowConnectedOnly: (show: boolean) => void;
-  
+
   // Extension operations
-  connectExtension: (extensionId: string, credentials: Record<string, any>, connectionName?: string) => Promise<void>;
+  connectExtension: (
+    extensionId: string,
+    credentials: Record<string, any>,
+    connectionName?: string,
+  ) => Promise<void>;
   disconnectExtension: (userExtensionId: string) => Promise<void>;
   syncExtension: (userExtensionId: string) => Promise<void>;
-  updateExtensionConfig: (userExtensionId: string, config: Record<string, any>) => Promise<void>;
-  
+  updateExtensionConfig: (
+    userExtensionId: string,
+    config: Record<string, any>,
+  ) => Promise<void>;
+
   // Computed getters
   getConnectedExtensions: () => UserExtension[];
   getAvailableExtensions: () => Extension[];
@@ -80,8 +93,8 @@ export const useExtensionStore = create<ExtensionState>()(
       selectedExtension: null,
       isLoading: false,
       error: null,
-      searchQuery: '',
-      selectedCategory: 'all',
+      searchQuery: "",
+      selectedCategory: "all",
       showConnectedOnly: false,
 
       setExtensions: (extensions) => set({ extensions }),
@@ -93,28 +106,34 @@ export const useExtensionStore = create<ExtensionState>()(
       setSelectedCategory: (selectedCategory) => set({ selectedCategory }),
       setShowConnectedOnly: (showConnectedOnly) => set({ showConnectedOnly }),
 
-      connectExtension: async (extensionId: string, credentials: Record<string, any>, connectionName?: string) => {
+      connectExtension: async (
+        extensionId: string,
+        credentials: Record<string, any>,
+        connectionName?: string,
+      ) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await fetch('/api/extensions/connect', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-              extensionId, 
+          const response = await fetch("/api/extensions/connect", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              extensionId,
               credentials,
-              connectionName: connectionName || 'Default Connection'
-            })
+              connectionName: connectionName || "Default Connection",
+            }),
           });
-          
+
           if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(errorData.message || 'Connection failed');
+
+            throw new Error(errorData.message || "Connection failed");
           }
-          
+
           const userExtension = await response.json();
-          set(state => ({
+
+          set((state) => ({
             userExtensions: [...state.userExtensions, userExtension.data],
-            isLoading: false
+            isLoading: false,
           }));
         } catch (error) {
           set({ error: (error as Error).message, isLoading: false });
@@ -126,17 +145,20 @@ export const useExtensionStore = create<ExtensionState>()(
         set({ isLoading: true, error: null });
         try {
           const response = await fetch(`/api/extensions/${userExtensionId}`, {
-            method: 'DELETE',
+            method: "DELETE",
           });
-          
+
           if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(errorData.message || 'Disconnection failed');
+
+            throw new Error(errorData.message || "Disconnection failed");
           }
-          
-          set(state => ({
-            userExtensions: state.userExtensions.filter(ext => ext.id !== userExtensionId),
-            isLoading: false
+
+          set((state) => ({
+            userExtensions: state.userExtensions.filter(
+              (ext) => ext.id !== userExtensionId,
+            ),
+            isLoading: false,
           }));
         } catch (error) {
           set({ error: (error as Error).message, isLoading: false });
@@ -147,22 +169,30 @@ export const useExtensionStore = create<ExtensionState>()(
       syncExtension: async (userExtensionId: string) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await fetch(`/api/extensions/${userExtensionId}/sync`, {
-            method: 'POST',
-          });
-          
+          const response = await fetch(
+            `/api/extensions/${userExtensionId}/sync`,
+            {
+              method: "POST",
+            },
+          );
+
           if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(errorData.message || 'Sync failed');
+
+            throw new Error(errorData.message || "Sync failed");
           }
-          
-          set(state => ({
-            userExtensions: state.userExtensions.map(ext => 
-              ext.id === userExtensionId 
-                ? { ...ext, syncStatus: 'syncing' as const, lastSyncAt: new Date().toISOString() }
-                : ext
+
+          set((state) => ({
+            userExtensions: state.userExtensions.map((ext) =>
+              ext.id === userExtensionId
+                ? {
+                    ...ext,
+                    syncStatus: "syncing" as const,
+                    lastSyncAt: new Date().toISOString(),
+                  }
+                : ext,
             ),
-            isLoading: false
+            isLoading: false,
           }));
         } catch (error) {
           set({ error: (error as Error).message, isLoading: false });
@@ -170,26 +200,34 @@ export const useExtensionStore = create<ExtensionState>()(
         }
       },
 
-      updateExtensionConfig: async (userExtensionId: string, config: Record<string, any>) => {
+      updateExtensionConfig: async (
+        userExtensionId: string,
+        config: Record<string, any>,
+      ) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await fetch(`/api/extensions/${userExtensionId}/config`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ configuration: config })
-          });
-          
+          const response = await fetch(
+            `/api/extensions/${userExtensionId}/config`,
+            {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ configuration: config }),
+            },
+          );
+
           if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(errorData.message || 'Update failed');
+
+            throw new Error(errorData.message || "Update failed");
           }
-          
+
           const updatedExtension = await response.json();
-          set(state => ({
-            userExtensions: state.userExtensions.map(ext => 
-              ext.id === userExtensionId ? updatedExtension.data : ext
+
+          set((state) => ({
+            userExtensions: state.userExtensions.map((ext) =>
+              ext.id === userExtensionId ? updatedExtension.data : ext,
             ),
-            isLoading: false
+            isLoading: false,
           }));
         } catch (error) {
           set({ error: (error as Error).message, isLoading: false });
@@ -199,39 +237,53 @@ export const useExtensionStore = create<ExtensionState>()(
 
       // Computed getters
       getConnectedExtensions: () => {
-        return get().userExtensions.filter(ext => ext.isEnabled);
+        return get().userExtensions.filter((ext) => ext.isEnabled);
       },
 
       getAvailableExtensions: () => {
         const { extensions, userExtensions } = get();
-        const connectedExtensionIds = new Set(userExtensions.map(ue => ue.extensionId));
-        return extensions.filter(ext => !connectedExtensionIds.has(ext.id));
+        const connectedExtensionIds = new Set(
+          userExtensions.map((ue) => ue.extensionId),
+        );
+
+        return extensions.filter((ext) => !connectedExtensionIds.has(ext.id));
       },
 
       getFilteredExtensions: () => {
-        const { extensions, searchQuery, selectedCategory, showConnectedOnly, userExtensions } = get();
-        const connectedExtensionIds = new Set(userExtensions.map(ue => ue.extensionId));
-        
-        return extensions.filter(ext => {
+        const {
+          extensions,
+          searchQuery,
+          selectedCategory,
+          showConnectedOnly,
+          userExtensions,
+        } = get();
+        const connectedExtensionIds = new Set(
+          userExtensions.map((ue) => ue.extensionId),
+        );
+
+        return extensions.filter((ext) => {
           // Search filter
-          const matchesSearch = !searchQuery || 
+          const matchesSearch =
+            !searchQuery ||
             ext.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             ext.description.toLowerCase().includes(searchQuery.toLowerCase());
 
           // Category filter
-          const matchesCategory = selectedCategory === 'all' || ext.category === selectedCategory;
+          const matchesCategory =
+            selectedCategory === "all" || ext.category === selectedCategory;
 
           // Connected filter
-          const matchesConnected = !showConnectedOnly || connectedExtensionIds.has(ext.id);
+          const matchesConnected =
+            !showConnectedOnly || connectedExtensionIds.has(ext.id);
 
           return matchesSearch && matchesCategory && matchesConnected;
         });
       },
 
       getExtensionBySlug: (slug: string) => {
-        return get().extensions.find(ext => ext.slug === slug);
+        return get().extensions.find((ext) => ext.slug === slug);
       },
     }),
-    { name: 'extension-store' }
-  )
+    { name: "extension-store" },
+  ),
 );

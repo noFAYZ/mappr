@@ -1,15 +1,16 @@
 // lib/utils/messageExport.ts
 "use client";
 
-import { Message } from '@/app/ai/components/types';
-import { ChatMessageUtils } from './chatMessage';
+import { ChatMessageUtils } from "./chatMessage";
+
+import { Message } from "@/app/ai/components/types";
 
 export interface ExportOptions {
-  format: 'txt' | 'md' | 'json' | 'html' | 'csv' | 'pdf';
+  format: "txt" | "md" | "json" | "html" | "csv" | "pdf";
   includeMetadata?: boolean;
   includeTimestamps?: boolean;
   includeAttachments?: boolean;
-  filterRoles?: Array<'user' | 'assistant' | 'system'>;
+  filterRoles?: Array<"user" | "assistant" | "system">;
   dateRange?: {
     start: Date;
     end: Date;
@@ -27,11 +28,11 @@ export interface ExportResult {
 }
 
 export interface ExportProgress {
-    phase: 'filtering' | 'formatting' | 'generating' | 'complete';
-    progress: number; // 0-100
-    message: string;
-    estimatedTimeRemaining?: number;
-  }
+  phase: "filtering" | "formatting" | "generating" | "complete";
+  progress: number; // 0-100
+  message: string;
+  estimatedTimeRemaining?: number;
+}
 
 /**
  * Comprehensive utility class for exporting chat messages in various formats
@@ -39,18 +40,21 @@ export interface ExportProgress {
  */
 export class MessageExporter {
   private static readonly MIME_TYPES = {
-    txt: 'text/plain',
-    md: 'text/markdown',
-    json: 'application/json',
-    html: 'text/html',
-    csv: 'text/csv',
-    pdf: 'application/pdf'
+    txt: "text/plain",
+    md: "text/markdown",
+    json: "application/json",
+    html: "text/html",
+    csv: "text/csv",
+    pdf: "application/pdf",
   } as const;
 
   /**
    * Export messages to specified format with comprehensive options
    */
-  static async export(messages: Message[], options: ExportOptions): Promise<ExportResult> {
+  static async export(
+    messages: Message[],
+    options: ExportOptions,
+  ): Promise<ExportResult> {
     try {
       // Validate inputs
       this.validateInputs(messages, options);
@@ -59,7 +63,7 @@ export class MessageExporter {
       const filteredMessages = this.filterMessages(messages, options);
 
       if (filteredMessages.length === 0) {
-        throw new Error('No messages match the specified criteria');
+        throw new Error("No messages match the specified criteria");
       }
 
       // Generate content based on format
@@ -68,33 +72,35 @@ export class MessageExporter {
       let mimeType: string;
 
       switch (options.format) {
-        case 'txt':
+        case "txt":
           content = this.exportAsText(filteredMessages, options);
-          filename = this.generateFilename('txt', options.title);
+          filename = this.generateFilename("txt", options.title);
           mimeType = this.MIME_TYPES.txt;
           break;
-        case 'md':
+        case "md":
           content = this.exportAsMarkdown(filteredMessages, options);
-          filename = this.generateFilename('md', options.title);
+          filename = this.generateFilename("md", options.title);
           mimeType = this.MIME_TYPES.md;
           break;
-        case 'json':
+        case "json":
           content = this.exportAsJSON(filteredMessages, options);
-          filename = this.generateFilename('json', options.title);
+          filename = this.generateFilename("json", options.title);
           mimeType = this.MIME_TYPES.json;
           break;
-        case 'html':
+        case "html":
           content = this.exportAsHTML(filteredMessages, options);
-          filename = this.generateFilename('html', options.title);
+          filename = this.generateFilename("html", options.title);
           mimeType = this.MIME_TYPES.html;
           break;
-        case 'csv':
+        case "csv":
           content = this.exportAsCSV(filteredMessages, options);
-          filename = this.generateFilename('csv', options.title);
+          filename = this.generateFilename("csv", options.title);
           mimeType = this.MIME_TYPES.csv;
           break;
-        case 'pdf':
-          throw new Error('PDF export requires additional dependencies. Use HTML export and convert to PDF.');
+        case "pdf":
+          throw new Error(
+            "PDF export requires additional dependencies. Use HTML export and convert to PDF.",
+          );
         default:
           throw new Error(`Unsupported export format: ${options.format}`);
       }
@@ -103,40 +109,48 @@ export class MessageExporter {
         content,
         filename,
         mimeType,
-        size: new Blob([content]).size
+        size: new Blob([content]).size,
       };
     } catch (error) {
-      console.error('Export failed:', error);
-      throw new Error(`Export failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error("Export failed:", error);
+      throw new Error(
+        `Export failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     }
   }
 
   /**
    * Download exported messages as file
    */
-  static async download(messages: Message[], options: ExportOptions): Promise<void> {
+  static async download(
+    messages: Message[],
+    options: ExportOptions,
+  ): Promise<void> {
     try {
       const result = await this.export(messages, options);
-      
+
       const blob = new Blob([result.content], { type: result.mimeType });
       const url = URL.createObjectURL(blob);
-      
-      const link = document.createElement('a');
+
+      const link = document.createElement("a");
+
       link.href = url;
       link.download = result.filename;
-      link.style.display = 'none';
-      
+      link.style.display = "none";
+
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      
+
       // Cleanup
       setTimeout(() => URL.revokeObjectURL(url), 100);
-      
+
       // Log success
-      console.log(`Successfully exported ${messages.length} messages as ${options.format.toUpperCase()}`);
+      console.log(
+        `Successfully exported ${messages.length} messages as ${options.format.toUpperCase()}`,
+      );
     } catch (error) {
-      console.error('Download failed:', error);
+      console.error("Download failed:", error);
       throw error;
     }
   }
@@ -144,47 +158,58 @@ export class MessageExporter {
   /**
    * Get export preview without downloading
    */
-  static async getPreview(messages: Message[], options: ExportOptions, maxLength: number = 1000): Promise<string> {
+  static async getPreview(
+    messages: Message[],
+    options: ExportOptions,
+    maxLength: number = 1000,
+  ): Promise<string> {
     const result = await this.export(messages, options);
-    return result.content.length > maxLength 
-      ? result.content.substring(0, maxLength) + '...\n\n[Content truncated for preview]'
+
+    return result.content.length > maxLength
+      ? result.content.substring(0, maxLength) +
+          "...\n\n[Content truncated for preview]"
       : result.content;
   }
 
   /**
    * Export as plain text with customizable formatting
    */
-  private static exportAsText(messages: Message[], options: ExportOptions): string {
-    const title = options.title || 'Chat Export';
-    const description = options.description || `Exported ${messages.length} messages`;
-    
-    let output = `${title}\n${'='.repeat(title.length)}\n`;
+  private static exportAsText(
+    messages: Message[],
+    options: ExportOptions,
+  ): string {
+    const title = options.title || "Chat Export";
+    const description =
+      options.description || `Exported ${messages.length} messages`;
+
+    let output = `${title}\n${"=".repeat(title.length)}\n`;
+
     output += `${description}\n`;
     output += `Export Date: ${new Date().toLocaleString()}\n`;
     output += `Total Messages: ${messages.length}\n\n`;
-    
+
     messages.forEach((message, index) => {
       const role = this.formatRole(message.role);
-      const timestamp = options.includeTimestamps 
+      const timestamp = options.includeTimestamps
         ? ` (${this.formatTimestamp(message.timestamp)})`
-        : '';
-      
+        : "";
+
       output += `${role}${timestamp}:\n`;
       output += `${this.cleanContentForText(message.content)}\n`;
-      
+
       // Add attachments
       if (options.includeAttachments && message.attachments?.length) {
         output += `\nAttachments:\n`;
-        message.attachments.forEach(attachment => {
+        message.attachments.forEach((attachment) => {
           output += `  - ${attachment.name} (${attachment.type})\n`;
         });
       }
-      
+
       // Add metadata
       if (options.includeMetadata && message.metadata) {
         output += `\nMetadata:\n`;
-        output += `  Model: ${message.metadata.model || 'Unknown'}\n`;
-        output += `  Word Count: ${message.metadata.wordCount || 'Unknown'}\n`;
+        output += `  Model: ${message.metadata.model || "Unknown"}\n`;
+        output += `  Word Count: ${message.metadata.wordCount || "Unknown"}\n`;
         if (message.metadata.processingTime) {
           output += `  Processing Time: ${message.metadata.processingTime}ms\n`;
         }
@@ -192,71 +217,78 @@ export class MessageExporter {
           output += `  Confidence: ${(message.metadata.confidence * 100).toFixed(1)}%\n`;
         }
       }
-      
+
       if (index < messages.length - 1) {
-        output += '\n' + '-'.repeat(50) + '\n\n';
+        output += "\n" + "-".repeat(50) + "\n\n";
       }
     });
-    
+
     return output;
   }
 
   /**
    * Export as Markdown with rich formatting
    */
-  private static exportAsMarkdown(messages: Message[], options: ExportOptions): string {
-    const title = options.title || 'Chat Export';
-    const description = options.description || `Exported ${messages.length} messages`;
-    
+  private static exportAsMarkdown(
+    messages: Message[],
+    options: ExportOptions,
+  ): string {
+    const title = options.title || "Chat Export";
+    const description =
+      options.description || `Exported ${messages.length} messages`;
+
     let output = `# ${title}\n\n`;
+
     output += `> ${description}  \n`;
     output += `> Export Date: ${new Date().toLocaleString()}  \n`;
     output += `> Total Messages: ${messages.length}\n\n`;
-    
+
     // Add table of contents if many messages
     if (messages.length > 10) {
       output += `## Table of Contents\n\n`;
       messages.forEach((message, index) => {
         const role = this.formatRole(message.role);
         const preview = this.getMessagePreview(message.content, 50);
+
         output += `${index + 1}. [${role}: ${preview}](#message-${index + 1})\n`;
       });
-      output += '\n---\n\n';
+      output += "\n---\n\n";
     }
-    
+
     messages.forEach((message, index) => {
       const role = this.formatRole(message.role);
-      const timestamp = options.includeTimestamps 
+      const timestamp = options.includeTimestamps
         ? ` - ${this.formatTimestamp(message.timestamp)}`
-        : '';
-      
+        : "";
+
       output += `## Message ${index + 1}: ${role}${timestamp} {#message-${index + 1}}\n\n`;
-      
+
       // Add role badge
       const roleBadge = this.getRoleBadge(message.role);
+
       output += `${roleBadge}\n\n`;
-      
+
       // Add content (preserve markdown formatting)
       output += `${message.content}\n\n`;
-      
+
       // Add attachments as a collapsible section
       if (options.includeAttachments && message.attachments?.length) {
         output += `<details>\n<summary>📎 Attachments (${message.attachments.length})</summary>\n\n`;
-        message.attachments.forEach(attachment => {
+        message.attachments.forEach((attachment) => {
           output += `- **${attachment.name}** (${attachment.type})`;
           if (attachment.size) {
             output += ` - ${this.formatFileSize(attachment.size)}`;
           }
-          output += '\n';
+          output += "\n";
         });
         output += `\n</details>\n\n`;
       }
-      
+
       // Add metadata as a collapsible section
       if (options.includeMetadata && message.metadata) {
         output += `<details>\n<summary>ℹ️ Metadata</summary>\n\n`;
         output += `| Property | Value |\n|----------|-------|\n`;
-        
+
         if (message.metadata.model) {
           output += `| Model | \`${message.metadata.model}\` |\n`;
         }
@@ -272,26 +304,30 @@ export class MessageExporter {
         if (message.metadata.contentType) {
           output += `| Content Type | ${message.metadata.contentType} |\n`;
         }
-        
+
         output += `\n</details>\n\n`;
       }
-      
+
       if (index < messages.length - 1) {
-        output += '---\n\n';
+        output += "---\n\n";
       }
     });
-    
+
     return output;
   }
 
   /**
    * Export as JSON with comprehensive structure
    */
-  private static exportAsJSON(messages: Message[], options: ExportOptions): string {
+  private static exportAsJSON(
+    messages: Message[],
+    options: ExportOptions,
+  ): string {
     const exportData = {
       meta: {
-        title: options.title || 'Chat Export',
-        description: options.description || `Exported ${messages.length} messages`,
+        title: options.title || "Chat Export",
+        description:
+          options.description || `Exported ${messages.length} messages`,
         exportedAt: new Date().toISOString(),
         messageCount: messages.length,
         exportOptions: {
@@ -299,9 +335,9 @@ export class MessageExporter {
           includeMetadata: options.includeMetadata,
           includeTimestamps: options.includeTimestamps,
           includeAttachments: options.includeAttachments,
-          filterRoles: options.filterRoles
+          filterRoles: options.filterRoles,
         },
-        statistics: this.generateQuickStats(messages)
+        statistics: this.generateQuickStats(messages),
       },
       messages: messages.map((message, index) => ({
         index: index + 1,
@@ -311,23 +347,29 @@ export class MessageExporter {
         timestamp: message.timestamp,
         formattedTimestamp: this.formatTimestamp(message.timestamp),
         wordCount: ChatMessageUtils.getWordCount(message.content),
-        ...(options.includeMetadata && message.metadata && { 
-          metadata: {
-            ...message.metadata,
-            ...(message.metadata.confidence && {
-              confidenceLevel: this.getConfidenceLevel(message.metadata.confidence)
-            })
-          }
-        }),
-        ...(options.includeAttachments && message.attachments && { 
-          attachments: message.attachments.map(att => ({
-            ...att,
-            formattedSize: att.size ? this.formatFileSize(att.size) : undefined
-          }))
-        }),
+        ...(options.includeMetadata &&
+          message.metadata && {
+            metadata: {
+              ...message.metadata,
+              ...(message.metadata.confidence && {
+                confidenceLevel: this.getConfidenceLevel(
+                  message.metadata.confidence,
+                ),
+              }),
+            },
+          }),
+        ...(options.includeAttachments &&
+          message.attachments && {
+            attachments: message.attachments.map((att) => ({
+              ...att,
+              formattedSize: att.size
+                ? this.formatFileSize(att.size)
+                : undefined,
+            })),
+          }),
         isStreaming: message.isStreaming || false,
-        isError: message.isError || false
-      }))
+        isError: message.isError || false,
+      })),
     };
 
     return JSON.stringify(exportData, null, 2);
@@ -336,10 +378,14 @@ export class MessageExporter {
   /**
    * Export as HTML with modern styling
    */
-  private static exportAsHTML(messages: Message[], options: ExportOptions): string {
-    const title = options.title || 'Chat Export';
-    const description = options.description || `Exported ${messages.length} messages`;
-    
+  private static exportAsHTML(
+    messages: Message[],
+    options: ExportOptions,
+  ): string {
+    const title = options.title || "Chat Export";
+    const description =
+      options.description || `Exported ${messages.length} messages`;
+
     let output = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -358,7 +404,7 @@ export class MessageExporter {
             <div class="meta">
                 <span>📅 Exported: ${new Date().toLocaleString()}</span>
                 <span>💬 Messages: ${messages.length}</span>
-                <span>👥 Participants: ${this.getUniqueRoles(messages).join(', ')}</span>
+                <span>👥 Participants: ${this.getUniqueRoles(messages).join(", ")}</span>
             </div>
         </header>
         
@@ -367,9 +413,9 @@ export class MessageExporter {
     messages.forEach((message, index) => {
       const roleClass = `message-${message.role}`;
       const roleName = this.formatRole(message.role);
-      const timestamp = options.includeTimestamps 
+      const timestamp = options.includeTimestamps
         ? `<time class="timestamp" datetime="${message.timestamp}">${this.formatTimestamp(message.timestamp)}</time>`
-        : '';
+        : "";
 
       output += `
             <article class="message ${roleClass}" id="message-${index + 1}">
@@ -391,16 +437,16 @@ export class MessageExporter {
                 <div class="attachments">
                     <h4>📎 Attachments</h4>
                     <ul class="attachment-list">`;
-        
-        message.attachments.forEach(attachment => {
+
+        message.attachments.forEach((attachment) => {
           output += `
                         <li class="attachment-item">
                             <span class="attachment-name">${this.escapeHtml(attachment.name)}</span>
                             <span class="attachment-type">${attachment.type}</span>
-                            ${attachment.size ? `<span class="attachment-size">${this.formatFileSize(attachment.size)}</span>` : ''}
+                            ${attachment.size ? `<span class="attachment-size">${this.formatFileSize(attachment.size)}</span>` : ""}
                         </li>`;
         });
-        
+
         output += `
                     </ul>
                 </div>`;
@@ -412,7 +458,7 @@ export class MessageExporter {
                 <details class="metadata">
                     <summary>ℹ️ Message Metadata</summary>
                     <dl class="metadata-list">`;
-        
+
         if (message.metadata.model) {
           output += `<dt>Model</dt><dd><code>${this.escapeHtml(message.metadata.model)}</code></dd>`;
         }
@@ -424,13 +470,16 @@ export class MessageExporter {
         }
         if (message.metadata.confidence) {
           const confidence = (message.metadata.confidence * 100).toFixed(1);
-          const confidenceClass = this.getConfidenceClass(message.metadata.confidence);
+          const confidenceClass = this.getConfidenceClass(
+            message.metadata.confidence,
+          );
+
           output += `<dt>Confidence</dt><dd><span class="confidence ${confidenceClass}">${confidence}%</span></dd>`;
         }
         if (message.metadata.contentType) {
           output += `<dt>Content Type</dt><dd><span class="content-type">${message.metadata.contentType}</span></dd>`;
         }
-        
+
         output += `
                     </dl>
                 </details>`;
@@ -465,29 +514,32 @@ export class MessageExporter {
   /**
    * Export as CSV for data analysis
    */
-  private static exportAsCSV(messages: Message[], options: ExportOptions): string {
+  private static exportAsCSV(
+    messages: Message[],
+    options: ExportOptions,
+  ): string {
     const headers = [
-      'Index',
-      'ID',
-      'Role',
-      'Content',
-      'Word_Count',
-      'Character_Count'
+      "Index",
+      "ID",
+      "Role",
+      "Content",
+      "Word_Count",
+      "Character_Count",
     ];
 
     if (options.includeTimestamps) {
-      headers.push('Timestamp', 'Formatted_Timestamp');
+      headers.push("Timestamp", "Formatted_Timestamp");
     }
 
     if (options.includeMetadata) {
-      headers.push('Model', 'Processing_Time_ms', 'Confidence', 'Content_Type');
+      headers.push("Model", "Processing_Time_ms", "Confidence", "Content_Type");
     }
 
     if (options.includeAttachments) {
-      headers.push('Attachment_Count', 'Attachment_Names');
+      headers.push("Attachment_Count", "Attachment_Names");
     }
 
-    let csv = headers.join(',') + '\n';
+    let csv = headers.join(",") + "\n";
 
     messages.forEach((message, index) => {
       const row = [
@@ -496,35 +548,34 @@ export class MessageExporter {
         `"${message.role}"`,
         `"${this.escapeCsv(this.cleanContentForCSV(message.content))}"`,
         ChatMessageUtils.getWordCount(message.content),
-        message.content.length
+        message.content.length,
       ];
 
       if (options.includeTimestamps) {
         row.push(
           `"${message.timestamp}"`,
-          `"${this.formatTimestamp(message.timestamp)}"`
+          `"${this.formatTimestamp(message.timestamp)}"`,
         );
       }
 
       if (options.includeMetadata) {
         row.push(
-          `"${message.metadata?.model || ''}"`,
-          message.metadata?.processingTime || '',
-          message.metadata?.confidence || '',
-          `"${message.metadata?.contentType || ''}"`
+          `"${message.metadata?.model || ""}"`,
+          message.metadata?.processingTime || "",
+          message.metadata?.confidence || "",
+          `"${message.metadata?.contentType || ""}"`,
         );
       }
 
       if (options.includeAttachments) {
         const attachmentCount = message.attachments?.length || 0;
-        const attachmentNames = message.attachments?.map(a => a.name).join('; ') || '';
-        row.push(
-          attachmentCount,
-          `"${this.escapeCsv(attachmentNames)}"`
-        );
+        const attachmentNames =
+          message.attachments?.map((a) => a.name).join("; ") || "";
+
+        row.push(attachmentCount, `"${this.escapeCsv(attachmentNames)}"`);
       }
 
-      csv += row.join(',') + '\n';
+      csv += row.join(",") + "\n";
     });
 
     return csv;
@@ -532,37 +583,49 @@ export class MessageExporter {
 
   // Helper Methods
 
-  private static validateInputs(messages: Message[], options: ExportOptions): void {
+  private static validateInputs(
+    messages: Message[],
+    options: ExportOptions,
+  ): void {
     if (!Array.isArray(messages)) {
-      throw new Error('Messages must be an array');
+      throw new Error("Messages must be an array");
     }
 
     if (messages.length === 0) {
-      throw new Error('No messages to export');
+      throw new Error("No messages to export");
     }
 
     if (!options.format) {
-      throw new Error('Export format is required');
+      throw new Error("Export format is required");
     }
 
-    if (!['txt', 'md', 'json', 'html', 'csv', 'pdf'].includes(options.format)) {
+    if (!["txt", "md", "json", "html", "csv", "pdf"].includes(options.format)) {
       throw new Error(`Unsupported format: ${options.format}`);
     }
   }
 
-  private static filterMessages(messages: Message[], options: ExportOptions): Message[] {
+  private static filterMessages(
+    messages: Message[],
+    options: ExportOptions,
+  ): Message[] {
     let filtered = [...messages];
 
     // Filter by roles
     if (options.filterRoles?.length) {
-      filtered = filtered.filter(msg => options.filterRoles!.includes(msg.role));
+      filtered = filtered.filter((msg) =>
+        options.filterRoles!.includes(msg.role),
+      );
     }
 
     // Filter by date range
     if (options.dateRange) {
-      filtered = filtered.filter(msg => {
+      filtered = filtered.filter((msg) => {
         const msgDate = new Date(msg.timestamp);
-        return msgDate >= options.dateRange!.start && msgDate <= options.dateRange!.end;
+
+        return (
+          msgDate >= options.dateRange!.start &&
+          msgDate <= options.dateRange!.end
+        );
       });
     }
 
@@ -583,18 +646,15 @@ export class MessageExporter {
 
   private static cleanContentForText(content: string): string {
     return content
-      .replace(/```[\s\S]*?```/g, '[Code Block]')
-      .replace(/`([^`]+)`/g, '$1')
-      .replace(/\*\*([^*]+)\*\*/g, '$1')
-      .replace(/\*([^*]+)\*/g, '$1')
+      .replace(/```[\s\S]*?```/g, "[Code Block]")
+      .replace(/`([^`]+)`/g, "$1")
+      .replace(/\*\*([^*]+)\*\*/g, "$1")
+      .replace(/\*([^*]+)\*/g, "$1")
       .trim();
   }
 
   private static cleanContentForCSV(content: string): string {
-    return content
-      .replace(/\n/g, ' ')
-      .replace(/"/g, '""')
-      .trim();
+    return content.replace(/\n/g, " ").replace(/"/g, '""').trim();
   }
 
   private static escapeCsv(text: string): string {
@@ -602,86 +662,107 @@ export class MessageExporter {
   }
 
   private static escapeHtml(text: string): string {
-    const div = document.createElement('div');
+    const div = document.createElement("div");
+
     div.textContent = text;
+
     return div.innerHTML;
   }
 
   private static formatContentForHTML(content: string): string {
     // Simple markdown to HTML conversion
     return content
-      .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
-      .replace(/`([^`]+)`/g, '<code>$1</code>')
-      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*([^*]+)\*/g, '<em>$1</em>')
-      .replace(/\n/g, '<br>')
+      .replace(/```([\s\S]*?)```/g, "<pre><code>$1</code></pre>")
+      .replace(/`([^`]+)`/g, "<code>$1</code>")
+      .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+      .replace(/\*([^*]+)\*/g, "<em>$1</em>")
+      .replace(/\n/g, "<br>")
       .trim();
   }
 
   private static getRoleBadge(role: string): string {
     const badges = {
-      user: '👤 **User**',
-      assistant: '🤖 **Assistant**',
-      system: '⚙️ **System**'
+      user: "👤 **User**",
+      assistant: "🤖 **Assistant**",
+      system: "⚙️ **System**",
     };
-    return badges[role as keyof typeof badges] || `**${this.formatRole(role)}**`;
+
+    return (
+      badges[role as keyof typeof badges] || `**${this.formatRole(role)}**`
+    );
   }
 
   private static getRoleEmoji(role: string): string {
     const emojis = {
-      user: '👤',
-      assistant: '🤖',
-      system: '⚙️'
+      user: "👤",
+      assistant: "🤖",
+      system: "⚙️",
     };
-    return emojis[role as keyof typeof emojis] || '💬';
+
+    return emojis[role as keyof typeof emojis] || "💬";
   }
 
   private static getMessagePreview(content: string, maxLength: number): string {
-    const cleaned = content.replace(/[#*`_~\[\]()]/g, '').trim();
-    return cleaned.length > maxLength ? cleaned.substring(0, maxLength) + '...' : cleaned;
+    const cleaned = content.replace(/[#*`_~\[\]()]/g, "").trim();
+
+    return cleaned.length > maxLength
+      ? cleaned.substring(0, maxLength) + "..."
+      : cleaned;
   }
 
   private static formatFileSize(bytes: number): string {
-    const sizes = ['B', 'KB', 'MB', 'GB'];
-    if (bytes === 0) return '0 B';
+    const sizes = ["B", "KB", "MB", "GB"];
+
+    if (bytes === 0) return "0 B";
     const i = Math.floor(Math.log(bytes) / Math.log(1024));
+
     return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${sizes[i]}`;
   }
 
   private static getConfidenceLevel(confidence: number): string {
-    if (confidence >= 0.9) return 'high';
-    if (confidence >= 0.7) return 'medium';
-    return 'low';
+    if (confidence >= 0.9) return "high";
+    if (confidence >= 0.7) return "medium";
+
+    return "low";
   }
 
   private static getConfidenceClass(confidence: number): string {
-    if (confidence >= 0.9) return 'confidence-high';
-    if (confidence >= 0.7) return 'confidence-medium';
-    return 'confidence-low';
+    if (confidence >= 0.9) return "confidence-high";
+    if (confidence >= 0.7) return "confidence-medium";
+
+    return "confidence-low";
   }
 
   private static getUniqueRoles(messages: Message[]): string[] {
-    const roles = new Set(messages.map(m => this.formatRole(m.role)));
+    const roles = new Set(messages.map((m) => this.formatRole(m.role)));
+
     return Array.from(roles);
   }
 
   private static generateQuickStats(messages: Message[]) {
     const totalWords = this.getTotalWords(messages);
-    const roles = messages.reduce((acc, msg) => {
-      acc[msg.role] = (acc[msg.role] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const roles = messages.reduce(
+      (acc, msg) => {
+        acc[msg.role] = (acc[msg.role] || 0) + 1;
+
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
 
     return {
       totalWords,
       averageWordsPerMessage: Math.round(totalWords / messages.length),
       roleDistribution: roles,
-      conversationDuration: this.getConversationDuration(messages)
+      conversationDuration: this.getConversationDuration(messages),
     };
   }
 
   private static getTotalWords(messages: Message[]): number {
-    return messages.reduce((total, msg) => total + ChatMessageUtils.getWordCount(msg.content), 0);
+    return messages.reduce(
+      (total, msg) => total + ChatMessageUtils.getWordCount(msg.content),
+      0,
+    );
   }
 
   private static getAverageWordsPerMessage(messages: Message[]): number {
@@ -689,25 +770,32 @@ export class MessageExporter {
   }
 
   private static getConversationDuration(messages: Message[]): string {
-    if (messages.length < 2) return 'N/A';
-    
+    if (messages.length < 2) return "N/A";
+
     const first = new Date(messages[0].timestamp);
     const last = new Date(messages[messages.length - 1].timestamp);
     const diffMs = last.getTime() - first.getTime();
     const diffMins = Math.round(diffMs / (1000 * 60));
-    
+
     if (diffMins < 60) return `${diffMins} minutes`;
     const diffHours = Math.round(diffMins / 60);
+
     return `${diffHours} hours`;
   }
 
   private static generateFilename(extension: string, title?: string): string {
-    const timestamp = new Date().toISOString().slice(0, 19).replace(/[:.]/g, '-');
-    const prefix = title ? title.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase() : 'chat-export';
+    const timestamp = new Date()
+      .toISOString()
+      .slice(0, 19)
+      .replace(/[:.]/g, "-");
+    const prefix = title
+      ? title.replace(/[^a-zA-Z0-9]/g, "-").toLowerCase()
+      : "chat-export";
+
     return `${prefix}-${timestamp}.${extension}`;
   }
 
-private static getHTMLStyles(): string {
+  private static getHTMLStyles(): string {
     return `
         * { box-sizing: border-box; }
         
@@ -1377,7 +1465,7 @@ export class ExportFormatUtils {
    * Get available export formats with their capabilities
    */
   static getAvailableFormats(): Array<{
-    format: ExportOptions['format'];
+    format: ExportOptions["format"];
     name: string;
     description: string;
     features: string[];
@@ -1387,104 +1475,134 @@ export class ExportFormatUtils {
   }> {
     return [
       {
-        format: 'txt',
-        name: 'Plain Text',
-        description: 'Simple text format, readable everywhere',
-        features: ['Lightweight', 'Universal compatibility', 'Easy to read'],
-        fileExtension: 'txt',
-        mimeType: 'text/plain',
-        maxRecommendedMessages: 1000
+        format: "txt",
+        name: "Plain Text",
+        description: "Simple text format, readable everywhere",
+        features: ["Lightweight", "Universal compatibility", "Easy to read"],
+        fileExtension: "txt",
+        mimeType: "text/plain",
+        maxRecommendedMessages: 1000,
       },
       {
-        format: 'md',
-        name: 'Markdown',
-        description: 'Formatted text with rich markup support',
-        features: ['Rich formatting', 'Code syntax highlighting', 'Tables', 'Links'],
-        fileExtension: 'md',
-        mimeType: 'text/markdown',
-        maxRecommendedMessages: 500
+        format: "md",
+        name: "Markdown",
+        description: "Formatted text with rich markup support",
+        features: [
+          "Rich formatting",
+          "Code syntax highlighting",
+          "Tables",
+          "Links",
+        ],
+        fileExtension: "md",
+        mimeType: "text/markdown",
+        maxRecommendedMessages: 500,
       },
       {
-        format: 'html',
-        name: 'HTML',
-        description: 'Interactive web page with search and navigation',
-        features: ['Interactive', 'Search functionality', 'Navigation', 'Responsive design'],
-        fileExtension: 'html',
-        mimeType: 'text/html',
-        maxRecommendedMessages: 300
+        format: "html",
+        name: "HTML",
+        description: "Interactive web page with search and navigation",
+        features: [
+          "Interactive",
+          "Search functionality",
+          "Navigation",
+          "Responsive design",
+        ],
+        fileExtension: "html",
+        mimeType: "text/html",
+        maxRecommendedMessages: 300,
       },
       {
-        format: 'json',
-        name: 'JSON',
-        description: 'Structured data format for programmatic access',
-        features: ['Structured data', 'API compatible', 'Metadata rich', 'Machine readable'],
-        fileExtension: 'json',
-        mimeType: 'application/json',
-        maxRecommendedMessages: 2000
+        format: "json",
+        name: "JSON",
+        description: "Structured data format for programmatic access",
+        features: [
+          "Structured data",
+          "API compatible",
+          "Metadata rich",
+          "Machine readable",
+        ],
+        fileExtension: "json",
+        mimeType: "application/json",
+        maxRecommendedMessages: 2000,
       },
       {
-        format: 'csv',
-        name: 'CSV',
-        description: 'Spreadsheet format for data analysis',
-        features: ['Spreadsheet compatible', 'Data analysis friendly', 'Lightweight'],
-        fileExtension: 'csv',
-        mimeType: 'text/csv',
-        maxRecommendedMessages: 5000
-      }
+        format: "csv",
+        name: "CSV",
+        description: "Spreadsheet format for data analysis",
+        features: [
+          "Spreadsheet compatible",
+          "Data analysis friendly",
+          "Lightweight",
+        ],
+        fileExtension: "csv",
+        mimeType: "text/csv",
+        maxRecommendedMessages: 5000,
+      },
     ];
   }
 
   /**
    * Get recommended format based on use case
    */
-  static getRecommendedFormat(useCase: 'sharing' | 'analysis' | 'backup' | 'presentation'): ExportOptions['format'] {
+  static getRecommendedFormat(
+    useCase: "sharing" | "analysis" | "backup" | "presentation",
+  ): ExportOptions["format"] {
     const recommendations = {
-      sharing: 'html',
-      analysis: 'csv',
-      backup: 'json',
-      presentation: 'md'
+      sharing: "html",
+      analysis: "csv",
+      backup: "json",
+      presentation: "md",
     };
-    
+
     return recommendations[useCase];
   }
 
   /**
    * Validate export options
    */
-  static validateExportOptions(options: ExportOptions): { valid: boolean; errors: string[] } {
+  static validateExportOptions(options: ExportOptions): {
+    valid: boolean;
+    errors: string[];
+  } {
     const errors: string[] = [];
-    
+
     if (!options.format) {
-      errors.push('Export format is required');
+      errors.push("Export format is required");
     }
-    
+
     if (options.dateRange) {
       if (options.dateRange.start >= options.dateRange.end) {
-        errors.push('Start date must be before end date');
+        errors.push("Start date must be before end date");
       }
     }
-    
+
     if (options.filterRoles && options.filterRoles.length === 0) {
-      errors.push('At least one role must be selected when filtering by roles');
+      errors.push("At least one role must be selected when filtering by roles");
     }
-    
+
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 
   /**
    * Get estimated export size
    */
-  static estimateExportSize(messages: Message[], format: ExportOptions['format']): {
+  static estimateExportSize(
+    messages: Message[],
+    format: ExportOptions["format"],
+  ): {
     estimatedSizeBytes: number;
     estimatedSizeFormatted: string;
     processingTimeMs: number;
   } {
-    const totalChars = messages.reduce((sum, msg) => sum + msg.content.length, 0);
+    const totalChars = messages.reduce(
+      (sum, msg) => sum + msg.content.length,
+      0,
+    );
     const totalMessages = messages.length;
-    
+
     // Size multipliers for different formats
     const multipliers = {
       txt: 1.2,
@@ -1492,19 +1610,21 @@ export class ExportFormatUtils {
       json: 2.5,
       html: 4.0,
       csv: 1.8,
-      pdf: 3.0
+      pdf: 3.0,
     };
-    
+
     const estimatedSizeBytes = Math.round(totalChars * multipliers[format]);
     const estimatedSizeFormatted = this.formatBytes(estimatedSizeBytes);
-    
+
     // Processing time estimation (very rough)
-    const processingTimeMs = Math.round(totalMessages * 2 + (estimatedSizeBytes / 1000));
-    
+    const processingTimeMs = Math.round(
+      totalMessages * 2 + estimatedSizeBytes / 1000,
+    );
+
     return {
       estimatedSizeBytes,
       estimatedSizeFormatted,
-      processingTimeMs
+      processingTimeMs,
     };
   }
 
@@ -1512,9 +1632,11 @@ export class ExportFormatUtils {
    * Format bytes to human readable string
    */
   private static formatBytes(bytes: number): string {
-    const sizes = ['B', 'KB', 'MB', 'GB'];
-    if (bytes === 0) return '0 B';
+    const sizes = ["B", "KB", "MB", "GB"];
+
+    if (bytes === 0) return "0 B";
     const i = Math.floor(Math.log(bytes) / Math.log(1024));
+
     return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${sizes[i]}`;
   }
 }
@@ -1523,58 +1645,57 @@ export class ExportFormatUtils {
 export class ExportProgressTracker {
   private callbacks: Set<(progress: ExportProgress) => void> = new Set();
 
-
-
   subscribe(callback: (progress: ExportProgress) => void): () => void {
     this.callbacks.add(callback);
+
     return () => this.callbacks.delete(callback);
   }
 
   private emit(progress: ExportProgress): void {
-    this.callbacks.forEach(callback => callback(progress));
+    this.callbacks.forEach((callback) => callback(progress));
   }
 
   async trackExport<T>(
     exportFn: (tracker: ExportProgressTracker) => Promise<T>,
-    totalSteps: number = 100
+    totalSteps: number = 100,
   ): Promise<T> {
     const startTime = Date.now();
-    
+
     try {
       this.emit({
-        phase: 'filtering',
+        phase: "filtering",
         progress: 0,
-        message: 'Starting export...'
+        message: "Starting export...",
       });
 
       const result = await exportFn(this);
 
       this.emit({
-        phase: 'complete',
+        phase: "complete",
         progress: 100,
-        message: 'Export completed successfully!'
+        message: "Export completed successfully!",
       });
 
       return result;
     } catch (error) {
       this.emit({
-        phase: 'complete',
+        phase: "complete",
         progress: 100,
-        message: `Export failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+        message: `Export failed: ${error instanceof Error ? error.message : "Unknown error"}`,
       });
       throw error;
     }
   }
 
   updateProgress(
-    phase: ExportProgress['phase'],
+    phase: ExportProgress["phase"],
     progress: number,
-    message: string
+    message: string,
   ): void {
     this.emit({
       phase,
       progress: Math.min(100, Math.max(0, progress)),
-      message
+      message,
     });
   }
 }

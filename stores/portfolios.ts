@@ -1,5 +1,5 @@
-import { create } from 'zustand';
-import { devtools } from 'zustand/middleware';
+import { create } from "zustand";
+import { devtools } from "zustand/middleware";
 
 export interface Portfolio {
   id: string;
@@ -59,26 +59,42 @@ interface PortfolioState {
   portfolioPerformance: Record<string, PortfolioPerformance>; // portfolioId -> performance
   isLoading: boolean;
   error: string | null;
-  
+
   // Actions
   setPortfolios: (portfolios: Portfolio[]) => void;
   setSelectedPortfolio: (portfolio: Portfolio | null) => void;
   setPortfolioItems: (portfolioId: string, items: PortfolioItem[]) => void;
-  setPortfolioPerformance: (portfolioId: string, performance: PortfolioPerformance) => void;
+  setPortfolioPerformance: (
+    portfolioId: string,
+    performance: PortfolioPerformance,
+  ) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
-  
+
   // Portfolio operations
   createPortfolio: (name: string, description?: string) => Promise<Portfolio>;
-  updatePortfolio: (portfolioId: string, updates: Partial<Portfolio>) => Promise<void>;
+  updatePortfolio: (
+    portfolioId: string,
+    updates: Partial<Portfolio>,
+  ) => Promise<void>;
   deletePortfolio: (portfolioId: string) => Promise<void>;
-  duplicatePortfolio: (portfolioId: string, newName: string) => Promise<Portfolio>;
-  
+  duplicatePortfolio: (
+    portfolioId: string,
+    newName: string,
+  ) => Promise<Portfolio>;
+
   // Portfolio item operations
-  addPortfolioItem: (portfolioId: string, item: Omit<PortfolioItem, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  addPortfolioItem: (
+    portfolioId: string,
+    item: Omit<PortfolioItem, "id" | "createdAt" | "updatedAt">,
+  ) => Promise<void>;
   removePortfolioItem: (portfolioId: string, itemId: string) => Promise<void>;
-  updatePortfolioItem: (portfolioId: string, itemId: string, updates: Partial<PortfolioItem>) => Promise<void>;
-  
+  updatePortfolioItem: (
+    portfolioId: string,
+    itemId: string,
+    updates: Partial<PortfolioItem>,
+  ) => Promise<void>;
+
   // Computed getters
   getDefaultPortfolio: () => Portfolio | null;
   getPortfolioById: (id: string) => Portfolio | undefined;
@@ -103,13 +119,16 @@ export const usePortfolioStore = create<PortfolioState>()(
 
       setPortfolios: (portfolios) => set({ portfolios }),
       setSelectedPortfolio: (selectedPortfolio) => set({ selectedPortfolio }),
-      setPortfolioItems: (portfolioId, items) => 
-        set(state => ({ 
-          portfolioItems: { ...state.portfolioItems, [portfolioId]: items }
+      setPortfolioItems: (portfolioId, items) =>
+        set((state) => ({
+          portfolioItems: { ...state.portfolioItems, [portfolioId]: items },
         })),
       setPortfolioPerformance: (portfolioId, performance) =>
-        set(state => ({
-          portfolioPerformance: { ...state.portfolioPerformance, [portfolioId]: performance }
+        set((state) => ({
+          portfolioPerformance: {
+            ...state.portfolioPerformance,
+            [portfolioId]: performance,
+          },
         })),
       setLoading: (isLoading) => set({ isLoading }),
       setError: (error) => set({ error }),
@@ -117,25 +136,26 @@ export const usePortfolioStore = create<PortfolioState>()(
       createPortfolio: async (name: string, description?: string) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await fetch('/api/portfolios', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, description })
+          const response = await fetch("/api/portfolios", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name, description }),
           });
-          
+
           if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(errorData.message || 'Failed to create portfolio');
+
+            throw new Error(errorData.message || "Failed to create portfolio");
           }
-          
+
           const result = await response.json();
           const portfolio = result.data;
-          
-          set(state => ({
+
+          set((state) => ({
             portfolios: [...state.portfolios, portfolio],
-            isLoading: false
+            isLoading: false,
           }));
-          
+
           return portfolio;
         } catch (error) {
           set({ error: (error as Error).message, isLoading: false });
@@ -143,31 +163,36 @@ export const usePortfolioStore = create<PortfolioState>()(
         }
       },
 
-      updatePortfolio: async (portfolioId: string, updates: Partial<Portfolio>) => {
+      updatePortfolio: async (
+        portfolioId: string,
+        updates: Partial<Portfolio>,
+      ) => {
         set({ isLoading: true, error: null });
         try {
           const response = await fetch(`/api/portfolios/${portfolioId}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(updates)
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(updates),
           });
-          
+
           if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(errorData.message || 'Failed to update portfolio');
+
+            throw new Error(errorData.message || "Failed to update portfolio");
           }
-          
+
           const result = await response.json();
           const updatedPortfolio = result.data;
-          
-          set(state => ({
-            portfolios: state.portfolios.map(p => 
-              p.id === portfolioId ? updatedPortfolio : p
+
+          set((state) => ({
+            portfolios: state.portfolios.map((p) =>
+              p.id === portfolioId ? updatedPortfolio : p,
             ),
-            selectedPortfolio: state.selectedPortfolio?.id === portfolioId 
-              ? updatedPortfolio 
-              : state.selectedPortfolio,
-            isLoading: false
+            selectedPortfolio:
+              state.selectedPortfolio?.id === portfolioId
+                ? updatedPortfolio
+                : state.selectedPortfolio,
+            isLoading: false,
           }));
         } catch (error) {
           set({ error: (error as Error).message, isLoading: false });
@@ -179,24 +204,32 @@ export const usePortfolioStore = create<PortfolioState>()(
         set({ isLoading: true, error: null });
         try {
           const response = await fetch(`/api/portfolios/${portfolioId}`, {
-            method: 'DELETE',
+            method: "DELETE",
           });
-          
+
           if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(errorData.message || 'Failed to delete portfolio');
+
+            throw new Error(errorData.message || "Failed to delete portfolio");
           }
-          
-          set(state => ({
-            portfolios: state.portfolios.filter(p => p.id !== portfolioId),
+
+          set((state) => ({
+            portfolios: state.portfolios.filter((p) => p.id !== portfolioId),
             portfolioItems: Object.fromEntries(
-              Object.entries(state.portfolioItems).filter(([id]) => id !== portfolioId)
+              Object.entries(state.portfolioItems).filter(
+                ([id]) => id !== portfolioId,
+              ),
             ),
             portfolioPerformance: Object.fromEntries(
-              Object.entries(state.portfolioPerformance).filter(([id]) => id !== portfolioId)
+              Object.entries(state.portfolioPerformance).filter(
+                ([id]) => id !== portfolioId,
+              ),
             ),
-            selectedPortfolio: state.selectedPortfolio?.id === portfolioId ? null : state.selectedPortfolio,
-            isLoading: false
+            selectedPortfolio:
+              state.selectedPortfolio?.id === portfolioId
+                ? null
+                : state.selectedPortfolio,
+            isLoading: false,
           }));
         } catch (error) {
           set({ error: (error as Error).message, isLoading: false });
@@ -207,25 +240,31 @@ export const usePortfolioStore = create<PortfolioState>()(
       duplicatePortfolio: async (portfolioId: string, newName: string) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await fetch(`/api/portfolios/${portfolioId}/duplicate`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: newName })
-          });
-          
+          const response = await fetch(
+            `/api/portfolios/${portfolioId}/duplicate`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ name: newName }),
+            },
+          );
+
           if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(errorData.message || 'Failed to duplicate portfolio');
+
+            throw new Error(
+              errorData.message || "Failed to duplicate portfolio",
+            );
           }
-          
+
           const result = await response.json();
           const newPortfolio = result.data;
-          
-          set(state => ({
+
+          set((state) => ({
             portfolios: [...state.portfolios, newPortfolio],
-            isLoading: false
+            isLoading: false,
           }));
-          
+
           return newPortfolio;
         } catch (error) {
           set({ error: (error as Error).message, isLoading: false });
@@ -233,29 +272,38 @@ export const usePortfolioStore = create<PortfolioState>()(
         }
       },
 
-      addPortfolioItem: async (portfolioId: string, item: Omit<PortfolioItem, 'id' | 'createdAt' | 'updatedAt'>) => {
+      addPortfolioItem: async (
+        portfolioId: string,
+        item: Omit<PortfolioItem, "id" | "createdAt" | "updatedAt">,
+      ) => {
         set({ isLoading: true, error: null });
         try {
           const response = await fetch(`/api/portfolios/${portfolioId}/items`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(item)
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(item),
           });
-          
+
           if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(errorData.message || 'Failed to add portfolio item');
+
+            throw new Error(
+              errorData.message || "Failed to add portfolio item",
+            );
           }
-          
+
           const result = await response.json();
           const newItem = result.data;
-          
-          set(state => ({
+
+          set((state) => ({
             portfolioItems: {
               ...state.portfolioItems,
-              [portfolioId]: [...(state.portfolioItems[portfolioId] || []), newItem]
+              [portfolioId]: [
+                ...(state.portfolioItems[portfolioId] || []),
+                newItem,
+              ],
             },
-            isLoading: false
+            isLoading: false,
           }));
         } catch (error) {
           set({ error: (error as Error).message, isLoading: false });
@@ -266,21 +314,29 @@ export const usePortfolioStore = create<PortfolioState>()(
       removePortfolioItem: async (portfolioId: string, itemId: string) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await fetch(`/api/portfolios/${portfolioId}/items/${itemId}`, {
-            method: 'DELETE',
-          });
-          
+          const response = await fetch(
+            `/api/portfolios/${portfolioId}/items/${itemId}`,
+            {
+              method: "DELETE",
+            },
+          );
+
           if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(errorData.message || 'Failed to remove portfolio item');
+
+            throw new Error(
+              errorData.message || "Failed to remove portfolio item",
+            );
           }
-          
-          set(state => ({
+
+          set((state) => ({
             portfolioItems: {
               ...state.portfolioItems,
-              [portfolioId]: (state.portfolioItems[portfolioId] || []).filter(item => item.id !== itemId)
+              [portfolioId]: (state.portfolioItems[portfolioId] || []).filter(
+                (item) => item.id !== itemId,
+              ),
             },
-            isLoading: false
+            isLoading: false,
           }));
         } catch (error) {
           set({ error: (error as Error).message, isLoading: false });
@@ -288,31 +344,41 @@ export const usePortfolioStore = create<PortfolioState>()(
         }
       },
 
-      updatePortfolioItem: async (portfolioId: string, itemId: string, updates: Partial<PortfolioItem>) => {
+      updatePortfolioItem: async (
+        portfolioId: string,
+        itemId: string,
+        updates: Partial<PortfolioItem>,
+      ) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await fetch(`/api/portfolios/${portfolioId}/items/${itemId}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(updates)
-          });
-          
+          const response = await fetch(
+            `/api/portfolios/${portfolioId}/items/${itemId}`,
+            {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(updates),
+            },
+          );
+
           if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(errorData.message || 'Failed to update portfolio item');
+
+            throw new Error(
+              errorData.message || "Failed to update portfolio item",
+            );
           }
-          
+
           const result = await response.json();
           const updatedItem = result.data;
-          
-          set(state => ({
+
+          set((state) => ({
             portfolioItems: {
               ...state.portfolioItems,
-              [portfolioId]: (state.portfolioItems[portfolioId] || []).map(item =>
-                item.id === itemId ? updatedItem : item
-              )
+              [portfolioId]: (state.portfolioItems[portfolioId] || []).map(
+                (item) => (item.id === itemId ? updatedItem : item),
+              ),
             },
-            isLoading: false
+            isLoading: false,
           }));
         } catch (error) {
           set({ error: (error as Error).message, isLoading: false });
@@ -322,34 +388,53 @@ export const usePortfolioStore = create<PortfolioState>()(
 
       // Computed getters
       getDefaultPortfolio: () => {
-        return get().portfolios.find(p => p.isDefault) || null;
+        return get().portfolios.find((p) => p.isDefault) || null;
       },
 
       getPortfolioById: (id: string) => {
-        return get().portfolios.find(p => p.id === id);
+        return get().portfolios.find((p) => p.id === id);
       },
 
       getTotalPortfolioValue: () => {
         const { portfolioPerformance } = get();
-        return Object.values(portfolioPerformance).reduce((total, perf) => total + perf.totalValue, 0);
+
+        return Object.values(portfolioPerformance).reduce(
+          (total, perf) => total + perf.totalValue,
+          0,
+        );
       },
 
       getPortfolioStats: () => {
         const { portfolios, portfolioItems, portfolioPerformance } = get();
-        
-        const totalItems = Object.values(portfolioItems).reduce((total, items) => total + items.length, 0);
-        const totalValue = Object.values(portfolioPerformance).reduce((total, perf) => total + perf.totalValue, 0);
-        
-        const bestPerformer = portfolios.reduce((best, portfolio) => {
-          const perf = portfolioPerformance[portfolio.id];
-          if (!perf) return best;
-          
-          const bestPerf = best ? portfolioPerformance[best.id] : null;
-          if (!bestPerf || perf.totalChangePercent > bestPerf.totalChangePercent) {
-            return portfolio;
-          }
-          return best;
-        }, null as Portfolio | null);
+
+        const totalItems = Object.values(portfolioItems).reduce(
+          (total, items) => total + items.length,
+          0,
+        );
+        const totalValue = Object.values(portfolioPerformance).reduce(
+          (total, perf) => total + perf.totalValue,
+          0,
+        );
+
+        const bestPerformer = portfolios.reduce(
+          (best, portfolio) => {
+            const perf = portfolioPerformance[portfolio.id];
+
+            if (!perf) return best;
+
+            const bestPerf = best ? portfolioPerformance[best.id] : null;
+
+            if (
+              !bestPerf ||
+              perf.totalChangePercent > bestPerf.totalChangePercent
+            ) {
+              return portfolio;
+            }
+
+            return best;
+          },
+          null as Portfolio | null,
+        );
 
         return {
           totalPortfolios: portfolios.length,
@@ -359,6 +444,6 @@ export const usePortfolioStore = create<PortfolioState>()(
         };
       },
     }),
-    { name: 'portfolio-store' }
-  )
+    { name: "portfolio-store" },
+  ),
 );

@@ -1,7 +1,7 @@
 "use client";
 
-import React from 'react';
-import { motion } from 'framer-motion';
+import React from "react";
+import { motion } from "framer-motion";
 
 export const StreamingIndicator: React.FC = React.memo(() => {
   return (
@@ -10,13 +10,13 @@ export const StreamingIndicator: React.FC = React.memo(() => {
         {[0, 1, 2].map((index) => (
           <motion.div
             key={index}
-            className="w-1 h-1 bg-current rounded-full"
             animate={{ y: [0, -4, 0] }}
+            className="w-1 h-1 bg-current rounded-full"
             transition={{
               duration: 0.6,
               repeat: Infinity,
               delay: index * 0.1,
-              ease: "easeInOut"
+              ease: "easeInOut",
             }}
           />
         ))}
@@ -26,4 +26,4 @@ export const StreamingIndicator: React.FC = React.memo(() => {
   );
 });
 
-StreamingIndicator.displayName = 'StreamingIndicator';
+StreamingIndicator.displayName = "StreamingIndicator";

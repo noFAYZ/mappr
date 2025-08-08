@@ -1,38 +1,51 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { Card, CardBody, CardHeader } from '@heroui/card';
-import { Button } from '@heroui/button';
-import { Select, SelectItem } from '@heroui/select';
-import { Tabs, Tab } from '@heroui/tabs';
-import { Chip } from '@heroui/chip';
-import { DateRangePicker } from '@heroui/date-picker';
-import { useQuery } from '@tanstack/react-query';
+import { useState } from "react";
+import { Card, CardBody, CardHeader } from "@heroui/card";
+import { Button } from "@heroui/button";
+import { Select, SelectItem } from "@heroui/select";
+import { Chip } from "@heroui/chip";
+import { useQuery } from "@tanstack/react-query";
 import {
-  BarChart, Bar, LineChart, Line, AreaChart, Area, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
-} from 'recharts';
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  AreaChart,
+  Area,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
 import {
   TrendingUp,
-  TrendingDown,
   DollarSign,
   BarChart3,
-  PieChart as PieChartIcon,
   Download,
   Filter,
   RefreshCw,
   Calendar,
   Activity,
   Wallet,
-  Building2,
-  ShoppingCart,
-  FileText
-} from 'lucide-react';
+} from "lucide-react";
 
-import { useAuth } from '@/contexts/AuthContext';
-import { useUIStore } from '@/stores';
+import { useAuth } from "@/contexts/AuthContext";
+import { useUIStore } from "@/stores";
 
-const COLORS = ['#8B5CF6', '#06B6D4', '#10B981', '#F59E0B', '#EF4444', '#6366F1'];
+const COLORS = [
+  "#8B5CF6",
+  "#06B6D4",
+  "#10B981",
+  "#F59E0B",
+  "#EF4444",
+  "#6366F1",
+];
 
 const DataMetrics = ({ data, isLoading }) => {
   if (isLoading) {
@@ -53,14 +66,20 @@ const DataMetrics = ({ data, isLoading }) => {
     );
   }
 
-  const totalValue = data?.reduce((sum, item) => sum + (parseFloat(item.normalized_data?.amount) || 0), 0) || 0;
+  const totalValue =
+    data?.reduce(
+      (sum, item) => sum + (parseFloat(item.normalized_data?.amount) || 0),
+      0,
+    ) || 0;
   const totalRecords = data?.length || 0;
-  const uniqueTypes = new Set(data?.map(item => item.data_type) || []).size;
-  const recentRecords = data?.filter(item => {
-    const createdDate = new Date(item.created_at);
-    const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    return createdDate > dayAgo;
-  }).length || 0;
+  const uniqueTypes = new Set(data?.map((item) => item.data_type) || []).size;
+  const recentRecords =
+    data?.filter((item) => {
+      const createdDate = new Date(item.created_at);
+      const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+      return createdDate > dayAgo;
+    }).length || 0;
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -68,8 +87,12 @@ const DataMetrics = ({ data, isLoading }) => {
         <CardBody className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-default-500 font-medium">Total Value</p>
-              <p className="text-2xl font-bold">${totalValue.toLocaleString()}</p>
+              <p className="text-sm text-default-500 font-medium">
+                Total Value
+              </p>
+              <p className="text-2xl font-bold">
+                ${totalValue.toLocaleString()}
+              </p>
               <div className="flex items-center gap-1 mt-1">
                 <TrendingUp className="w-3 h-3 text-success" />
                 <span className="text-xs text-success">Live data</span>
@@ -86,8 +109,12 @@ const DataMetrics = ({ data, isLoading }) => {
         <CardBody className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-default-500 font-medium">Total Records</p>
-              <p className="text-2xl font-bold">{totalRecords.toLocaleString()}</p>
+              <p className="text-sm text-default-500 font-medium">
+                Total Records
+              </p>
+              <p className="text-2xl font-bold">
+                {totalRecords.toLocaleString()}
+              </p>
               <p className="text-xs text-default-400 mt-1">All time</p>
             </div>
             <div className="p-3 bg-secondary-500/20 rounded-full">
@@ -116,7 +143,9 @@ const DataMetrics = ({ data, isLoading }) => {
         <CardBody className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-default-500 font-medium">Recent (24h)</p>
+              <p className="text-sm text-default-500 font-medium">
+                Recent (24h)
+              </p>
               <p className="text-2xl font-bold">{recentRecords}</p>
               <p className="text-xs text-default-400 mt-1">New records</p>
             </div>
@@ -131,21 +160,24 @@ const DataMetrics = ({ data, isLoading }) => {
 };
 
 const DataTypeChart = ({ data }) => {
-  const chartData = data?.reduce((acc, item) => {
-    const type = item.data_type;
-    const existing = acc.find(d => d.name === type);
-    if (existing) {
-      existing.value += 1;
-      existing.amount += parseFloat(item.normalized_data?.amount) || 0;
-    } else {
-      acc.push({
-        name: type,
-        value: 1,
-        amount: parseFloat(item.normalized_data?.amount) || 0
-      });
-    }
-    return acc;
-  }, []) || [];
+  const chartData =
+    data?.reduce((acc, item) => {
+      const type = item.data_type;
+      const existing = acc.find((d) => d.name === type);
+
+      if (existing) {
+        existing.value += 1;
+        existing.amount += parseFloat(item.normalized_data?.amount) || 0;
+      } else {
+        acc.push({
+          name: type,
+          value: 1,
+          amount: parseFloat(item.normalized_data?.amount) || 0,
+        });
+      }
+
+      return acc;
+    }, []) || [];
 
   return (
     <Card>
@@ -154,21 +186,28 @@ const DataTypeChart = ({ data }) => {
       </CardHeader>
       <CardBody>
         <div className="h-80">
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer height="100%" width="100%">
             <PieChart>
               <Pie
-                data={chartData}
                 cx="50%"
                 cy="50%"
-                outerRadius={80}
+                data={chartData}
                 dataKey="value"
-                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                label={({ name, percent }) =>
+                  `${name} ${(percent * 100).toFixed(0)}%`
+                }
+                outerRadius={80}
               >
                 {chartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={COLORS[index % COLORS.length]}
+                  />
                 ))}
               </Pie>
-              <Tooltip formatter={(value, name) => [`${value} records`, name]} />
+              <Tooltip
+                formatter={(value, name) => [`${value} records`, name]}
+              />
             </PieChart>
           </ResponsiveContainer>
         </div>
@@ -177,26 +216,30 @@ const DataTypeChart = ({ data }) => {
   );
 };
 
-const TimeSeriesChart = ({ data, type = 'area' }) => {
-  const chartData = data?.reduce((acc, item) => {
-    const date = new Date(item.created_at).toISOString().split('T')[0];
-    const existing = acc.find(d => d.date === date);
-    const amount = parseFloat(item.normalized_data?.amount) || 0;
-    
-    if (existing) {
-      existing.amount += amount;
-      existing.count += 1;
-    } else {
-      acc.push({ date, amount, count: 1 });
-    }
-    return acc;
-  }, []) || [];
+const TimeSeriesChart = ({ data, type = "area" }) => {
+  const chartData =
+    data?.reduce((acc, item) => {
+      const date = new Date(item.created_at).toISOString().split("T")[0];
+      const existing = acc.find((d) => d.date === date);
+      const amount = parseFloat(item.normalized_data?.amount) || 0;
+
+      if (existing) {
+        existing.amount += amount;
+        existing.count += 1;
+      } else {
+        acc.push({ date, amount, count: 1 });
+      }
+
+      return acc;
+    }, []) || [];
 
   // Sort by date
-  chartData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  chartData.sort(
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+  );
 
-  const ChartComponent = type === 'line' ? LineChart : AreaChart;
-  const DataComponent = type === 'line' ? Line : Area;
+  const ChartComponent = type === "line" ? LineChart : AreaChart;
+  const DataComponent = type === "line" ? Line : Area;
 
   return (
     <Card>
@@ -205,35 +248,35 @@ const TimeSeriesChart = ({ data, type = 'area' }) => {
       </CardHeader>
       <CardBody>
         <div className="h-80">
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer height="100%" width="100%">
             <ChartComponent data={chartData}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis 
-                dataKey="date" 
+              <XAxis
+                dataKey="date"
                 tickFormatter={(value) => new Date(value).toLocaleDateString()}
               />
               <YAxis />
-              <Tooltip 
-                labelFormatter={(value) => new Date(value).toLocaleDateString()}
+              <Tooltip
                 formatter={(value, name) => [
-                  name === 'amount' ? `$${value.toLocaleString()}` : value,
-                  name === 'amount' ? 'Total Value' : 'Records Count'
+                  name === "amount" ? `$${value.toLocaleString()}` : value,
+                  name === "amount" ? "Total Value" : "Records Count",
                 ]}
+                labelFormatter={(value) => new Date(value).toLocaleDateString()}
               />
               <Legend />
               <DataComponent
-                type="monotone"
                 dataKey="amount"
-                stroke="#8B5CF6"
                 fill="#8B5CF6"
                 fillOpacity={0.6}
+                stroke="#8B5CF6"
+                type="monotone"
               />
               <DataComponent
-                type="monotone"
                 dataKey="count"
-                stroke="#06B6D4"
                 fill="#06B6D4"
                 fillOpacity={0.6}
+                stroke="#06B6D4"
+                type="monotone"
               />
             </ChartComponent>
           </ResponsiveContainer>
@@ -244,24 +287,26 @@ const TimeSeriesChart = ({ data, type = 'area' }) => {
 };
 
 const DataSourceAnalysis = ({ data }) => {
-  const sourceData = data?.reduce((acc, item) => {
-    // You would need to join with user_extensions to get actual source names
-    const source = item.user_extension_id; // This would be the source name in real data
-    const existing = acc.find(d => d.source === source);
-    
-    if (existing) {
-      existing.records += 1;
-      existing.value += parseFloat(item.normalized_data?.amount) || 0;
-    } else {
-      acc.push({
-        source: `Source ${source.slice(-4)}`, // Simplified for demo
-        records: 1,
-        value: parseFloat(item.normalized_data?.amount) || 0,
-        lastUpdate: item.created_at
-      });
-    }
-    return acc;
-  }, []) || [];
+  const sourceData =
+    data?.reduce((acc, item) => {
+      // You would need to join with user_extensions to get actual source names
+      const source = item.user_extension_id; // This would be the source name in real data
+      const existing = acc.find((d) => d.source === source);
+
+      if (existing) {
+        existing.records += 1;
+        existing.value += parseFloat(item.normalized_data?.amount) || 0;
+      } else {
+        acc.push({
+          source: `Source ${source.slice(-4)}`, // Simplified for demo
+          records: 1,
+          value: parseFloat(item.normalized_data?.amount) || 0,
+          lastUpdate: item.created_at,
+        });
+      }
+
+      return acc;
+    }, []) || [];
 
   return (
     <Card>
@@ -270,7 +315,7 @@ const DataSourceAnalysis = ({ data }) => {
       </CardHeader>
       <CardBody>
         <div className="h-80">
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer height="100%" width="100%">
             <BarChart data={sourceData}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="source" />
@@ -290,55 +335,65 @@ const DataSourceAnalysis = ({ data }) => {
 export default function DataPage() {
   const { profile } = useAuth();
   const { addNotification } = useUIStore();
-  
-  const [selectedDataType, setSelectedDataType] = useState('all');
+
+  const [selectedDataType, setSelectedDataType] = useState("all");
   const [dateRange, setDateRange] = useState({
     start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
-    end: new Date()
+    end: new Date(),
   });
-  const [chartType, setChartType] = useState('area');
+  const [chartType, setChartType] = useState("area");
 
   // Fetch aggregated data
-  const { data: aggregatedData, isLoading, error, refetch } = useQuery({
-    queryKey: ['aggregated-data', selectedDataType, dateRange],
+  const {
+    data: aggregatedData,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ["aggregated-data", selectedDataType, dateRange],
     queryFn: async () => {
       const params = new URLSearchParams({
-        limit: '1000',
-        offset: '0'
+        limit: "1000",
+        offset: "0",
       });
-      
-      if (selectedDataType !== 'all') {
-        params.append('type', selectedDataType);
+
+      if (selectedDataType !== "all") {
+        params.append("type", selectedDataType);
       }
-      
+
       const response = await fetch(`/api/data/aggregate?${params}`);
-      if (!response.ok) throw new Error('Failed to fetch data');
+
+      if (!response.ok) throw new Error("Failed to fetch data");
       const result = await response.json();
+
       return result.data;
     },
-    enabled: !!profile
+    enabled: !!profile,
   });
 
   // Get unique data types for filter
-  const dataTypes = [...new Set(aggregatedData?.map(item => item.data_type) || [])];
+  const dataTypes = [
+    ...new Set(aggregatedData?.map((item) => item.data_type) || []),
+  ];
 
-  const handleExport = async (format: 'csv' | 'json') => {
+  const handleExport = async (format: "csv" | "json") => {
     try {
-      const response = await fetch('/api/data/export', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/data/export", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           format,
           dataType: selectedDataType,
-          dateRange
-        })
+          dateRange,
+        }),
       });
 
-      if (!response.ok) throw new Error('Export failed');
+      if (!response.ok) throw new Error("Export failed");
 
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
+
       a.href = url;
       a.download = `data-export-${Date.now()}.${format}`;
       document.body.appendChild(a);
@@ -347,41 +402,42 @@ export default function DataPage() {
       document.body.removeChild(a);
 
       addNotification({
-        type: 'success',
-        title: 'Export Complete',
-        message: `Data exported as ${format.toUpperCase()}`
+        type: "success",
+        title: "Export Complete",
+        message: `Data exported as ${format.toUpperCase()}`,
       });
     } catch (error) {
       addNotification({
-        type: 'error',
-        title: 'Export Failed',
-        message: error.message
+        type: "error",
+        title: "Export Failed",
+        message: error.message,
       });
     }
   };
 
   const handleSyncAll = async () => {
     try {
-      const response = await fetch('/api/extensions/sync-all', {
-        method: 'POST'
+      const response = await fetch("/api/extensions/sync-all", {
+        method: "POST",
       });
 
-      if (!response.ok) throw new Error('Sync failed');
+      if (!response.ok) throw new Error("Sync failed");
 
       const result = await response.json();
+
       addNotification({
-        type: 'success',
-        title: 'Sync Started',
-        message: `Syncing ${result.synced} extensions`
+        type: "success",
+        title: "Sync Started",
+        message: `Syncing ${result.synced} extensions`,
       });
 
       // Refetch data after a delay
       setTimeout(() => refetch(), 5000);
     } catch (error) {
       addNotification({
-        type: 'error',
-        title: 'Sync Failed',
-        message: error.message
+        type: "error",
+        title: "Sync Failed",
+        message: error.message,
       });
     }
   };
@@ -413,11 +469,11 @@ export default function DataPage() {
             Analyze your aggregated data and insights
           </p>
         </div>
-        
+
         <div className="flex items-center gap-3">
           <Button
-            variant="flat"
             startContent={<RefreshCw className="w-4 h-4" />}
+            variant="flat"
             onPress={handleSyncAll}
           >
             Sync All
@@ -425,7 +481,7 @@ export default function DataPage() {
           <Button
             color="primary"
             startContent={<Download className="w-4 h-4" />}
-            onPress={() => handleExport('csv')}
+            onPress={() => handleExport("csv")}
           >
             Export Data
           </Button>
@@ -437,11 +493,13 @@ export default function DataPage() {
         <CardBody className="p-4">
           <div className="flex flex-col sm:flex-row gap-4">
             <Select
+              className="sm:max-w-xs"
               placeholder="All Data Types"
               selectedKeys={[selectedDataType]}
-              onSelectionChange={(keys) => setSelectedDataType(Array.from(keys)[0] as string)}
-              className="sm:max-w-xs"
               variant="bordered"
+              onSelectionChange={(keys) =>
+                setSelectedDataType(Array.from(keys)[0] as string)
+              }
             >
               <SelectItem key="all">All Data Types</SelectItem>
               {dataTypes.map((type) => (
@@ -452,11 +510,13 @@ export default function DataPage() {
             </Select>
 
             <Select
+              className="sm:max-w-xs"
               placeholder="Chart Type"
               selectedKeys={[chartType]}
-              onSelectionChange={(keys) => setChartType(Array.from(keys)[0] as string)}
-              className="sm:max-w-xs"
               variant="bordered"
+              onSelectionChange={(keys) =>
+                setChartType(Array.from(keys)[0] as string)
+              }
             >
               <SelectItem key="area">Area Chart</SelectItem>
               <SelectItem key="line">Line Chart</SelectItem>
@@ -465,7 +525,7 @@ export default function DataPage() {
 
             <div className="flex items-center gap-2">
               <span className="text-sm text-default-600">Last 30 days</span>
-              <Chip size="sm" color="primary" variant="flat">
+              <Chip color="primary" size="sm" variant="flat">
                 {aggregatedData?.length || 0} records
               </Chip>
             </div>
@@ -492,16 +552,16 @@ export default function DataPage() {
             <div className="flex items-center gap-2">
               <Button
                 size="sm"
-                variant="flat"
                 startContent={<Download className="w-3 h-3" />}
-                onPress={() => handleExport('json')}
+                variant="flat"
+                onPress={() => handleExport("json")}
               >
                 Export JSON
               </Button>
               <Button
                 size="sm"
-                variant="flat"
                 startContent={<Filter className="w-3 h-3" />}
+                variant="flat"
               >
                 More Filters
               </Button>
@@ -512,7 +572,10 @@ export default function DataPage() {
           {isLoading ? (
             <div className="space-y-3">
               {[...Array(5)].map((_, i) => (
-                <div key={i} className="flex items-center gap-4 p-4 bg-default-50 rounded-lg animate-pulse">
+                <div
+                  key={i}
+                  className="flex items-center gap-4 p-4 bg-default-50 rounded-lg animate-pulse"
+                >
                   <div className="w-12 h-12 bg-default-200 rounded-lg" />
                   <div className="flex-1 space-y-2">
                     <div className="w-32 h-4 bg-default-200 rounded" />
@@ -529,15 +592,14 @@ export default function DataPage() {
               </div>
               <h3 className="text-lg font-semibold mb-2">No Data Found</h3>
               <p className="text-default-600 mb-4">
-                {selectedDataType === 'all' 
-                  ? 'Connect your data sources to start aggregating data'
-                  : `No ${selectedDataType} data available`
-                }
+                {selectedDataType === "all"
+                  ? "Connect your data sources to start aggregating data"
+                  : `No ${selectedDataType} data available`}
               </p>
-              <Button 
-                as="a" 
-                href="/extensions" 
+              <Button
+                as="a"
                 color="primary"
+                href="/extensions"
                 startContent={<Wallet className="w-4 h-4" />}
               >
                 Connect Data Sources
@@ -546,19 +608,24 @@ export default function DataPage() {
           ) : (
             <div className="space-y-3 max-h-96 overflow-auto">
               {aggregatedData?.slice(0, 50).map((item, index) => (
-                <div key={index} className="flex items-center gap-4 p-4 bg-default-50 rounded-lg hover:bg-default-100 transition-colors">
+                <div
+                  key={index}
+                  className="flex items-center gap-4 p-4 bg-default-50 rounded-lg hover:bg-default-100 transition-colors"
+                >
                   <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-lg flex items-center justify-center text-white font-bold">
                     {item.data_type.charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="font-medium capitalize">{item.data_type}</span>
-                      <Chip size="sm" variant="flat" color="primary">
-                        {item.normalized_data?.type || 'Unknown'}
+                      <span className="font-medium capitalize">
+                        {item.data_type}
+                      </span>
+                      <Chip color="primary" size="sm" variant="flat">
+                        {item.normalized_data?.type || "Unknown"}
                       </Chip>
                     </div>
                     <p className="text-sm text-default-600">
-                      {item.normalized_data?.description || 'No description'}
+                      {item.normalized_data?.description || "No description"}
                     </p>
                     <p className="text-xs text-default-500">
                       {new Date(item.created_at).toLocaleString()}
@@ -566,13 +633,12 @@ export default function DataPage() {
                   </div>
                   <div className="text-right">
                     <p className="font-semibold">
-                      {item.normalized_data?.amount ? 
-                        `${parseFloat(item.normalized_data.amount).toLocaleString()}` : 
-                        'N/A'
-                      }
+                      {item.normalized_data?.amount
+                        ? `${parseFloat(item.normalized_data.amount).toLocaleString()}`
+                        : "N/A"}
                     </p>
                     <p className="text-xs text-default-500">
-                      {item.normalized_data?.currency || 'USD'}
+                      {item.normalized_data?.currency || "USD"}
                     </p>
                   </div>
                 </div>

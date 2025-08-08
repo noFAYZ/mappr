@@ -1,22 +1,22 @@
 "use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Card, CardBody, CardHeader } from '@heroui/card';
-import { Button } from '@heroui/button';
-import { Input } from '@heroui/input';
-import { Link } from '@heroui/link';
-import NextLink from 'next/link';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { ArrowLeft, Mail, CheckCircle2, AlertCircle } from 'lucide-react';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Card, CardBody, CardHeader } from "@heroui/card";
+import { Button } from "@heroui/button";
+import { Input } from "@heroui/input";
+import { Link } from "@heroui/link";
+import NextLink from "next/link";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { ArrowLeft, Mail, CheckCircle2 } from "lucide-react";
 
-import { supabase } from '@/lib/supabase';
-import { useUIStore } from '@/stores';
+import { supabase } from "@/lib/supabase";
+import { useUIStore } from "@/stores";
 
 const forgotPasswordSchema = z.object({
-  email: z.string().email('Please enter a valid email address'),
+  email: z.string().email("Please enter a valid email address"),
 });
 
 type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
@@ -31,17 +31,17 @@ export default function ForgotPasswordPage() {
     register,
     handleSubmit,
     formState: { errors, isValid },
-    watch
+    watch,
   } = useForm<ForgotPasswordFormData>({
     resolver: zodResolver(forgotPasswordSchema),
-    mode: 'onChange',
+    mode: "onChange",
   });
 
-  const email = watch('email');
+  const email = watch("email");
 
   const onSubmit = async (data: ForgotPasswordFormData) => {
     setIsLoading(true);
-    
+
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
         redirectTo: `${window.location.origin}/auth/reset-password`,
@@ -49,24 +49,25 @@ export default function ForgotPasswordPage() {
 
       if (error) {
         addNotification({
-          type: 'error',
-          title: 'Reset Failed',
+          type: "error",
+          title: "Reset Failed",
           message: error.message,
         });
+
         return;
       }
 
       setIsSubmitted(true);
       addNotification({
-        type: 'success',
-        title: 'Reset Link Sent',
-        message: 'Check your email for password reset instructions.',
+        type: "success",
+        title: "Reset Link Sent",
+        message: "Check your email for password reset instructions.",
       });
     } catch (error) {
       addNotification({
-        type: 'error',
-        title: 'Unexpected Error',
-        message: 'An unexpected error occurred. Please try again.',
+        type: "error",
+        title: "Unexpected Error",
+        message: "An unexpected error occurred. Please try again.",
       });
     } finally {
       setIsLoading(false);
@@ -84,21 +85,21 @@ export default function ForgotPasswordPage() {
               </div>
               <h2 className="text-2xl font-bold mb-2">Check your email</h2>
               <p className="text-default-600 mb-6">
-                We've sent password reset instructions to{' '}
+                We've sent password reset instructions to{" "}
                 <span className="font-medium">{email}</span>
               </p>
               <div className="space-y-3">
                 <Button
                   as={NextLink}
-                  href="/auth/signin"
-                  color="primary"
                   className="w-full"
+                  color="primary"
+                  href="/auth/signin"
                 >
                   Back to Sign In
                 </Button>
                 <Button
-                  variant="flat"
                   className="w-full"
+                  variant="flat"
                   onPress={() => setIsSubmitted(false)}
                 >
                   Try different email
@@ -116,10 +117,10 @@ export default function ForgotPasswordPage() {
       <div className="w-full max-w-md">
         <Button
           as={NextLink}
-          href="/auth/signin"
-          variant="flat"
-          startContent={<ArrowLeft className="w-4 h-4" />}
           className="mb-6 bg-background/50 backdrop-blur-sm"
+          href="/auth/signin"
+          startContent={<ArrowLeft className="w-4 h-4" />}
+          variant="flat"
         >
           Back to Sign In
         </Button>
@@ -136,28 +137,28 @@ export default function ForgotPasswordPage() {
               </p>
             </div>
           </CardHeader>
-          
+
           <CardBody className="px-8 pb-8">
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
               <Input
-                {...register('email')}
-                type="email"
+                {...register("email")}
+                autoFocus
+                errorMessage={errors.email?.message}
+                isInvalid={!!errors.email}
                 label="Email Address"
                 placeholder="Enter your email"
                 startContent={<Mail className="w-4 h-4 text-default-400" />}
+                type="email"
                 variant="bordered"
-                isInvalid={!!errors.email}
-                errorMessage={errors.email?.message}
-                autoFocus
               />
 
               <Button
-                type="submit"
-                color="primary"
                 className="w-full font-semibold"
-                size="lg"
-                isLoading={isLoading}
+                color="primary"
                 isDisabled={!isValid}
+                isLoading={isLoading}
+                size="lg"
+                type="submit"
               >
                 Send Reset Link
               </Button>
@@ -165,11 +166,11 @@ export default function ForgotPasswordPage() {
 
             <div className="mt-6 text-center">
               <p className="text-sm text-default-600">
-                Remember your password?{' '}
+                Remember your password?{" "}
                 <Link
                   as={NextLink}
-                  href="/auth/signin"
                   className="text-primary-600 hover:text-primary-700 font-medium"
+                  href="/auth/signin"
                 >
                   Sign in here
                 </Link>

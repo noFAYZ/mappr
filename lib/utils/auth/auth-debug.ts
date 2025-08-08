@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { supabase } from "@/lib/supabase";
 
 interface AuthDebugInfo {
   timestamp: string;
@@ -22,7 +22,10 @@ class AuthDebugger {
     const errors: string[] = [];
 
     try {
-      const { data: { session }, error } = await supabase.auth.getSession();
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.getSession();
 
       if (error) {
         errors.push(`Session error: ${error.message}`);
@@ -34,7 +37,9 @@ class AuthDebugger {
         userExists: !!session?.user,
         userId: session?.user?.id,
         email: session?.user?.email,
-        sessionExpiry: session?.expires_at ? new Date(session.expires_at * 1000).toISOString() : undefined,
+        sessionExpiry: session?.expires_at
+          ? new Date(session.expires_at * 1000).toISOString()
+          : undefined,
         lastSignIn: session?.user?.last_sign_in_at,
         provider: session?.user?.app_metadata?.provider,
         metadata: session?.user?.user_metadata,
@@ -42,6 +47,7 @@ class AuthDebugger {
       };
 
       this.addLog(info);
+
       return info;
     } catch (error) {
       const info: AuthDebugInfo = {
@@ -52,6 +58,7 @@ class AuthDebugger {
       };
 
       this.addLog(info);
+
       return info;
     }
   }
@@ -77,11 +84,11 @@ class AuthDebugger {
 
     // Check for common issues
     if (!info.sessionExists) {
-      issues.push('No active session found');
+      issues.push("No active session found");
     }
 
     if (info.sessionExists && !info.userExists) {
-      issues.push('Session exists but no user data');
+      issues.push("Session exists but no user data");
     }
 
     if (info.sessionExpiry) {
@@ -90,9 +97,10 @@ class AuthDebugger {
       const timeUntilExpiry = expiryTime - now;
 
       if (timeUntilExpiry <= 0) {
-        issues.push('Session has expired');
-      } else if (timeUntilExpiry < 5 * 60 * 1000) { // Less than 5 minutes
-        issues.push('Session expires soon (< 5 minutes)');
+        issues.push("Session has expired");
+      } else if (timeUntilExpiry < 5 * 60 * 1000) {
+        // Less than 5 minutes
+        issues.push("Session expires soon (< 5 minutes)");
       }
     }
 
@@ -105,10 +113,15 @@ class AuthDebugger {
 
   async checkSupabaseConnection(): Promise<boolean> {
     try {
-      const { data, error } = await supabase.from('profiles').select('count').limit(1);
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("count")
+        .limit(1);
+
       return !error;
     } catch (error) {
-      console.error('Supabase connection test failed:', error);
+      console.error("Supabase connection test failed:", error);
+
       return false;
     }
   }
@@ -120,9 +133,11 @@ class AuthDebugger {
     issues: string[];
   }> {
     const issues = await this.diagnoseIssues();
-    
+
     return {
-      sessionCheck: await this.getCurrentAuthInfo().then(info => info.sessionExists),
+      sessionCheck: await this.getCurrentAuthInfo().then(
+        (info) => info.sessionExists,
+      ),
       profileFetch: true, // Will be determined by actual profile fetch
       connectionTest: await this.checkSupabaseConnection(),
       issues,

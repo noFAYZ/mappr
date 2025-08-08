@@ -1,12 +1,21 @@
-'use client';
+"use client";
 
-import React, { createContext, useContext, useEffect, useState, useRef, useCallback } from 'react';
-import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/lib/supabase';
-import type { Database } from '@/types/supabase';
+import type { Database } from "@/types/supabase";
+
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useRef,
+  useCallback,
+} from "react";
+import { User, Session } from "@supabase/supabase-js";
+
+import { supabase } from "@/lib/supabase";
 
 // Types
-type Profile = Database['public']['Tables']['profiles']['Row'];
+type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
 interface AuthState {
   user: User | null;
@@ -19,10 +28,19 @@ interface AuthState {
 
 interface AuthActions {
   signOut: () => Promise<void>;
-  signIn: (email: string, password: string) => Promise<{ error: string | null }>;
-  signUp: (email: string, password: string, metadata?: Record<string, any>) => Promise<{ error: string | null }>;
+  signIn: (
+    email: string,
+    password: string,
+  ) => Promise<{ error: string | null }>;
+  signUp: (
+    email: string,
+    password: string,
+    metadata?: Record<string, any>,
+  ) => Promise<{ error: string | null }>;
   resetPassword: (email: string) => Promise<{ error: string | null }>;
-  updateProfile: (updates: Partial<Profile>) => Promise<{ error: string | null }>;
+  updateProfile: (
+    updates: Partial<Profile>,
+  ) => Promise<{ error: string | null }>;
   refreshSession: () => Promise<void>;
   clearError: () => void;
 }
@@ -34,7 +52,10 @@ const AUTH_TIMEOUT = 10000; // 10 seconds
 const PROFILE_CACHE_TIME = 5 * 60 * 1000; // 5 minutes
 
 // Cache for profile data
-const profileCache = new Map<string, { data: Profile | null; timestamp: number }>();
+const profileCache = new Map<
+  string,
+  { data: Profile | null; timestamp: number }
+>();
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -54,43 +75,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isMountedRef = useRef(true);
 
   // Enhanced profile fetcher with caching
-  const fetchProfile = useCallback(async (userId: string, signal?: AbortSignal): Promise<Profile | null> => {
-    try {
-      // Check cache first
-      const cached = profileCache.get(userId);
-      if (cached && Date.now() - cached.timestamp < PROFILE_CACHE_TIME) {
-        return cached.data;
+  const fetchProfile = useCallback(
+    async (userId: string, signal?: AbortSignal): Promise<Profile | null> => {
+      try {
+        // Check cache first
+        const cached = profileCache.get(userId);
+
+        if (cached && Date.now() - cached.timestamp < PROFILE_CACHE_TIME) {
+          return cached.data;
+        }
+
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("user_id", userId)
+          .maybeSingle();
+
+        if (signal?.aborted) return null;
+
+        if (error && error.code !== "PGRST116") {
+          console.error("Profile fetch error:", error);
+          throw new Error(`Failed to fetch profile: ${error.message}`);
+        }
+
+        // Update cache
+        profileCache.set(userId, { data, timestamp: Date.now() });
+
+        return data;
+      } catch (error) {
+        if (!signal?.aborted) {
+          console.error("Profile fetch error:", error);
+          throw error;
+        }
+
+        return null;
       }
-
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', userId)
-        .maybeSingle();
-
-      if (signal?.aborted) return null;
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('Profile fetch error:', error);
-        throw new Error(`Failed to fetch profile: ${error.message}`);
-      }
-
-      // Update cache
-      profileCache.set(userId, { data, timestamp: Date.now() });
-      return data;
-    } catch (error) {
-      if (!signal?.aborted) {
-        console.error('Profile fetch error:', error);
-        throw error;
-      }
-      return null;
-    }
-  }, []);
+    },
+    [],
+  );
 
   // Update state helper
   const updateState = useCallback((updates: Partial<AuthState>) => {
     if (!isMountedRef.current) return;
-    setState(prev => ({ ...prev, ...updates }));
+    setState((prev) => ({ ...prev, ...updates }));
   }, []);
 
   // Initialize authentication
@@ -104,20 +131,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Timeout protection
         initTimeoutRef.current = setTimeout(() => {
           if (isMountedRef.current) {
-            console.warn('Auth initialization timeout');
+            console.warn("Auth initialization timeout");
             updateState({
               user: null,
               session: null,
               profile: null,
               isLoading: false,
               isInitialized: true,
-              error: 'Authentication timeout',
+              error: "Authentication timeout",
             });
           }
         }, AUTH_TIMEOUT);
 
         // Get session
-        const { data: { session }, error } = await supabase.auth.getSession();
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession();
 
         if (!isMountedRef.current) return;
 
@@ -135,13 +165,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (session?.user) {
           profileFetchRef.current = new AbortController();
           try {
-            const profileData = await fetchProfile(session.user.id, profileFetchRef.current.signal);
-            if (isMountedRef.current && !profileFetchRef.current.signal.aborted) {
+            const profileData = await fetchProfile(
+              session.user.id,
+              profileFetchRef.current.signal,
+            );
+
+            if (
+              isMountedRef.current &&
+              !profileFetchRef.current.signal.aborted
+            ) {
               newState.profile = profileData;
             }
           } catch (error) {
-            console.error('Profile fetch during init failed:', error);
-            newState.error = 'Failed to load user profile';
+            console.error("Profile fetch during init failed:", error);
+            newState.error = "Failed to load user profile";
           }
         } else {
           newState.profile = null;
@@ -158,7 +195,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         }
       } catch (error) {
-        console.error('Auth initialization error:', error);
+        console.error("Auth initialization error:", error);
         if (isMountedRef.current) {
           updateState({
             user: null,
@@ -166,7 +203,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             profile: null,
             isLoading: false,
             isInitialized: true,
-            error: error instanceof Error ? error.message : 'Authentication failed',
+            error:
+              error instanceof Error ? error.message : "Authentication failed",
           });
         }
       }
@@ -175,50 +213,54 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initializeAuth();
 
     // Auth state change listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (!isMountedRef.current) return;
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!isMountedRef.current) return;
 
-        console.log(`Auth event: ${event}`, session?.user?.id);
+      console.log(`Auth event: ${event}`, session?.user?.id);
 
-        // Cancel ongoing profile fetch
-        if (profileFetchRef.current) {
-          profileFetchRef.current.abort();
-        }
-
-        const newState: Partial<AuthState> = {
-          session,
-          user: session?.user ?? null,
-          error: null,
-        };
-
-        // Handle profile based on session
-        if (session?.user) {
-          profileFetchRef.current = new AbortController();
-          try {
-            const profileData = await fetchProfile(session.user.id, profileFetchRef.current.signal);
-            if (isMountedRef.current && !profileFetchRef.current.signal.aborted) {
-              newState.profile = profileData;
-            }
-          } catch (error) {
-            console.error('Profile fetch on auth change failed:', error);
-            newState.error = 'Failed to load user profile';
-          }
-        } else {
-          newState.profile = null;
-          // Clear profile cache on sign out
-          profileCache.clear();
-        }
-
-        if (isMountedRef.current) {
-          updateState({
-            ...newState,
-            isLoading: false,
-            isInitialized: true,
-          });
-        }
+      // Cancel ongoing profile fetch
+      if (profileFetchRef.current) {
+        profileFetchRef.current.abort();
       }
-    );
+
+      const newState: Partial<AuthState> = {
+        session,
+        user: session?.user ?? null,
+        error: null,
+      };
+
+      // Handle profile based on session
+      if (session?.user) {
+        profileFetchRef.current = new AbortController();
+        try {
+          const profileData = await fetchProfile(
+            session.user.id,
+            profileFetchRef.current.signal,
+          );
+
+          if (isMountedRef.current && !profileFetchRef.current.signal.aborted) {
+            newState.profile = profileData;
+          }
+        } catch (error) {
+          console.error("Profile fetch on auth change failed:", error);
+          newState.error = "Failed to load user profile";
+        }
+      } else {
+        newState.profile = null;
+        // Clear profile cache on sign out
+        profileCache.clear();
+      }
+
+      if (isMountedRef.current) {
+        updateState({
+          ...newState,
+          isLoading: false,
+          isInitialized: true,
+        });
+      }
+    });
 
     return () => {
       isMountedRef.current = false;
@@ -235,7 +277,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [fetchProfile, updateState]);
 
   // Sign in
-  const signIn = async (email: string, password: string): Promise<{ error: string | null }> => {
+  const signIn = async (
+    email: string,
+    password: string,
+  ): Promise<{ error: string | null }> => {
     try {
       updateState({ isLoading: true, error: null });
 
@@ -250,8 +295,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       return { error: null };
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Sign in failed';
+      const message = error instanceof Error ? error.message : "Sign in failed";
+
       updateState({ error: message, isLoading: false });
+
       return { error: message };
     }
   };
@@ -260,7 +307,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signUp = async (
     email: string,
     password: string,
-    metadata?: Record<string, any>
+    metadata?: Record<string, any>,
   ): Promise<{ error: string | null }> => {
     try {
       updateState({ isLoading: true, error: null });
@@ -279,20 +326,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       return { error: null };
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Sign up failed';
+      const message = error instanceof Error ? error.message : "Sign up failed";
+
       updateState({ error: message, isLoading: false });
+
       return { error: message };
     }
   };
 
   // Reset password
-  const resetPassword = async (email: string): Promise<{ error: string | null }> => {
+  const resetPassword = async (
+    email: string,
+  ): Promise<{ error: string | null }> => {
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(
         email.trim().toLowerCase(),
         {
           redirectTo: `${window.location.origin}/auth/reset-password`,
-        }
+        },
       );
 
       if (error) {
@@ -301,7 +352,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       return { error: null };
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Password reset failed';
+      const message =
+        error instanceof Error ? error.message : "Password reset failed";
+
       return { error: message };
     }
   };
@@ -312,11 +365,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     try {
       const { error } = await supabase.auth.signOut();
+
       if (error) {
-        console.error('Sign out error:', error);
+        console.error("Sign out error:", error);
       }
     } catch (error) {
-      console.error('Sign out error:', error);
+      console.error("Sign out error:", error);
     } finally {
       // Always clear local state
       profileCache.clear();
@@ -332,16 +386,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   // Update profile
-  const updateProfile = async (updates: Partial<Profile>): Promise<{ error: string | null }> => {
+  const updateProfile = async (
+    updates: Partial<Profile>,
+  ): Promise<{ error: string | null }> => {
     if (!state.user || !state.profile) {
-      return { error: 'No authenticated user or profile' };
+      return { error: "No authenticated user or profile" };
     }
 
     try {
       const { data, error } = await supabase
-        .from('profiles')
+        .from("profiles")
         .update(updates)
-        .eq('user_id', state.user.id)
+        .eq("user_id", state.user.id)
         .select()
         .single();
 
@@ -355,7 +411,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       return { error: null };
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Profile update failed';
+      const message =
+        error instanceof Error ? error.message : "Profile update failed";
+
       return { error: message };
     }
   };
@@ -363,7 +421,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Refresh session
   const refreshSession = async (): Promise<void> => {
     try {
-      const { data: { session }, error } = await supabase.auth.refreshSession();
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.refreshSession();
 
       if (error) throw error;
 
@@ -372,7 +433,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user: session?.user ?? null,
       });
     } catch (error) {
-      console.error('Session refresh error:', error);
+      console.error("Session refresh error:", error);
       throw error;
     }
   };
@@ -394,9 +455,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={contextValue}>
-      {children}
-    </AuthContext.Provider>
+    <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
   );
 }
 
@@ -405,7 +464,7 @@ export function useAuth(): AuthContextType {
   const context = useContext(AuthContext);
 
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
 
   return context;
@@ -426,8 +485,8 @@ export const authUtils = {
       profile?.full_name ||
       profile?.first_name ||
       user?.user_metadata?.full_name ||
-      user?.email?.split('@')[0] ||
-      'User'
+      user?.email?.split("@")[0] ||
+      "User"
     );
   },
 
@@ -436,36 +495,41 @@ export const authUtils = {
   },
 
   generateRedirectUrl: (basePath: string): string => {
-    if (typeof window === 'undefined') return basePath;
+    if (typeof window === "undefined") return basePath;
     const currentPath = window.location.pathname + window.location.search;
+
     return `${basePath}?redirect=${encodeURIComponent(currentPath)}`;
   },
 
   isEmailValid: (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
     return emailRegex.test(email);
   },
 
-  getPasswordStrength: (password: string): { score: number; message: string } => {
+  getPasswordStrength: (
+    password: string,
+  ): { score: number; message: string } => {
     if (password.length < 6) {
-      return { score: 0, message: 'Too short' };
+      return { score: 0, message: "Too short" };
     }
     if (password.length < 8) {
-      return { score: 1, message: 'Weak' };
+      return { score: 1, message: "Weak" };
     }
-    
+
     let score = 2;
     let requirements = 0;
-    
+
     if (/[a-z]/.test(password)) requirements++;
     if (/[A-Z]/.test(password)) requirements++;
     if (/[0-9]/.test(password)) requirements++;
     if (/[^A-Za-z0-9]/.test(password)) requirements++;
-    
+
     if (requirements >= 3) score = 3;
     if (requirements === 4 && password.length >= 10) score = 4;
-    
-    const messages = ['Too short', 'Weak', 'Fair', 'Good', 'Strong'];
+
+    const messages = ["Too short", "Weak", "Fair", "Good", "Strong"];
+
     return { score, message: messages[score] };
   },
 };

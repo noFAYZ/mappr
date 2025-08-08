@@ -1,5 +1,5 @@
-import { BaseExtension } from './base';
-import { ZerionExtension } from './crypto/zerion';
+import { BaseExtension } from "./base";
+import { ZerionExtension } from "./crypto/zerion";
 
 export class ExtensionRegistry {
   private static extensions = new Map<string, typeof BaseExtension>();
@@ -15,18 +15,20 @@ export class ExtensionRegistry {
   static list(): Array<{ slug: string; extension: typeof BaseExtension }> {
     return Array.from(this.extensions.entries()).map(([slug, extension]) => ({
       slug,
-      extension
+      extension,
     }));
   }
 
   static createInstance(slug: string): BaseExtension | null {
     const ExtensionClass = this.get(slug);
+
     if (!ExtensionClass) {
       return null;
     }
+
     return new ExtensionClass();
   }
 }
 
 // Register extensions
-ExtensionRegistry.register('zerion', ZerionExtension);
+ExtensionRegistry.register("zerion", ZerionExtension);

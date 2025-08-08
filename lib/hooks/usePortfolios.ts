@@ -1,18 +1,21 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { usePortfolioStore } from '@/stores';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+
+import { usePortfolioStore } from "@/stores";
 
 export function usePortfolios() {
   const queryClient = useQueryClient();
   const { setPortfolios, setLoading, setError } = usePortfolioStore();
 
   const portfoliosQuery = useQuery({
-    queryKey: ['portfolios'],
+    queryKey: ["portfolios"],
     queryFn: async () => {
-      const response = await fetch('/api/portfolios');
+      const response = await fetch("/api/portfolios");
+
       if (!response.ok) {
-        throw new Error('Failed to fetch portfolios');
+        throw new Error("Failed to fetch portfolios");
       }
       const result = await response.json();
+
       return result.data;
     },
     onSuccess: (data) => {
@@ -24,22 +27,29 @@ export function usePortfolios() {
   });
 
   const createMutation = useMutation({
-    mutationFn: async ({ name, description }: { name: string; description?: string }) => {
-      const response = await fetch('/api/portfolios', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+    mutationFn: async ({
+      name,
+      description,
+    }: {
+      name: string;
+      description?: string;
+    }) => {
+      const response = await fetch("/api/portfolios", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, description }),
       });
-      
+
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Failed to create portfolio');
+
+        throw new Error(error.message || "Failed to create portfolio");
       }
-      
+
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['portfolios'] });
+      queryClient.invalidateQueries({ queryKey: ["portfolios"] });
     },
   });
 

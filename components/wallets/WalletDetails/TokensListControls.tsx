@@ -1,16 +1,20 @@
 // components/WalletAnalytics/TokensListControls.tsx
-'use client';
+"use client";
 
-import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import React, {
+  useState,
+  useCallback,
+  useMemo,
+  useRef,
+  useEffect,
+} from "react";
 import {
- 
   Button,
   Dropdown,
   DropdownTrigger,
   DropdownMenu,
   DropdownItem,
   Switch,
-  Badge,
   Chip,
   Tooltip,
   ButtonGroup,
@@ -23,16 +27,12 @@ import {
   Divider,
   Select,
   SelectItem,
-  RadioGroup,
-  Radio,
-  ScrollShadow
-} from '@heroui/react';
-import { motion, AnimatePresence } from 'framer-motion';
+  ScrollShadow,
+} from "@heroui/react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
   Filter,
-  SortAsc,
-  SortDesc,
   Settings,
   ChevronDown,
   X,
@@ -48,33 +48,33 @@ import {
   Eye,
   EyeOff,
   RefreshCw,
-  Grid3X3,
-  List,
   Sparkles,
   ArrowUpDown,
   Layers,
   Activity,
   RotateCcw,
   MinusCircle,
-  Star,
-  Zap,
-  Globe,
-  ListChecks
-} from 'lucide-react';
-import clsx from 'clsx';
-import { IcTwotonePrivacyTip } from '@/components/icons/icons';
-import { Input } from '@heroui/input';
+  ListChecks,
+} from "lucide-react";
+import clsx from "clsx";
+import { Input } from "@heroui/input";
+
+import { IcTwotonePrivacyTip } from "@/components/icons/icons";
 
 // Types
 export interface TokensControlsProps {
   searchQuery: string;
   onSearchChange: (query: string) => void;
-  sortMode: 'value' | 'change' | 'quantity' | 'alphabetical' | 'price';
-  onSortModeChange: (mode: 'value' | 'change' | 'quantity' | 'alphabetical' | 'price') => void;
+  sortMode: "value" | "change" | "quantity" | "alphabetical" | "price";
+  onSortModeChange: (
+    mode: "value" | "change" | "quantity" | "alphabetical" | "price",
+  ) => void;
   sortAscending: boolean;
   onSortDirectionChange: (ascending: boolean) => void;
-  filterMode: 'all' | 'verified' | 'highValue' | 'gainers' | 'losers';
-  onFilterModeChange: (mode: 'all' | 'verified' | 'highValue' | 'gainers' | 'losers') => void;
+  filterMode: "all" | "verified" | "highValue" | "gainers" | "losers";
+  onFilterModeChange: (
+    mode: "all" | "verified" | "highValue" | "gainers" | "losers",
+  ) => void;
   hideZeroValues: boolean;
   onHideZeroValuesChange: (hide: boolean) => void;
   hideDustTokens: boolean;
@@ -85,99 +85,99 @@ export interface TokensControlsProps {
   onRefresh?: () => void;
   totalTokens: number;
   filteredTokens: number;
-  viewMode?: 'list' | 'grid';
-  onViewModeChange?: (mode: 'list' | 'grid') => void;
+  viewMode?: "list" | "grid";
+  onViewModeChange?: (mode: "list" | "grid") => void;
   itemsPerPage?: number;
   onItemsPerPageChange?: (count: number) => void;
 }
 
 // Enhanced Constants
 const FILTER_OPTIONS = [
-  { 
-    key: 'all', 
-    label: 'All Tokens', 
-    shortLabel: 'All',
-    icon: Layers, 
-    color: 'default',
-    description: 'Show all tokens'
+  {
+    key: "all",
+    label: "All Tokens",
+    shortLabel: "All",
+    icon: Layers,
+    color: "default",
+    description: "Show all tokens",
   },
-  { 
-    key: 'verified', 
-    label: 'Verified Only', 
-    shortLabel: 'Verified',
-    icon: CheckCircle2, 
-    color: 'success',
-    description: 'Only verified tokens'
+  {
+    key: "verified",
+    label: "Verified Only",
+    shortLabel: "Verified",
+    icon: CheckCircle2,
+    color: "success",
+    description: "Only verified tokens",
   },
-  { 
-    key: 'highValue', 
-    label: 'High Value ($1k+)', 
-    shortLabel: 'High Value',
-    icon: Crown, 
-    color: 'warning',
-    description: 'Tokens worth $1,000+'
+  {
+    key: "highValue",
+    label: "High Value ($1k+)",
+    shortLabel: "High Value",
+    icon: Crown,
+    color: "warning",
+    description: "Tokens worth $1,000+",
   },
-  { 
-    key: 'gainers', 
-    label: '24h Gainers', 
-    shortLabel: 'Gainers',
-    icon: TrendingUp, 
-    color: 'success',
-    description: 'Positive 24h change'
+  {
+    key: "gainers",
+    label: "24h Gainers",
+    shortLabel: "Gainers",
+    icon: TrendingUp,
+    color: "success",
+    description: "Positive 24h change",
   },
-  { 
-    key: 'losers', 
-    label: '24h Losers', 
-    shortLabel: 'Losers',
-    icon: TrendingDown, 
-    color: 'danger',
-    description: 'Negative 24h change'
-  }
+  {
+    key: "losers",
+    label: "24h Losers",
+    shortLabel: "Losers",
+    icon: TrendingDown,
+    color: "danger",
+    description: "Negative 24h change",
+  },
 ];
 
 const SORT_OPTIONS = [
-  { 
-    key: 'value', 
-    label: 'Portfolio Value', 
-    shortLabel: 'Value',
+  {
+    key: "value",
+    label: "Portfolio Value",
+    shortLabel: "Value",
     icon: DollarSign,
-    description: 'Sort by USD value'
+    description: "Sort by USD value",
   },
-  { 
-    key: 'change', 
-    label: '24h Change', 
-    shortLabel: 'Change',
+  {
+    key: "change",
+    label: "24h Change",
+    shortLabel: "Change",
     icon: BarChart3,
-    description: 'Sort by price change'
+    description: "Sort by price change",
   },
-  { 
-    key: 'quantity', 
-    label: 'Token Amount', 
-    shortLabel: 'Amount',
+  {
+    key: "quantity",
+    label: "Token Amount",
+    shortLabel: "Amount",
     icon: Hash,
-    description: 'Sort by quantity held'
+    description: "Sort by quantity held",
   },
-  { 
-    key: 'price', 
-    label: 'Unit Price', 
-    shortLabel: 'Price',
+  {
+    key: "price",
+    label: "Unit Price",
+    shortLabel: "Price",
     icon: Target,
-    description: 'Sort by token price'
+    description: "Sort by token price",
   },
-  { 
-    key: 'alphabetical', 
-    label: 'Alphabetical', 
-    shortLabel: 'Name',
+  {
+    key: "alphabetical",
+    label: "Alphabetical",
+    shortLabel: "Name",
     icon: Award,
-    description: 'Sort by token name'
-  }
+    description: "Sort by token name",
+  },
 ];
 
 const ITEMS_PER_PAGE_OPTIONS = [
-  { value: 10, label: '10' },
-  { value: 25, label: '25' },
-  { value: 50, label: '50' },
-  { value: 100, label: '100' }
+  { value: 10, label: "10" },
+  { value: 25, label: "25" },
+  { value: 50, label: "50" },
+  { value: 100, label: "100" },
 ];
 
 // Enhanced Search Input
@@ -192,43 +192,36 @@ const EnhancedSearchInput: React.FC<{
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
         inputRef.current?.focus();
       }
-      if (e.key === 'Escape' && isFocused) {
+      if (e.key === "Escape" && isFocused) {
         inputRef.current?.blur();
         onClear();
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isFocused, onClear]);
 
   return (
     <Input
       ref={inputRef}
-      placeholder="Search tokens by name, symbol..."
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      onFocus={() => setIsFocused(true)}
-      onBlur={() => setIsFocused(false)}
-      startContent={
-        <Search className={clsx(
-          "w-4 h-4 ",
-          isFocused ? "text-primary scale-110" : "text-default-400"
-        )} />
-      }
+      classNames={{
+        base: "w-full",
+      }}
       endContent={
         <div className="flex items-center gap-1">
           {value && (
             <Button
               isIconOnly
+              className="w-5 h-5 min-w-5 text-default-400 hover:text-danger transition-colors"
               size="sm"
               variant="faded"
               onPress={onClear}
-              className="w-5 h-5 min-w-5 text-default-400 hover:text-danger transition-colors"
             >
               <X className="w-3 h-3" />
             </Button>
@@ -240,11 +233,21 @@ const EnhancedSearchInput: React.FC<{
           )}
         </div>
       }
-      classNames={{
-        base: "w-full",
-      }}
+      placeholder="Search tokens by name, symbol..."
       radius="lg"
+      startContent={
+        <Search
+          className={clsx(
+            "w-4 h-4 ",
+            isFocused ? "text-primary scale-110" : "text-default-400",
+          )}
+        />
+      }
+      value={value}
       variant="faded"
+      onBlur={() => setIsFocused(false)}
+      onChange={(e) => onChange(e.target.value)}
+      onFocus={() => setIsFocused(true)}
     />
   );
 };
@@ -257,34 +260,33 @@ const SmartFilterDropdown: React.FC<{
   totalCount: number;
 }> = ({ filterMode, onFilterModeChange, filteredCount, totalCount }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const activeFilter = FILTER_OPTIONS.find(f => f.key === filterMode) || FILTER_OPTIONS[0];
+  const activeFilter =
+    FILTER_OPTIONS.find((f) => f.key === filterMode) || FILTER_OPTIONS[0];
   const ActiveIcon = activeFilter.icon;
   const hasFilter = filteredCount !== totalCount;
 
   return (
-    <Dropdown 
+    <Dropdown
+      classNames={{
+        content:
+          "p-1 border border-default-200 shadow-xl bg-background/95 backdrop-blur-md",
+      }}
       isOpen={isOpen}
       onOpenChange={setIsOpen}
-      classNames={{
-        content: "p-1 border border-default-200 shadow-xl bg-background/95 backdrop-blur-md"
-      }}
     >
       <DropdownTrigger>
         <Button
-          variant="faded"
-          size="sm"
-          startContent={<ActiveIcon className="w-4 h-4" />}
+          className={clsx("h-8 min-w-24 justify-between ")}
           endContent={
             <div className="flex items-center gap-1">
               {hasFilter && (
-                <Chip 
-                 
-                  size="sm" 
-                  variant='flat'
+                <Chip
                   className="text-[11px] font-medium px-0 h-5 rounded-full bg-primary-500/25 text-primary-700 border-primary-700"
-               
-                  >{filteredCount}</Chip>
-               
+                  size="sm"
+                  variant="flat"
+                >
+                  {filteredCount}
+                </Chip>
               )}
               <motion.div
                 animate={{ rotate: isOpen ? 180 : 0 }}
@@ -294,55 +296,54 @@ const SmartFilterDropdown: React.FC<{
               </motion.div>
             </div>
           }
-          className={clsx(
-            "h-8 min-w-24 justify-between ",
-           
-          )}
           radius="none"
+          size="sm"
+          startContent={<ActiveIcon className="w-4 h-4" />}
+          variant="faded"
         >
-          <span className="font-medium text-xs text-default-500">{activeFilter.shortLabel}</span>
+          <span className="font-medium text-xs text-default-500">
+            {activeFilter.shortLabel}
+          </span>
         </Button>
       </DropdownTrigger>
-      
+
       <DropdownMenu
         aria-label="Filter options"
-        variant="flat"
+        className="w-48"
         closeOnSelect={true}
+        itemClasses={{
+          base: " data-[hover=true]:bg-default-100 data-[selected=true]:bg-primary-500/10",
+        }}
         selectedKeys={new Set([filterMode])}
         selectionMode="single"
+        variant="flat"
         onSelectionChange={(keys) => {
           const selectedKey = Array.from(keys)[0] as string;
+
           if (selectedKey) {
             onFilterModeChange(selectedKey);
           }
-        }}
-        className="w-48"
-        itemClasses={{
-          base: " data-[hover=true]:bg-default-100 data-[selected=true]:bg-primary-500/10"
         }}
       >
         {FILTER_OPTIONS.map((option) => {
           const Icon = option.icon;
           const isSelected = filterMode === option.key;
-          
+
           return (
             <DropdownItem
               key={option.key}
+              className={clsx("", isSelected && "bg-primary-500/10")}
               startContent={
-                <Icon className={clsx(
-                  "w-4 h-4",
-                  isSelected ? "text-primary" : "text-default-500"
-                )} />
+                <Icon
+                  className={clsx(
+                    "w-4 h-4",
+                    isSelected ? "text-primary" : "text-default-500",
+                  )}
+                />
               }
-            
-              className={clsx(
-                "",
-                isSelected && "bg-primary-500/10"
-              )}
             >
               <div>
                 <div className="font-medium text-xs">{option.label}</div>
-                
               </div>
             </DropdownItem>
           );
@@ -360,23 +361,23 @@ const EnhancedSortControls: React.FC<{
   onSortDirectionChange: (ascending: boolean) => void;
 }> = ({ sortMode, sortAscending, onSortModeChange, onSortDirectionChange }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const activeSort = SORT_OPTIONS.find(s => s.key === sortMode) || SORT_OPTIONS[0];
+  const activeSort =
+    SORT_OPTIONS.find((s) => s.key === sortMode) || SORT_OPTIONS[0];
   const ActiveIcon = activeSort.icon;
 
   return (
-    <ButtonGroup variant="faded" size="sm" className="shadow-sm" radius='none'>
-      <Dropdown 
-        isOpen={isOpen}
-        onOpenChange={setIsOpen}
-        
+    <ButtonGroup className="shadow-sm" radius="none" size="sm" variant="faded">
+      <Dropdown
         classNames={{
           base: "relative text-xs",
-          content: " border border-divider shadow-xl backdrop-blur-md"
+          content: " border border-divider shadow-xl backdrop-blur-md",
         }}
+        isOpen={isOpen}
+        onOpenChange={setIsOpen}
       >
         <DropdownTrigger>
           <Button
-            startContent={<ActiveIcon className="w-4 h-4" />}
+            className="h-8 min-w-20    "
             endContent={
               <motion.div
                 animate={{ rotate: isOpen ? 180 : 0 }}
@@ -385,57 +386,62 @@ const EnhancedSortControls: React.FC<{
                 <ChevronDown className="w-3.5 h-3.5" />
               </motion.div>
             }
-            className="h-8 min-w-20    "
-       
-           
+            startContent={<ActiveIcon className="w-4 h-4" />}
           >
-            <span className="hidden sm:inline font-medium text-xs">{activeSort.shortLabel}</span>
+            <span className="hidden sm:inline font-medium text-xs">
+              {activeSort.shortLabel}
+            </span>
           </Button>
         </DropdownTrigger>
-        
+
         <DropdownMenu
           aria-label="Sort options"
-          variant="flat"
+          className="w-52"
           closeOnSelect={true}
+          itemClasses={{
+            base: "rounded-lg data-[hover=true]:bg-default-100 data-[selected=true]:bg-primary/10",
+          }}
           selectedKeys={new Set([sortMode])}
           selectionMode="single"
+          variant="flat"
           onSelectionChange={(keys) => {
             const selectedKey = Array.from(keys)[0] as string;
+
             if (selectedKey) {
               onSortModeChange(selectedKey);
             }
-          }}
-          className="w-52"
-          itemClasses={{
-            base: "rounded-lg data-[hover=true]:bg-default-100 data-[selected=true]:bg-primary/10"
           }}
         >
           {SORT_OPTIONS.map((option) => {
             const Icon = option.icon;
             const isSelected = sortMode === option.key;
-            
+
             return (
               <DropdownItem
                 key={option.key}
-                startContent={
-                  <Icon className={clsx(
-                    "w-4 h-4",
-                    isSelected ? "text-primary" : "text-default-500"
-                  )} />
-                }
+                className={clsx(
+                  "transition-all duration-150",
+                  isSelected && "bg-primary/10",
+                )}
                 endContent={
                   isSelected && (
                     <CheckCircle2 className="w-4 h-4 text-primary" />
                   )
                 }
-                className={clsx(
-                  "transition-all duration-150",
-                  isSelected && "bg-primary/10"
-                )}
+                startContent={
+                  <Icon
+                    className={clsx(
+                      "w-4 h-4",
+                      isSelected ? "text-primary" : "text-default-500",
+                    )}
+                  />
+                }
               >
                 <div>
                   <div className="font-medium text-sm">{option.label}</div>
-                  <div className="text-xs text-default-500">{option.description}</div>
+                  <div className="text-xs text-default-500">
+                    {option.description}
+                  </div>
                 </div>
               </DropdownItem>
             );
@@ -443,24 +449,24 @@ const EnhancedSortControls: React.FC<{
         </DropdownMenu>
       </Dropdown>
 
-      <Tooltip 
-        content={`Sort ${sortAscending ? 'Descending' : 'Ascending'}`}
+      <Tooltip
+        content={`Sort ${sortAscending ? "Descending" : "Ascending"}`}
         delay={200}
       >
         <Button
           isIconOnly
-          
-          onPress={() => onSortDirectionChange(!sortAscending)}
           className={clsx(
             "h-8 w-8  ",
-            sortAscending ? "text-primary-700 bg-primary-500/5" : "text-default-500"
+            sortAscending
+              ? "text-primary-700 bg-primary-500/5"
+              : "text-default-500",
           )}
-         
+          onPress={() => onSortDirectionChange(!sortAscending)}
         >
           <motion.div
-            animate={{ 
+            animate={{
               rotate: sortAscending ? 0 : 180,
-              scale: sortAscending ? 1.1 : 1
+              scale: sortAscending ? 1.1 : 1,
             }}
             transition={{ duration: 0.1, type: "spring", stiffness: 200 }}
           >
@@ -480,8 +486,8 @@ const PremiumSettingsPanel: React.FC<{
   onHideZeroValuesChange: (hide: boolean) => void;
   onHideDustTokensChange: (hide: boolean) => void;
   onShowBalanceChange: (show: boolean) => void;
-  viewMode?: 'list' | 'grid';
-  onViewModeChange?: (mode: 'list' | 'grid') => void;
+  viewMode?: "list" | "grid";
+  onViewModeChange?: (mode: "list" | "grid") => void;
   itemsPerPage?: number;
   onItemsPerPageChange?: (count: number) => void;
 }> = ({
@@ -494,7 +500,7 @@ const PremiumSettingsPanel: React.FC<{
   viewMode,
   onViewModeChange,
   itemsPerPage = 25,
-  onItemsPerPageChange
+  onItemsPerPageChange,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [dustThreshold, setDustThreshold] = useState(1);
@@ -502,29 +508,26 @@ const PremiumSettingsPanel: React.FC<{
   const hasActiveSettings = hideZeroValues || hideDustTokens || !showBalance;
 
   return (
-    <Popover 
-      isOpen={isOpen}
-      onOpenChange={setIsOpen}
-      placement="bottom-end"
+    <Popover
       classNames={{
-        content: "p-0 bg-background backdrop-blur-md border border-divider "
+        content: "p-0 bg-background backdrop-blur-md border border-divider ",
       }}
+      isOpen={isOpen}
+      placement="bottom-end"
+      onOpenChange={setIsOpen}
     >
       <PopoverTrigger>
         <Button
           isIconOnly
-          variant="faded"
-          size="sm"
-          className={clsx(
-            "h-8 w-8 relative overflow-visible",
-      
-          )}
+          className={clsx("h-8 w-8 relative overflow-visible")}
           radius="full"
+          size="sm"
+          variant="faded"
         >
           <motion.div
-            animate={{ 
+            animate={{
               rotate: isOpen ? 90 : 0,
-              scale: isOpen ? 1.1 : 1
+              scale: isOpen ? 1.1 : 1,
             }}
             transition={{ duration: 0.2 }}
           >
@@ -532,18 +535,17 @@ const PremiumSettingsPanel: React.FC<{
           </motion.div>
           {hasActiveSettings && (
             <motion.div
-              initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               className="absolute -top-1 -right-1 w-3 h-3 bg-primary-500 rounded-full border border-background"
+              initial={{ scale: 0 }}
             />
           )}
         </Button>
       </PopoverTrigger>
-      
+
       <PopoverContent className="w-auto">
-        <Card shadow="none" className="border-none bg-transparent">
+        <Card className="border-none bg-transparent" shadow="none">
           <CardBody className="p-3 space-y-2">
-            
             {/* Header */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -554,10 +556,10 @@ const PremiumSettingsPanel: React.FC<{
               </div>
               <Button
                 isIconOnly
+                className="text-default-400 hover:text-default-600"
                 size="sm"
                 variant="light"
                 onPress={() => setIsOpen(false)}
-                className="text-default-400 hover:text-default-600"
               >
                 <X className="w-4 h-4" />
               </Button>
@@ -566,49 +568,51 @@ const PremiumSettingsPanel: React.FC<{
             <Divider className="bg-divider" />
 
             {/* Display Options */}
-        
-                {/* Items Per Page */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <ListChecks className="w-4 h-4 text-default-500" />
-                    <span className="text-xs font-medium">Items per page</span>
-                  </div>
-                  <Select
-                    size="sm"
-                    variant='faded'
-                    selectedKeys={new Set([itemsPerPage.toString()])}
-                    onSelectionChange={(keys) => {
-                      const value = Array.from(keys)[0] as string;
-                      if (value && onItemsPerPageChange) {
-                        onItemsPerPageChange(parseInt(value));
-                      }
-                    }}
-                    className="w-20"
-                    classNames={{
-                      trigger: "h-8 min-h-8 bg-default-100",
-                      value: "text-xs font-medium"
-                    }}
-                    radius="sm"
+
+            {/* Items Per Page */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ListChecks className="w-4 h-4 text-default-500" />
+                <span className="text-xs font-medium">Items per page</span>
+              </div>
+              <Select
+                className="w-20"
+                classNames={{
+                  trigger: "h-8 min-h-8 bg-default-100",
+                  value: "text-xs font-medium",
+                }}
+                radius="sm"
+                selectedKeys={new Set([itemsPerPage.toString()])}
+                size="sm"
+                variant="faded"
+                onSelectionChange={(keys) => {
+                  const value = Array.from(keys)[0] as string;
+
+                  if (value && onItemsPerPageChange) {
+                    onItemsPerPageChange(parseInt(value));
+                  }
+                }}
+              >
+                {ITEMS_PER_PAGE_OPTIONS.map((option) => (
+                  <SelectItem
+                    key={option.value.toString()}
+                    value={option.value.toString()}
                   >
-                    {ITEMS_PER_PAGE_OPTIONS.map((option) => (
-                      <SelectItem key={option.value.toString()} value={option.value.toString()}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </Select>
-                </div>
-
-          
-
-            
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </Select>
+            </div>
 
             {/* Privacy & Filters */}
             <div className="space-y-4">
               <div className="flex items-center gap-2 mb-3">
                 <IcTwotonePrivacyTip className="w-4 h-4 text-default-500" />
-                <h5 className="font-medium text-xs text-default-700">Privacy & Filters</h5>
+                <h5 className="font-medium text-xs text-default-700">
+                  Privacy & Filters
+                </h5>
               </div>
-              
+
               <div className="space-y-3">
                 {/* Show Balances */}
                 <div className="flex items-center justify-between p-2 rounded-lg bg-default-50 hover:bg-default-100 ">
@@ -620,17 +624,16 @@ const PremiumSettingsPanel: React.FC<{
                     )}
                     <div>
                       <span className="text-xs font-medium">Show balances</span>
-                    
                     </div>
                   </div>
                   <Switch
-                    size="sm"
-                    isSelected={showBalance}
-                    onValueChange={onShowBalanceChange}
-                    color="primary"
                     classNames={{
-                      wrapper: "group-data-[selected=true]:bg-primary"
+                      wrapper: "group-data-[selected=true]:bg-primary",
                     }}
+                    color="primary"
+                    isSelected={showBalance}
+                    size="sm"
+                    onValueChange={onShowBalanceChange}
                   />
                 </div>
 
@@ -639,19 +642,19 @@ const PremiumSettingsPanel: React.FC<{
                   <div className="flex items-center gap-3">
                     <MinusCircle className="w-4 h-4 text-warning" />
                     <div>
-                      <span className="text-xs font-medium">Hide zero values</span>
-                     
+                      <span className="text-xs font-medium">
+                        Hide zero values
+                      </span>
                     </div>
                   </div>
                   <Switch
-                    size="sm"
-                    isSelected={hideZeroValues}
-                    onValueChange={onHideZeroValuesChange}
-                    color="warning"
                     classNames={{
-                    
-                      wrapper: "group-data-[selected=true]:bg-warning"
+                      wrapper: "group-data-[selected=true]:bg-warning",
                     }}
+                    color="warning"
+                    isSelected={hideZeroValues}
+                    size="sm"
+                    onValueChange={onHideZeroValuesChange}
                   />
                 </div>
 
@@ -660,18 +663,19 @@ const PremiumSettingsPanel: React.FC<{
                   <div className="flex items-center gap-3">
                     <Sparkles className="w-4 h-4 text-secondary" />
                     <div>
-                      <span className="text-sm font-medium">Hide dust tokens</span>
-                    
+                      <span className="text-sm font-medium">
+                        Hide dust tokens
+                      </span>
                     </div>
                   </div>
                   <Switch
-                    size="sm"
-                    isSelected={hideDustTokens}
-                    onValueChange={onHideDustTokensChange}
-                    color="secondary"
                     classNames={{
-                      wrapper: "group-data-[selected=true]:bg-secondary"
+                      wrapper: "group-data-[selected=true]:bg-secondary",
                     }}
+                    color="secondary"
+                    isSelected={hideDustTokens}
+                    size="sm"
+                    onValueChange={onHideDustTokensChange}
                   />
                 </div>
               </div>
@@ -681,45 +685,51 @@ const PremiumSettingsPanel: React.FC<{
             <AnimatePresence>
               {hideDustTokens && (
                 <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
+                  animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
+                  initial={{ opacity: 0, height: 0 }}
                   transition={{ duration: 0.1 }}
                 >
-              
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium flex items-center gap-2">
                         <Sparkles className="w-4 h-4 text-default-500" />
                         Dust threshold
                       </span>
-                      <Chip 
-                        size="sm" 
-                        variant="flat" 
-                        color="secondary"
+                      <Chip
                         className="font-semibold"
+                        color="secondary"
+                        size="sm"
+                        variant="flat"
                       >
                         ${dustThreshold.toFixed(2)}
                       </Chip>
                     </div>
                     <div className="px-4">
                       <Slider
-                        size="sm"
-                        step={0.1}
-                        minValue={0.01}
-                        maxValue={10}
-                        value={dustThreshold}
-                        onChange={(value) => setDustThreshold(Array.isArray(value) ? value[0] : value)}
                         className="max-w-full"
                         classNames={{
                           track: "bg-default-200",
-                          thumb: "bg-secondary border-2 border-background shadow-lg",
-                          filler: "bg-gradient-to-r from-secondary/60 to-secondary"
+                          thumb:
+                            "bg-secondary border-2 border-background shadow-lg",
+                          filler:
+                            "bg-gradient-to-r from-secondary/60 to-secondary",
                         }}
+                        maxValue={10}
+                        minValue={0.01}
+                        size="sm"
+                        step={0.1}
+                        value={dustThreshold}
+                        onChange={(value) =>
+                          setDustThreshold(
+                            Array.isArray(value) ? value[0] : value,
+                          )
+                        }
                       />
                     </div>
                     <p className="text-xs text-default-500 text-center">
-                      Tokens worth less than ${dustThreshold.toFixed(2)} will be hidden
+                      Tokens worth less than ${dustThreshold.toFixed(2)} will be
+                      hidden
                     </p>
                   </div>
                 </motion.div>
@@ -731,25 +741,25 @@ const PremiumSettingsPanel: React.FC<{
             {/* Action Buttons */}
             <div className="flex gap-3">
               <Button
-                size="sm"
-                variant="flat"
+                className="flex-1 "
                 color="warning"
+                size="sm"
                 startContent={<RotateCcw className="w-3 h-3" />}
+                variant="flat"
                 onPress={() => {
                   onHideZeroValuesChange(false);
                   onHideDustTokensChange(false);
                   onShowBalanceChange(true);
                   setDustThreshold(1);
                 }}
-                className="flex-1 "
               >
                 Reset All
               </Button>
               <Button
+                className="flex-1 "
                 size="sm"
                 variant="faded"
                 onPress={() => setIsOpen(false)}
-                className="flex-1 "
               >
                 Apply Changes
               </Button>
@@ -775,11 +785,11 @@ const SmartResultsSummary: React.FC<{
 
   return (
     <motion.div
-      initial={{ opacity: 0, height: 0, y: -10 }}
-      animate={{ opacity: 1, height: 'auto', y: 0 }}
-      exit={{ opacity: 0, height: 0, y: -10 }}
-      transition={{ duration: 0.3, type: "spring", stiffness: 200 }}
+      animate={{ opacity: 1, height: "auto", y: 0 }}
       className="relative overflow-hidden"
+      exit={{ opacity: 0, height: 0, y: -10 }}
+      initial={{ opacity: 0, height: 0, y: -10 }}
+      transition={{ duration: 0.3, type: "spring", stiffness: 200 }}
     >
       <div className="flex items-center justify-between p-2 bg-gradient-to-r from-primary/5 via-secondary/5 to-primary/5 border border-divider rounded-2xl backdrop-blur-sm">
         <div className="flex items-center gap-4">
@@ -787,7 +797,6 @@ const SmartResultsSummary: React.FC<{
             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
               <Activity className="w-4 h-4 text-primary" />
             </div>
-         
 
             <div className="flex flex-col">
               <span className="font-semibold text-lg text-primary">
@@ -798,7 +807,7 @@ const SmartResultsSummary: React.FC<{
               </span>
             </div>
           </div>
-          
+
           {isFiltered && (
             <>
               <div className="h-8 w-px bg-default-200" />
@@ -821,24 +830,24 @@ const SmartResultsSummary: React.FC<{
 
         {(isFiltered || hasActiveFilters) && (
           <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
+            initial={{ scale: 0.9, opacity: 0 }}
             transition={{ delay: 0.1 }}
           >
             <Button
-              size="sm"
-              variant="flat"
-              color="warning"
-              startContent={<RotateCcw className="w-3 h-3" />}
-              onPress={onClearFilters}
               className="text-[11px]"
+              color="warning"
+              size="sm"
+              startContent={<RotateCcw className="w-3 h-3" />}
+              variant="flat"
+              onPress={onClearFilters}
             >
               Clear All Filters
             </Button>
           </motion.div>
         )}
       </div>
-      
+
       {/* Subtle background pattern */}
       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent opacity-50 pointer-events-none" />
     </motion.div>
@@ -863,60 +872,62 @@ const QuickFilterPills: React.FC<{
   onFilterModeChange,
   onHideZeroValuesChange,
   onHideDustTokensChange,
-  onShowBalanceChange
+  onShowBalanceChange,
 }) => {
   const quickFilters = [
     {
-      key: 'verified',
-      label: 'Verified',
+      key: "verified",
+      label: "Verified",
       icon: CheckCircle2,
-      isActive: filterMode === 'verified',
-      color: 'success' as const,
-      onToggle: () => onFilterModeChange(filterMode === 'verified' ? 'all' : 'verified')
+      isActive: filterMode === "verified",
+      color: "success" as const,
+      onToggle: () =>
+        onFilterModeChange(filterMode === "verified" ? "all" : "verified"),
     },
     {
-      key: 'gainers',
-      label: 'Gainers',
+      key: "gainers",
+      label: "Gainers",
       icon: TrendingUp,
-      isActive: filterMode === 'gainers',
-      color: 'success' as const,
-      onToggle: () => onFilterModeChange(filterMode === 'gainers' ? 'all' : 'gainers')
+      isActive: filterMode === "gainers",
+      color: "success" as const,
+      onToggle: () =>
+        onFilterModeChange(filterMode === "gainers" ? "all" : "gainers"),
     },
     {
-      key: 'hideZero',
-      label: 'Hide Zero',
+      key: "hideZero",
+      label: "Hide Zero",
       icon: MinusCircle,
       isActive: hideZeroValues,
-      color: 'warning' as const,
-      onToggle: () => onHideZeroValuesChange(!hideZeroValues)
+      color: "warning" as const,
+      onToggle: () => onHideZeroValuesChange(!hideZeroValues),
     },
     {
-      key: 'hideDust',
-      label: 'Hide Dust',
+      key: "hideDust",
+      label: "Hide Dust",
       icon: Sparkles,
       isActive: hideDustTokens,
-      color: 'secondary' as const,
-      onToggle: () => onHideDustTokensChange(!hideDustTokens)
+      color: "secondary" as const,
+      onToggle: () => onHideDustTokensChange(!hideDustTokens),
     },
     {
-      key: 'showBalance',
-      label: showBalance ? 'Hide Values' : 'Show Values',
+      key: "showBalance",
+      label: showBalance ? "Hide Values" : "Show Values",
       icon: showBalance ? EyeOff : Eye,
       isActive: !showBalance,
-      color: 'primary' as const,
-      onToggle: () => onShowBalanceChange(!showBalance)
-    }
+      color: "primary" as const,
+      onToggle: () => onShowBalanceChange(!showBalance),
+    },
   ];
 
   return (
-    <ScrollShadow 
-      orientation="horizontal" 
-      className="flex items-center gap-2 pb-2"
+    <ScrollShadow
       hideScrollBar
+      className="flex items-center gap-2 pb-2"
+      orientation="horizontal"
     >
       {quickFilters.map((filter) => {
         const Icon = filter.icon;
-        
+
         return (
           <motion.div
             key={filter.key}
@@ -924,16 +935,16 @@ const QuickFilterPills: React.FC<{
             whileTap={{ scale: 0.95 }}
           >
             <Button
-              size="sm"
-              variant={filter.isActive ? "solid" : "bordered"}
-              color={filter.isActive ? filter.color : "default"}
-              startContent={<Icon className="w-3 h-3" />}
-              onPress={filter.onToggle}
               className={clsx(
                 "whitespace-nowrap transition-all duration-200",
-                filter.isActive && "shadow-lg"
+                filter.isActive && "shadow-lg",
               )}
+              color={filter.isActive ? filter.color : "default"}
               radius="full"
+              size="sm"
+              startContent={<Icon className="w-3 h-3" />}
+              variant={filter.isActive ? "solid" : "bordered"}
+              onPress={filter.onToggle}
             >
               {filter.label}
             </Button>
@@ -964,53 +975,55 @@ export const TokensListControls: React.FC<TokensControlsProps> = ({
   onRefresh,
   totalTokens,
   filteredTokens,
-  viewMode = 'list',
+  viewMode = "list",
   onViewModeChange,
   itemsPerPage = 25,
-  onItemsPerPageChange
+  onItemsPerPageChange,
 }) => {
   const [isMobile, setIsMobile] = useState(false);
 
   // Responsive detection
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
+
     checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    window.addEventListener("resize", checkMobile);
+
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
   // Enhanced keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Skip if user is typing in an input
-      if (e.target && (e.target as HTMLElement).tagName === 'INPUT') return;
-      
+      if (e.target && (e.target as HTMLElement).tagName === "INPUT") return;
+
       const isCmd = e.metaKey || e.ctrlKey;
-      
+
       // Filter shortcuts with Cmd/Ctrl
       if (isCmd) {
         switch (e.key.toLowerCase()) {
-          case 'a':
+          case "a":
             e.preventDefault();
-            onFilterModeChange('all');
+            onFilterModeChange("all");
             break;
-          case 'v':
+          case "v":
             e.preventDefault();
-            onFilterModeChange('verified');
+            onFilterModeChange("verified");
             break;
-          case 'h':
+          case "h":
             e.preventDefault();
-            onFilterModeChange('highValue');
+            onFilterModeChange("highValue");
             break;
-          case 'g':
+          case "g":
             e.preventDefault();
-            onFilterModeChange('gainers');
+            onFilterModeChange("gainers");
             break;
-          case 'l':
+          case "l":
             e.preventDefault();
-            onFilterModeChange('losers');
+            onFilterModeChange("losers");
             break;
-          case 'r':
+          case "r":
             e.preventDefault();
             if (onRefresh) onRefresh();
             break;
@@ -1020,52 +1033,53 @@ export const TokensListControls: React.FC<TokensControlsProps> = ({
       // Sort shortcuts (number keys without modifiers)
       if (!isCmd && !e.shiftKey && !e.altKey) {
         switch (e.key) {
-          case '1':
+          case "1":
             e.preventDefault();
-            onSortModeChange('value');
+            onSortModeChange("value");
             break;
-          case '2':
+          case "2":
             e.preventDefault();
-            onSortModeChange('change');
+            onSortModeChange("change");
             break;
-          case '3':
+          case "3":
             e.preventDefault();
-            onSortModeChange('quantity');
+            onSortModeChange("quantity");
             break;
-          case '4':
+          case "4":
             e.preventDefault();
-            onSortModeChange('price');
+            onSortModeChange("price");
             break;
-          case '5':
+          case "5":
             e.preventDefault();
-            onSortModeChange('alphabetical');
+            onSortModeChange("alphabetical");
             break;
         }
       }
 
       // Toggle sort direction with Space (when not in input)
-      if (e.key === ' ' && !isCmd) {
+      if (e.key === " " && !isCmd) {
         e.preventDefault();
         onSortDirectionChange(!sortAscending);
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, [
-    onFilterModeChange, 
-    onSortModeChange, 
-    onSortDirectionChange, 
-    onRefresh, 
-    sortAscending
+    onFilterModeChange,
+    onSortModeChange,
+    onSortDirectionChange,
+    onRefresh,
+    sortAscending,
   ]);
 
   // Active filters calculation
   const hasActiveFilters = useMemo(() => {
     return (
-      filterMode !== 'all' || 
-      hideZeroValues || 
-      hideDustTokens || 
+      filterMode !== "all" ||
+      hideZeroValues ||
+      hideDustTokens ||
       searchQuery.length > 0 ||
       !showBalance
     );
@@ -1073,78 +1087,78 @@ export const TokensListControls: React.FC<TokensControlsProps> = ({
 
   // Clear all filters handler
   const handleClearAllFilters = useCallback(() => {
-    onSearchChange('');
-    onFilterModeChange('all');
+    onSearchChange("");
+    onFilterModeChange("all");
     onHideZeroValuesChange(false);
     onHideDustTokensChange(false);
     onShowBalanceChange(true);
   }, [
-    onSearchChange, 
-    onFilterModeChange, 
-    onHideZeroValuesChange, 
+    onSearchChange,
+    onFilterModeChange,
+    onHideZeroValuesChange,
     onHideDustTokensChange,
-    onShowBalanceChange
+    onShowBalanceChange,
   ]);
 
   return (
     <div className="space-y-3">
       {/* Main Controls Bar */}
-      <motion.div 
+      <motion.div
+        animate={{ opacity: 1, y: 0 }}
         className="flex items-center gap-3"
         initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
       >
-        
         {/* Search Input - Flexible width */}
         <div className="flex-1 min-w-0 max-w-md">
           <EnhancedSearchInput
             value={searchQuery}
             onChange={onSearchChange}
-            onClear={() => onSearchChange('')}
+            onClear={() => onSearchChange("")}
           />
         </div>
 
         {/* Filter Dropdown */}
         <SmartFilterDropdown
           filterMode={filterMode}
-          onFilterModeChange={onFilterModeChange}
           filteredCount={filteredTokens}
           totalCount={totalTokens}
+          onFilterModeChange={onFilterModeChange}
         />
 
         {/* Sort Controls */}
         <EnhancedSortControls
-          sortMode={sortMode}
           sortAscending={sortAscending}
-          onSortModeChange={onSortModeChange}
+          sortMode={sortMode}
           onSortDirectionChange={onSortDirectionChange}
+          onSortModeChange={onSortModeChange}
         />
 
         {/* Refresh Button */}
         {onRefresh && (
-          <Tooltip content="Refresh tokens (⌘R)" className='text-xs font-medium rounded-sm border border-default h-5'showArrow>
+          <Tooltip
+            showArrow
+            className="text-xs font-medium rounded-sm border border-default h-5"
+            content="Refresh tokens (⌘R)"
+          >
             <Button
               isIconOnly
-              variant="faded"
-              size="sm"
-              onPress={onRefresh}
+              className={clsx("h-8 w-8  ", isRefreshing && "animate-pulse")}
               isLoading={isRefreshing}
-              className={clsx(
-                "h-8 w-8  ",
-                isRefreshing && "animate-pulse"
-              )}
               radius="full"
+              size="sm"
+              variant="faded"
+              onPress={onRefresh}
             >
               <motion.div
-                animate={{ 
+                animate={{
                   rotate: isRefreshing ? 360 : 0,
-                  scale: isRefreshing ? 0.9 : 1
+                  scale: isRefreshing ? 0.9 : 1,
                 }}
-                transition={{ 
-                  duration: 1, 
+                transition={{
+                  duration: 1,
                   repeat: isRefreshing ? Infinity : 0,
-                  ease: "linear"
+                  ease: "linear",
                 }}
               >
                 <RefreshCw className="w-4 h-4" />
@@ -1155,39 +1169,37 @@ export const TokensListControls: React.FC<TokensControlsProps> = ({
 
         {/* Settings Panel */}
         <PremiumSettingsPanel
-          hideZeroValues={hideZeroValues}
           hideDustTokens={hideDustTokens}
-          showBalance={showBalance}
-          onHideZeroValuesChange={onHideZeroValuesChange}
-          onHideDustTokensChange={onHideDustTokensChange}
-          onShowBalanceChange={onShowBalanceChange}
-          viewMode={viewMode}
-          onViewModeChange={onViewModeChange}
+          hideZeroValues={hideZeroValues}
           itemsPerPage={itemsPerPage}
+          showBalance={showBalance}
+          viewMode={viewMode}
+          onHideDustTokensChange={onHideDustTokensChange}
+          onHideZeroValuesChange={onHideZeroValuesChange}
           onItemsPerPageChange={onItemsPerPageChange}
+          onShowBalanceChange={onShowBalanceChange}
+          onViewModeChange={onViewModeChange}
         />
-      
 
-     
-      {isMobile && (
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          <QuickFilterPills
-            filterMode={filterMode}
-            hideZeroValues={hideZeroValues}
-            hideDustTokens={hideDustTokens}
-            showBalance={showBalance}
-            onFilterModeChange={onFilterModeChange}
-            onHideZeroValuesChange={onHideZeroValuesChange}
-            onHideDustTokensChange={onHideDustTokensChange}
-            onShowBalanceChange={onShowBalanceChange}
-          />
-        </motion.div>
-      )}
- </motion.div>
+        {isMobile && (
+          <motion.div
+            animate={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, x: -20 }}
+            transition={{ delay: 0.1 }}
+          >
+            <QuickFilterPills
+              filterMode={filterMode}
+              hideDustTokens={hideDustTokens}
+              hideZeroValues={hideZeroValues}
+              showBalance={showBalance}
+              onFilterModeChange={onFilterModeChange}
+              onHideDustTokensChange={onHideDustTokensChange}
+              onHideZeroValuesChange={onHideZeroValuesChange}
+              onShowBalanceChange={onShowBalanceChange}
+            />
+          </motion.div>
+        )}
+      </motion.div>
       {/* Results Summary
       <AnimatePresence mode="wait">
         <SmartResultsSummary
@@ -1197,11 +1209,6 @@ export const TokensListControls: React.FC<TokensControlsProps> = ({
           onClearFilters={handleClearAllFilters}
         />
       </AnimatePresence> */}
-
-
-     
-
-    
     </div>
   );
 };

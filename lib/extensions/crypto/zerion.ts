@@ -1,12 +1,14 @@
 // lib/extensions/crypto/zerion.ts
-import { BaseExtension } from '../base';
-import { DataNormalizer } from '@/lib/utils/data-normalization';
-import { ErrorHandler } from '@/lib/utils/error-handler';
-import { CacheManager } from '@/lib/utils/cache-manager';
-import ZerionSDK from 'zerion-sdk-ts';
-import { supabase } from '@/lib/supabase';
-import { formatBusinessTime, formatTime, toTimestampz } from '@/lib/utils/time';
-import { SyncOptions } from '@/lib/hooks/useWalletAnalytics';
+import ZerionSDK from "zerion-sdk-ts";
+
+import { BaseExtension } from "../base";
+
+import { DataNormalizer } from "@/lib/utils/data-normalization";
+import { ErrorHandler } from "@/lib/utils/error-handler";
+import { CacheManager } from "@/lib/utils/cache-manager";
+import { supabase } from "@/lib/supabase";
+import { toTimestampz } from "@/lib/utils/time";
+import { SyncOptions } from "@/lib/hooks/useWalletAnalytics";
 
 export interface ZerionCredentials {
   apiKey: string;
@@ -60,38 +62,44 @@ export interface OHLCDataPoint {
 }
 
 export class ZerionExtension extends BaseExtension {
-  name = 'Zerion';
-  provider = 'zerion';
-  category = 'crypto';
-  supportedDataTypes = ['portfolio', 'positions', 'transactions', 'nfts', 'chart'];
-  
+  name = "Zerion";
+  provider = "zerion";
+  category = "crypto";
+  supportedDataTypes = [
+    "portfolio",
+    "positions",
+    "transactions",
+    "nfts",
+    "chart",
+  ];
+
   private sdk: any;
   private cache: CacheManager;
 
   constructor() {
     super();
-    this.cache = new CacheManager('zerion', {
+    this.cache = new CacheManager("zerion", {
       defaultTTL: 5 * 60 * 1000,
-      maxSize: 1000
+      maxSize: 1000,
     });
   }
 
   async connect(credentials: ZerionCredentials): Promise<void> {
     try {
       if (!credentials.apiKey) {
-        throw new Error('API key is required for Zerion connection');
+        throw new Error("API key is required for Zerion connection");
       }
 
       this.sdk = new ZerionSDK({
         apiKey: credentials.apiKey,
         timeout: 30000,
         retries: 3,
-        retryDelay: 2000
+        retryDelay: 2000,
       });
 
       await this.validateCredentials(credentials);
     } catch (error) {
-      ErrorHandler.handle(error, 'ZerionExtension.connect');
+      ErrorHandler.handle(error, "ZerionExtension.connect");
       throw error;
     }
   }
@@ -104,41 +112,54 @@ export class ZerionExtension extends BaseExtension {
   async validateCredentials(credentials: ZerionCredentials): Promise<boolean> {
     try {
       await this.sdk.fungibles.getTopFungibles(1);
+
       return true;
     } catch (error) {
-      ErrorHandler.handle(error, 'ZerionExtension.validateCredentials');
+      ErrorHandler.handle(error, "ZerionExtension.validateCredentials");
+
       return false;
     }
   }
 
-  async syncWallet(address: string, options: {
-    includeTransactions?: boolean;
-    includeNFTs?: boolean;
-    includeChart?: boolean;
-    chartPeriod?: 'hour' | 'day' | 'week' | 'month' | '3months' | 'year' | 'max';
-    forceRefresh?: boolean;
-  } = {}): Promise<SyncResult> {
+  async syncWallet(
+    address: string,
+    options: {
+      includeTransactions?: boolean;
+      includeNFTs?: boolean;
+      includeChart?: boolean;
+      chartPeriod?:
+        | "hour"
+        | "day"
+        | "week"
+        | "month"
+        | "3months"
+        | "year"
+        | "max";
+      forceRefresh?: boolean;
+    } = {},
+  ): Promise<SyncResult> {
     const startTime = Date.now();
     const cacheKey = `wallet_${address}_${JSON.stringify(options)}`;
 
     try {
       if (!this.sdk) {
-        throw new Error('Zerion SDK not initialized. Call connect() first.');
+        throw new Error("Zerion SDK not initialized. Call connect() first.");
       }
 
       if (!this.isValidAddress(address)) {
-        throw new Error('Invalid wallet address format');
+        throw new Error("Invalid wallet address format");
       }
 
       // Check cache unless force refresh
       if (!options.forceRefresh) {
         const cached = this.cache.get(cacheKey);
+
         if (cached && !this.shouldRefreshCache(cached.metadata.lastSyncAt)) {
           return {
             success: true,
             data: cached,
             syncedAt: cached.metadata.lastSyncAt,
-            syncDuration: Date.now() - startTime
+            syncDuration: Date.now() - startTime,
           };
         }
       }
@@ -148,7 +169,7 @@ export class ZerionExtension extends BaseExtension {
       // Prepare API calls
       const apiCalls = [
         this.sdk.wallets.getPortfolio(address),
-        this.sdk.wallets.getPositions(address)
+        this.sdk.wallets.getPositions(address),
       ];
 
       if (options.includeTransactions) {
@@ -160,26 +181,43 @@ export class ZerionExtension extends BaseExtension {
       }
 
       if (options.includeChart) {
-        apiCalls.push(this.sdk.wallets.getChart(address, options.chartPeriod || 'week'));
+        apiCalls.push(
+          this.sdk.wallets.getChart(address, options.chartPeriod || "week"),
+        );
       }
 
       if (false) {
-        apiCalls.push(this.sdk.wallets.getPnL(address,  'week'));
+        apiCalls.push(this.sdk.wallets.getPnL(address, "week"));
       }
 
       // Execute API calls in parallel
       const results = await Promise.allSettled(apiCalls);
 
       // Extract results
-      const portfolio = results[0].status === 'fulfilled' ? results[0].value : null;
-      const positions = results[1].status === 'fulfilled' ? results[1].value : [];
-      const transactions = options.includeTransactions && results[2]?.status === 'fulfilled' ? results[2].value : [];
-      const nfts = options.includeNFTs && results[results.length - (options.includeChart ? 2 : 1)]?.status === 'fulfilled' 
-        ? results[results.length - (options.includeChart ? 2 : 1)].value : null;
-      const chart = options.includeChart && results[results.length - 1]?.status === 'fulfilled' 
-        ? results[results.length - 1].value : [];
-      const pnl = results[results.length - (options.includeChart ? 2 : 1)]?.status === 'fulfilled'  ? results[results.length - (options.includeChart ? 2 : 1)].value : null;
-
+      const portfolio =
+        results[0].status === "fulfilled" ? results[0].value : null;
+      const positions =
+        results[1].status === "fulfilled" ? results[1].value : [];
+      const transactions =
+        options.includeTransactions && results[2]?.status === "fulfilled"
+          ? results[2].value
+          : [];
+      const nfts =
+        options.includeNFTs &&
+        results[results.length - (options.includeChart ? 2 : 1)]?.status ===
+          "fulfilled"
+          ? results[results.length - (options.includeChart ? 2 : 1)].value
+          : null;
+      const chart =
+        options.includeChart &&
+        results[results.length - 1]?.status === "fulfilled"
+          ? results[results.length - 1].value
+          : [];
+      const pnl =
+        results[results.length - (options.includeChart ? 2 : 1)]?.status ===
+        "fulfilled"
+          ? results[results.length - (options.includeChart ? 2 : 1)].value
+          : null;
 
       // Normalize and structure data
       const walletData: WalletData = {
@@ -195,59 +233,61 @@ export class ZerionExtension extends BaseExtension {
           positionsCount: positions?.data?.length || 0,
           chainsCount: this.getUniqueChains(positions?.data).length,
           transactionsCount: transactions?.length || 0,
-          nftsCount: nfts?.data?.length || 0
-        }
+          nftsCount: nfts?.data?.length || 0,
+        },
       };
 
-      console.log(`Wallet ${address} synced successfully in ${Date.now() - startTime}ms`, walletData);
- 
+      console.log(
+        `Wallet ${address} synced successfully in ${Date.now() - startTime}ms`,
+        walletData,
+      );
+
       this.cache.set(cacheKey, walletData);
 
       return {
         success: true,
         data: walletData,
         syncedAt: new Date().toISOString(),
-        syncDuration: Date.now() - startTime
+        syncDuration: Date.now() - startTime,
       };
-
     } catch (error) {
-      ErrorHandler.handle(error, 'ZerionExtension.syncWallet');
+      ErrorHandler.handle(error, "ZerionExtension.syncWallet");
+
       return {
         success: false,
         error: error.message,
         syncedAt: new Date().toISOString(),
-        syncDuration: Date.now() - startTime
+        syncDuration: Date.now() - startTime,
       };
     }
   }
 
-  private normalizePortfolioData(portfolio: any): WalletData['portfolio'] {
+  private normalizePortfolioData(portfolio: any): WalletData["portfolio"] {
     const totalValue = portfolio?.attributes?.total?.positions || 0;
     const dayChange = portfolio?.attributes?.changes?.absolute_1d || 0;
     const dayChangePercent = portfolio?.attributes?.changes?.percent_1d || 0;
-    const chainDistribution = portfolio?.attributes?.positions_distribution_by_chain;
+    const chainDistribution =
+      portfolio?.attributes?.positions_distribution_by_chain;
 
     return {
       totalValue,
       dayChange,
       dayChangePercent,
-      chains: chainDistribution
+      chains: chainDistribution,
     };
   }
 
-  private calculatePnL(pnl: any): WalletData['pnl'] {
+  private calculatePnL(pnl: any): WalletData["pnl"] {
     return pnl?.attributes;
   }
 
   private getUniqueChains(positions: any[]): string[] {
     if (!positions) return [];
-    
+
     const chains = new Set(
-      positions
-        .map(p => p.relationships?.chain?.data?.id)
-        .filter(Boolean)
+      positions.map((p) => p.relationships?.chain?.data?.id).filter(Boolean),
     );
-    
+
     return Array.from(chains);
   }
 
@@ -257,16 +297,21 @@ export class ZerionExtension extends BaseExtension {
 
   private shouldRefreshCache(timestamp: string): boolean {
     const cacheAge = Date.now() - new Date(timestamp).getTime();
+
     return cacheAge > 5 * 60 * 1000;
   }
 }
 
 // Enhanced Wallet Service for normalized database operations
 export class WalletService {
-  static async addWallet(userId: string, address: string, name?: string): Promise<any> {
+  static async addWallet(
+    userId: string,
+    address: string,
+    name?: string,
+  ): Promise<any> {
     try {
       const { data, error } = await supabase
-        .from('user_wallets')
+        .from("user_wallets")
         .insert({
           user_id: userId,
           address: address?.toLowerCase(),
@@ -274,16 +319,17 @@ export class WalletService {
           is_active: true,
           metadata: {
             addedAt: new Date().toISOString(),
-            source: 'manual'
-          }
+            source: "manual",
+          },
         })
         .select()
         .single();
 
       if (error) throw error;
+
       return data;
     } catch (error) {
-      ErrorHandler.handle(error, 'WalletService.addWallet');
+      ErrorHandler.handle(error, "WalletService.addWallet");
       throw error;
     }
   }
@@ -291,14 +337,14 @@ export class WalletService {
   static async removeWallet(userId: string, walletId: string): Promise<void> {
     try {
       const { error } = await supabase
-        .from('user_wallets')
+        .from("user_wallets")
         .update({ is_active: false })
-        .eq('id', walletId)
-        .eq('user_id', userId);
+        .eq("id", walletId)
+        .eq("user_id", userId);
 
       if (error) throw error;
     } catch (error) {
-      ErrorHandler.handle(error, 'WalletService.removeWallet');
+      ErrorHandler.handle(error, "WalletService.removeWallet");
       throw error;
     }
   }
@@ -306,22 +352,27 @@ export class WalletService {
   static async getUserWallets(userId: string): Promise<any[]> {
     try {
       const { data, error } = await supabase
-        .from('user_wallets')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('is_active', true)
-        .order('created_at', { ascending: false });
+        .from("user_wallets")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("is_active", true)
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
+
       return data || [];
     } catch (error) {
-      ErrorHandler.handle(error, 'WalletService.getUserWallets');
+      ErrorHandler.handle(error, "WalletService.getUserWallets");
       throw error;
     }
   }
 
   // Updated method to store data in normalized tables
-  static async updateWalletData(walletId: string, data: WalletData, options:SyncOptions): Promise<void> {
+  static async updateWalletData(
+    walletId: string,
+    data: WalletData,
+    options: SyncOptions,
+  ): Promise<void> {
     try {
       // Begin transaction
       const updates = [];
@@ -329,19 +380,18 @@ export class WalletService {
       // 1. Update wallet summary
       updates.push(
         supabase
-          .from('user_wallets')
+          .from("user_wallets")
           .update({
             last_sync_at: new Date().toISOString(),
-            sync_status: 'success'
+            sync_status: "success",
           })
-          .eq('id', walletId)
+          .eq("id", walletId),
       );
 
       // 2. Store/update portfolio summary
       updates.push(
-        supabase
-          .from('wallet_portfolio_summary')
-          .upsert({
+        supabase.from("wallet_portfolio_summary").upsert(
+          {
             wallet_id: walletId,
             total_value: data.portfolio.totalValue,
             day_change: data.portfolio.dayChange,
@@ -349,24 +399,23 @@ export class WalletService {
             positions_count: data.metadata.positionsCount,
             nft_count: data.metadata.nftsCount,
             chains_count: data.metadata.chainsCount,
-            last_sync_at: new Date().toISOString()
-          }, {
-            onConflict: 'wallet_id'
-          })
+            last_sync_at: new Date().toISOString(),
+          },
+          {
+            onConflict: "wallet_id",
+          },
+        ),
       );
 
       // 3. Replace positions (overwrite existing)
       if (data.positions?.length) {
         // First delete existing positions
         updates.push(
-          supabase
-            .from('wallet_positions')
-            .delete()
-            .eq('wallet_id', walletId)
+          supabase.from("wallet_positions").delete().eq("wallet_id", walletId),
         );
 
         // Then insert new positions
-        const positionsToInsert = data.positions.map(pos => ({
+        const positionsToInsert = data.positions.map((pos) => ({
           wallet_id: walletId,
           token_address: pos.relationships?.fungible?.data?.id || null,
           symbol: pos.attributes.symbol,
@@ -379,17 +428,15 @@ export class WalletService {
           chain_id: pos.attributes.chain,
           protocol_id: pos.attributes.protocol,
           is_verified: pos.attributes.verified,
-          position_type: 'token',
+          position_type: "token",
           metadata: {
             originalData: pos,
-            normalizedAt: new Date().toISOString()
-          }
+            normalizedAt: new Date().toISOString(),
+          },
         }));
 
         updates.push(
-          supabase
-            .from('wallet_positions')
-            .insert(positionsToInsert)
+          supabase.from("wallet_positions").insert(positionsToInsert),
         );
       }
 
@@ -398,13 +445,13 @@ export class WalletService {
         // First delete existing NFTs
         updates.push(
           supabase
-            .from('wallet_nft_positions')
+            .from("wallet_nft_positions")
             .delete()
-            .eq('wallet_id', walletId)
+            .eq("wallet_id", walletId),
         );
 
         // Then insert new NFTs
-        const nftsToInsert = data.nftPortfolio.items.map(nft => ({
+        const nftsToInsert = data.nftPortfolio.items.map((nft) => ({
           wallet_id: walletId,
           token_id: nft.attributes.tokenId,
           collection_name: nft.attributes.collection,
@@ -416,26 +463,25 @@ export class WalletService {
           contract_address: nft.id,
           metadata: {
             originalData: nft,
-            normalizedAt: new Date().toISOString()
-          }
+            normalizedAt: new Date().toISOString(),
+          },
         }));
 
         updates.push(
-          supabase
-            .from('wallet_nft_positions')
-            .insert(nftsToInsert)
+          supabase.from("wallet_nft_positions").insert(nftsToInsert),
         );
       }
 
       // 5. Append new transactions (if any)
       if (data.transactions?.length) {
-        const existingTxHashes = await this.getExistingTransactionHashes(walletId);
+        const existingTxHashes =
+          await this.getExistingTransactionHashes(walletId);
         const newTransactions = data.transactions.filter(
-          tx => !existingTxHashes.has(tx.attributes.hash)
+          (tx) => !existingTxHashes.has(tx.attributes.hash),
         );
 
         if (newTransactions.length) {
-          const transactionsToInsert = newTransactions.map(tx => ({
+          const transactionsToInsert = newTransactions.map((tx) => ({
             wallet_id: walletId,
             hash: tx.attributes.hash,
             status: tx.attributes.status,
@@ -452,146 +498,142 @@ export class WalletService {
             transaction_type: tx.type,
             metadata: {
               originalData: tx,
-              normalizedAt: new Date().toISOString()
-            }
+              normalizedAt: new Date().toISOString(),
+            },
           }));
 
           updates.push(
-            supabase
-              .from('wallet_transactions')
-              .insert(transactionsToInsert)
+            supabase.from("wallet_transactions").insert(transactionsToInsert),
           );
         }
       }
 
       // 6. Append chart data
       if (data.chart?.length) {
-        const chartDataToInsert = data.chart.map(point => ({
+        const chartDataToInsert = data.chart.map((point) => ({
           wallet_id: walletId,
-          timestamp:  toTimestampz(point.timestamp),
+          timestamp: toTimestampz(point.timestamp),
           value: point.value,
-          period: options?.chartPeriod || 'week' // Default period, can be made configurable
+          period: options?.chartPeriod || "week", // Default period, can be made configurable
         }));
 
-        
-
         updates.push(
-          supabase
-            .from('wallet_chart_data')
-            .upsert(chartDataToInsert, {
-              onConflict: 'wallet_id,timestamp,period'
-            })
+          supabase.from("wallet_chart_data").upsert(chartDataToInsert, {
+            onConflict: "wallet_id,timestamp,period",
+          }),
         );
       }
 
       // Execute all updates
       const results = await Promise.allSettled(updates);
-      
+
       // Check for errors
       const errors = results
-        .filter(result => result.status === 'rejected')
-        .map(result => result.reason);
+        .filter((result) => result.status === "rejected")
+        .map((result) => result.reason);
 
       if (errors.length > 0) {
-        throw new Error(`Database update errors: ${errors.join(', ')}`);
+        throw new Error(`Database update errors: ${errors.join(", ")}`);
       }
-
     } catch (error) {
-      ErrorHandler.handle(error, 'WalletService.updateWalletData');
+      ErrorHandler.handle(error, "WalletService.updateWalletData");
       throw error;
     }
   }
 
-  private static async getExistingTransactionHashes(walletId: string): Promise<Set<string>> {
+  private static async getExistingTransactionHashes(
+    walletId: string,
+  ): Promise<Set<string>> {
     try {
       const { data, error } = await supabase
-        .from('wallet_transactions')
-        .select('hash')
-        .eq('wallet_id', walletId);
+        .from("wallet_transactions")
+        .select("hash")
+        .eq("wallet_id", walletId);
 
       if (error) throw error;
 
-      return new Set(data?.map(tx => tx.hash) || []);
+      return new Set(data?.map((tx) => tx.hash) || []);
     } catch (error) {
-      console.error('Error fetching existing transaction hashes:', error);
+      console.error("Error fetching existing transaction hashes:", error);
+
       return new Set();
     }
   }
 
- static async getChartData(walletId: string, period: string): Promise<OHLCDataPoint[]> {
-    const { data, error } = await supabase
-      .rpc('get_ohlc_chart_data', {
-        p_wallet_id: walletId,
-        p_period: period
-      });
-  
+  static async getChartData(
+    walletId: string,
+    period: string,
+  ): Promise<OHLCDataPoint[]> {
+    const { data, error } = await supabase.rpc("get_ohlc_chart_data", {
+      p_wallet_id: walletId,
+      p_period: period,
+    });
+
     if (error) {
-      ErrorHandler.handle(error, 'WalletService.getChartData');
-      console.error('Chart data error:', error);
+      ErrorHandler.handle(error, "WalletService.getChartData");
+      console.error("Chart data error:", error);
+
       return [];
     }
-  
+
     return data || [];
-  };
+  }
 
   // Retrieve wallet data from normalized tables
   static async getWalletData(walletId: string): Promise<WalletData | null> {
     try {
       // Get portfolio summary
       const { data: summary, error: summaryError } = await supabase
-        .from('wallet_portfolio_summary')
-        .select('*')
-        .eq('wallet_id', walletId)
+        .from("wallet_portfolio_summary")
+        .select("*")
+        .eq("wallet_id", walletId)
         .single();
 
-      if (summaryError && summaryError.code !== 'PGRST116') throw summaryError;
+      if (summaryError && summaryError.code !== "PGRST116") throw summaryError;
 
       // Get positions
       const { data: positions, error: positionsError } = await supabase
-        .from('wallet_positions')
-        .select('*')
-        .eq('wallet_id', walletId)
-        .order('value', { ascending: false });
+        .from("wallet_positions")
+        .select("*")
+        .eq("wallet_id", walletId)
+        .order("value", { ascending: false });
 
       if (positionsError) throw positionsError;
 
       // Get NFTs
       const { data: nfts, error: nftsError } = await supabase
-        .from('wallet_nft_positions')
-        .select('*')
-        .eq('wallet_id', walletId);
+        .from("wallet_nft_positions")
+        .select("*")
+        .eq("wallet_id", walletId);
 
       if (nftsError) throw nftsError;
 
       // Get recent transactions
       const { data: transactions, error: txError } = await supabase
-        .from('wallet_transactions')
-        .select('*')
-        .eq('wallet_id', walletId)
-        .order('timestamp', { ascending: false })
+        .from("wallet_transactions")
+        .select("*")
+        .eq("wallet_id", walletId)
+        .order("timestamp", { ascending: false })
         .limit(100);
 
       if (txError) throw txError;
 
       // Get chart data
-     /*  const { data: chartData, error: chartError } = await supabase
+      /*  const { data: chartData, error: chartError } = await supabase
         .from('wallet_chart_data')
         .select('*')
         .eq('wallet_id', walletId)
         .order('timestamp', { ascending: true })
         .limit(168); // Last week of hourly data */
-        // Usage function
+      // Usage function
 
-        const chartData = await this.getChartData(walletId, 'week') || [];
- 
-
-  
+      const chartData = (await this.getChartData(walletId, "week")) || [];
 
       // Get wallet info
       const { data: wallet, error: walletError } = await supabase
-        .from('user_wallets')
-        .select('address, name')
-        .eq('id', walletId)
+        .from("user_wallets")
+        .select("address, name")
+        .eq("id", walletId)
         .single();
 
       if (walletError) throw walletError;
@@ -609,18 +651,20 @@ export class WalletService {
           dayChange: summary?.day_change || 0,
           dayChangePercent: summary?.day_change_percent || 0,
           positions: positions || [],
-          chains: [...new Set(positions?.map(p => p.chain_id).filter(Boolean))] || []
+          chains:
+            [...new Set(positions?.map((p) => p.chain_id).filter(Boolean))] ||
+            [],
         },
         positions: positions || [],
         transactions: transactions || [],
         nftPortfolio: {
           items: nfts || [],
-          totalCount: nfts?.length || 0
+          totalCount: nfts?.length || 0,
         },
         pnl: {
           total: summary?.total_value || 0,
           realized: 0,
-          unrealized: summary?.total_value || 0
+          unrealized: summary?.total_value || 0,
         },
         chart: chartData || [],
         metadata: {
@@ -628,12 +672,11 @@ export class WalletService {
           positionsCount: summary?.positions_count || 0,
           chainsCount: summary?.chains_count || 0,
           transactionsCount: transactions?.length || 0,
-          nftsCount: summary?.nft_count || 0
-        }
+          nftsCount: summary?.nft_count || 0,
+        },
       };
-
     } catch (error) {
-      ErrorHandler.handle(error, 'WalletService.getWalletData');
+      ErrorHandler.handle(error, "WalletService.getWalletData");
       throw error;
     }
   }
@@ -669,6 +712,6 @@ export const useZerionExtension = () => {
     addWallet,
     removeWallet,
     getUserWallets,
-    extension
+    extension,
   };
 };

@@ -1,14 +1,14 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardBody, CardHeader } from '@heroui/card';
-import { Button } from '@heroui/button';
-import { Divider } from '@heroui/divider';
-import { useAuthWithDebug } from '@/lib/hooks/auth/useAuthWithDebug';
-import { authDebugger } from '@/lib/utils/auth/auth-debug';
-import { authMonitor } from '@/lib/utils/auth/auth-monitor';
-import { AuthRecovery } from '@/lib/hooks/auth/auth-recovery';
+import React, { useState, useEffect } from "react";
+import { Card, CardBody, CardHeader } from "@heroui/card";
+import { Button } from "@heroui/button";
+import { Divider } from "@heroui/divider";
 
+import { useAuthWithDebug } from "@/lib/hooks/auth/useAuthWithDebug";
+import { authDebugger } from "@/lib/utils/auth/auth-debug";
+import { authMonitor } from "@/lib/utils/auth/auth-monitor";
+import { AuthRecovery } from "@/lib/hooks/auth/auth-recovery";
 
 export function AuthDebugPanel() {
   const auth = useAuthWithDebug();
@@ -19,6 +19,7 @@ export function AuthDebugPanel() {
   useEffect(() => {
     const updateDebugInfo = async () => {
       const info = await authDebugger.getCurrentAuthInfo();
+
       setDebugInfo(info);
       setLogs(authDebugger.getLogs().slice(0, 10));
       setMetrics(authMonitor.getAllMetrics());
@@ -30,7 +31,7 @@ export function AuthDebugPanel() {
     return () => clearInterval(interval);
   }, []);
 
-  if (process.env.NODE_ENV !== 'development') {
+  if (process.env.NODE_ENV !== "development") {
     return null;
   }
 
@@ -45,13 +46,21 @@ export function AuthDebugPanel() {
           <div>
             <h4 className="font-medium mb-2">Current Status</h4>
             <div className="text-sm space-y-1">
-              <div className={`flex items-center gap-2 ${auth.isLoading ? 'text-warning' : 'text-success'}`}>
-                <div className={`w-2 h-2 rounded-full ${auth.isLoading ? 'bg-warning' : 'bg-success'}`} />
-                {auth.isLoading ? 'Loading...' : 'Ready'}
+              <div
+                className={`flex items-center gap-2 ${auth.isLoading ? "text-warning" : "text-success"}`}
+              >
+                <div
+                  className={`w-2 h-2 rounded-full ${auth.isLoading ? "bg-warning" : "bg-success"}`}
+                />
+                {auth.isLoading ? "Loading..." : "Ready"}
               </div>
-              <div className={`flex items-center gap-2 ${auth.user ? 'text-success' : 'text-danger'}`}>
-                <div className={`w-2 h-2 rounded-full ${auth.user ? 'bg-success' : 'bg-danger'}`} />
-                {auth.user ? 'Authenticated' : 'Not authenticated'}
+              <div
+                className={`flex items-center gap-2 ${auth.user ? "text-success" : "text-danger"}`}
+              >
+                <div
+                  className={`w-2 h-2 rounded-full ${auth.user ? "bg-success" : "bg-danger"}`}
+                />
+                {auth.user ? "Authenticated" : "Not authenticated"}
               </div>
               {auth.user && (
                 <div className="text-xs text-foreground/60">
@@ -68,14 +77,17 @@ export function AuthDebugPanel() {
             <div>
               <h4 className="font-medium mb-2">Session Info</h4>
               <div className="text-xs space-y-1">
-                <div>Session: {debugInfo.sessionExists ? '✅' : '❌'}</div>
-                <div>User: {debugInfo.userExists ? '✅' : '❌'}</div>
+                <div>Session: {debugInfo.sessionExists ? "✅" : "❌"}</div>
+                <div>User: {debugInfo.userExists ? "✅" : "❌"}</div>
                 {debugInfo.sessionExpiry && (
-                  <div>Expires: {new Date(debugInfo.sessionExpiry).toLocaleString()}</div>
+                  <div>
+                    Expires:{" "}
+                    {new Date(debugInfo.sessionExpiry).toLocaleString()}
+                  </div>
                 )}
                 {debugInfo.errors && (
                   <div className="text-danger">
-                    Errors: {debugInfo.errors.join(', ')}
+                    Errors: {debugInfo.errors.join(", ")}
                   </div>
                 )}
               </div>
@@ -85,28 +97,28 @@ export function AuthDebugPanel() {
           {/* Actions */}
           <div className="space-y-2">
             <Button
+              className="w-full"
               size="sm"
               variant="flat"
               onClick={() => authDebugger.clearLogs()}
-              className="w-full"
             >
               Clear Logs
             </Button>
             <Button
+              className="w-full"
+              color="warning"
               size="sm"
               variant="flat"
-              color="warning"
               onClick={() => AuthRecovery.attemptRecovery()}
-              className="w-full"
             >
               Attempt Recovery
             </Button>
             <Button
+              className="w-full"
+              color="danger"
               size="sm"
               variant="flat"
-              color="danger"
               onClick={() => AuthRecovery.resetToCleanState()}
-              className="w-full"
             >
               Reset Auth State
             </Button>

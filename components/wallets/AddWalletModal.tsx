@@ -1,22 +1,22 @@
-import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { 
-  Modal, 
-  ModalContent, 
-  ModalHeader, 
-  ModalBody, 
-  ModalFooter 
-} from '@heroui/modal';
-import { Button } from '@heroui/button';
-import { Input } from '@heroui/input';
-import { Chip } from '@heroui/chip';
-import { Progress } from '@heroui/progress';
-import { Tabs, Tab } from '@heroui/tabs';
-import { Card, CardBody } from '@heroui/card';
-import { Avatar } from '@heroui/avatar';
-import { Switch } from '@heroui/switch';
-import { Spinner } from '@heroui/spinner';
-import { Divider } from '@heroui/divider';
-import { motion, AnimatePresence } from 'framer-motion';
+"use client";
+import React, { useState, useCallback, useRef, useEffect } from "react";
+import {
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+} from "@heroui/modal";
+import { Button } from "@heroui/button";
+import { Input } from "@heroui/input";
+import { Chip } from "@heroui/chip";
+import { Progress } from "@heroui/progress";
+import { Card, CardBody } from "@heroui/card";
+import { Switch } from "@heroui/switch";
+import { Spinner } from "@heroui/spinner";
+import { Divider } from "@heroui/divider";
+import { Checkbox } from "@heroui/checkbox";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Wallet,
   Plus,
@@ -26,181 +26,233 @@ import {
   CheckCircle2,
   AlertCircle,
   Search,
-  Zap,
-  Activity,
   Globe,
-  Eye,
-  EyeOff,
-  Copy,
-  ExternalLink,
-  ArrowRight,
-  Sparkles,
-  TrendingUp,
-  X,
-  AlertTriangle,
-  Info,
-  Clock,
   Database,
-  Layers,
-  ChevronRight
-} from 'lucide-react';
-import { toast } from 'sonner';
+  ArrowRight,
+  Settings,
+} from "lucide-react";
 
-// Mock wallet analytics hook (replace with your actual implementation)
-const useWalletAnalytics = () => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [syncing, setSyncing] = useState({});
-  
-  const addWallet = async (address, name) => {
-    setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    setIsLoading(false);
-    return true;
-  };
-  
-  const isWalletSyncing = (id) => syncing[id] || false;
-  
+import { useToast } from "@/components/ui/Toaster";
+import { useWalletAnalytics } from "@/lib/hooks/useWalletAnalytics";
+
+// Types and Interfaces
+interface Network {
+  id: string;
+  name: string;
+  chainId: number;
+  symbol: string;
+  icon: string;
+  isPopular: boolean;
+  color: string;
+}
+
+interface ValidationResult {
+  isValid: boolean;
+  error?: string;
+  type?: string;
+  network?: string;
+}
+
+interface WalletFormData {
+  address: string;
+  name: string;
+  networks: string[];
+  isWatchOnly: boolean;
+  autoSync: boolean;
+  enableNotifications: boolean;
+  includeNFTs: boolean;
+  trackTransactions: boolean;
+}
+
+interface ProgressState {
+  phase:
+    | "idle"
+    | "validating"
+    | "connecting"
+    | "syncing"
+    | "complete"
+    | "error";
+  message: string;
+  details?: string;
+  progress: number;
+}
+
+// Constants
+const SUPPORTED_NETWORKS: Network[] = [
+  {
+    id: "ethereum",
+    name: "Ethereum",
+    chainId: 1,
+    symbol: "ETH",
+    icon: "⟠",
+    isPopular: true,
+    color: "from-blue-500 to-purple-600",
+  },
+  {
+    id: "bitcoin",
+    name: "Bitcoin",
+    chainId: 0,
+    symbol: "BTC",
+    icon: "₿",
+    isPopular: true,
+    color: "from-orange-400 to-yellow-500",
+  },
+  {
+    id: "polygon",
+    name: "Polygon",
+    chainId: 137,
+    symbol: "MATIC",
+    icon: "◈",
+    isPopular: true,
+    color: "from-purple-500 to-pink-500",
+  },
+  {
+    id: "binance",
+    name: "BNB Chain",
+    chainId: 56,
+    symbol: "BNB",
+    icon: "◉",
+    isPopular: true,
+    color: "from-yellow-400 to-orange-500",
+  },
+  {
+    id: "solana",
+    name: "Solana",
+    chainId: 0,
+    symbol: "SOL",
+    icon: "◎",
+    isPopular: true,
+    color: "from-green-400 to-blue-500",
+  },
+];
+
+// Utility Functions
+const validateWalletAddress = (address: string): ValidationResult => {
+  if (!address || address.trim().length === 0) {
+    return { isValid: false, error: "Address is required" };
+  }
+
+  const trimmedAddress = address.trim();
+
+  // Ethereum-like addresses (0x...)
+  if (trimmedAddress.startsWith("0x")) {
+    if (
+      trimmedAddress.length === 42 &&
+      /^0x[a-fA-F0-9]{40}$/.test(trimmedAddress)
+    ) {
+      return {
+        isValid: true,
+        type: "Ethereum-compatible",
+        network: "ethereum",
+      };
+    }
+
+    return { isValid: false, error: "Invalid Ethereum address format" };
+  }
+
+  // Bitcoin addresses
+  if (
+    /^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/.test(trimmedAddress) ||
+    /^bc1[a-z0-9]{39,59}$/.test(trimmedAddress)
+  ) {
+    return {
+      isValid: true,
+      type: "Bitcoin",
+      network: "bitcoin",
+    };
+  }
+
+  // Solana addresses
+  if (
+    /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(trimmedAddress) &&
+    trimmedAddress.length >= 32
+  ) {
+    return {
+      isValid: true,
+      type: "Solana",
+      network: "solana",
+    };
+  }
+
   return {
-    addWallet,
-    isWalletSyncing,
-    isLoading
+    isValid: false,
+    error:
+      "Unsupported address format. Please enter a valid Ethereum, Bitcoin, or Solana address.",
   };
 };
 
-// Progress tracking hook
+const getChainTypeFromNetwork = (networkId: string): string => {
+  const networkMap: Record<string, string> = {
+    ethereum: "ethereum",
+    bitcoin: "bitcoin",
+    solana: "solana",
+    polygon: "ethereum",
+    binance: "ethereum",
+  };
+
+  return networkMap[networkId] || "ethereum";
+};
+
+// Hooks
 const useProgressTracker = () => {
-  const [progress, setProgress] = useState({
-    phase: 'idle',
+  const [progress, setProgress] = useState<ProgressState>({
+    phase: "idle",
+    message: "",
     progress: 0,
-    message: '',
-    details: null
   });
 
-  const updateProgress = useCallback((phase, progressValue, message, details = null) => {
-    setProgress({
-      phase,
-      progress: Math.min(100, Math.max(0, progressValue)),
-      message,
-      details
-    });
+  const updateProgress = useCallback((updates: Partial<ProgressState>) => {
+    setProgress((prev) => ({ ...prev, ...updates }));
   }, []);
 
   const resetProgress = useCallback(() => {
     setProgress({
-      phase: 'idle',
+      phase: "idle",
+      message: "",
       progress: 0,
-      message: '',
-      details: null
     });
   }, []);
 
   return { progress, updateProgress, resetProgress };
 };
 
-// Network configurations
-const SUPPORTED_NETWORKS = [
-  {
-    id: 'ethereum',
-    name: 'Ethereum',
-    symbol: 'ETH',
-    color: 'rgb(96, 165, 250)',
-    icon: '⟠',
-    chainId: 1,
-    isPopular: true
-  },
-  {
-    id: 'polygon',
-    name: 'Polygon',
-    symbol: 'MATIC',
-    color: 'rgb(139, 92, 246)',
-    icon: '⬟',
-    chainId: 137,
-    isPopular: true
-  },
-  {
-    id: 'arbitrum',
-    name: 'Arbitrum',
-    symbol: 'ARB',
-    color: 'rgb(34, 197, 94)',
-    icon: '◦',
-    chainId: 42161,
-    isPopular: true
-  },
-  {
-    id: 'optimism',
-    name: 'Optimism',
-    symbol: 'OP',
-    color: 'rgb(239, 68, 68)',
-    icon: '○',
-    chainId: 10,
-    isPopular: false
-  },
-  {
-    id: 'base',
-    name: 'Base',
-    symbol: 'BASE',
-    color: 'rgb(59, 130, 246)',
-    icon: '◉',
-    chainId: 8453,
-    isPopular: false
-  },
-  {
-    id: 'bsc',
-    name: 'BSC',
-    symbol: 'BNB',
-    color: 'rgb(245, 158, 11)',
-    icon: '◈',
-    chainId: 56,
-    isPopular: false
-  }
-];
-
-// Address validation utility
-const validateAddress = (address) => {
-  if (!address || address.length < 10) {
-    return { isValid: false, error: 'Address too short' };
-  }
-  
-  if (address.startsWith('0x') && address.length === 42) {
-    return { isValid: true, type: 'ethereum' };
-  }
-  
-  if (address.length >= 26 && address.length <= 35) {
-    return { isValid: true, type: 'bitcoin' };
-  }
-  
-  if (address.length === 44) {
-    return { isValid: true, type: 'solana' };
-  }
-  
-  return { isValid: false, error: 'Invalid address format' };
-};
-
-// Address input component with real-time validation
-const AddressInput = ({ value, onChange, onValidation, disabled, className }) => {
-  const [validation, setValidation] = useState({ isValid: false });
-  const [isCheckingAddress, setIsCheckingAddress] = useState(false);
-  const timeoutRef = useRef(null);
+// Components
+const AddressInput: React.FC<{
+  value: string;
+  onChange: (value: string) => void;
+  onValidation: (validation: ValidationResult) => void;
+  disabled?: boolean;
+}> = ({ value, onChange, onValidation, disabled }) => {
+  const [validation, setValidation] = useState<ValidationResult>({
+    isValid: false,
+  });
+  const [isValidating, setIsValidating] = useState(false);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
 
-    if (!value || value.length < 10) {
-      setValidation({ isValid: false });
-      onValidation({ isValid: false });
+    if (!value || value.trim().length < 10) {
+      const result = { isValid: false };
+
+      setValidation(result);
+      onValidation(result);
+      setIsValidating(false);
+
       return;
     }
 
-    setIsCheckingAddress(true);
-    
+    setIsValidating(true);
+
     timeoutRef.current = setTimeout(() => {
-      const result = validateAddress(value);
+      const result = validateWalletAddress(value);
+
       setValidation(result);
       onValidation(result);
-      setIsCheckingAddress(false);
-    }, 500);
+      setIsValidating(false);
+    }, 600);
 
     return () => {
       if (timeoutRef.current) {
@@ -209,60 +261,63 @@ const AddressInput = ({ value, onChange, onValidation, disabled, className }) =>
     };
   }, [value, onValidation]);
 
-  const getValidationColor = () => {
-    if (isCheckingAddress) return 'default';
-    if (!value) return 'default';
-    return validation.isValid ? 'success' : 'danger';
+  const getInputColor = () => {
+    if (isValidating || !value) return "default";
+
+    return validation.isValid ? "success" : "danger";
   };
 
-  const getValidationIcon = () => {
-    if (isCheckingAddress) return <Spinner size="sm" />;
+  const getEndContent = () => {
+    if (isValidating) return <Spinner size="sm" />;
     if (!value) return null;
-    return validation.isValid ? 
-      <CheckCircle2 className="w-4 h-4 text-success" /> : 
-      <AlertCircle className="w-4 h-4 text-danger" />;
+
+    return validation.isValid ? (
+      <CheckCircle2 className="w-4 h-4 text-success" />
+    ) : (
+      <AlertCircle className="w-4 h-4 text-danger" />
+    );
   };
 
   return (
     <div className="space-y-2">
       <Input
-        label="Wallet Address"
-        placeholder="0x... or bc1... or 1A..."
-        value={value}
-        onValueChange={onChange}
-        isDisabled={disabled}
-        color={getValidationColor()}
-        endContent={getValidationIcon()}
-        description="Enter your wallet's public address"
-        className={className}
         classNames={{
           input: "font-mono text-sm",
-          label: "font-medium"
+          label: "font-medium text-default-700",
+          description: "text-xs text-default-500",
         }}
+        color={getInputColor()}
+        description="Enter your wallet's public address to start tracking"
+        endContent={getEndContent()}
+        isDisabled={disabled}
+        label="Wallet Address"
+        placeholder="0x... or bc1... or 1A... or Base58"
+        value={value}
+        onValueChange={onChange}
       />
-      
+
       <AnimatePresence>
         {validation.error && (
           <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
+            animate={{ opacity: 1, height: "auto" }}
+            className="flex items-center gap-2 text-danger text-xs px-1"
             exit={{ opacity: 0, height: 0 }}
-            className="flex items-center gap-2 text-danger text-xs"
+            initial={{ opacity: 0, height: 0 }}
           >
-            <AlertCircle className="w-3 h-3" />
-            {validation.error}
+            <AlertCircle className="w-3 h-3 flex-shrink-0" />
+            <span>{validation.error}</span>
           </motion.div>
         )}
-        
+
         {validation.isValid && validation.type && (
           <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
+            animate={{ opacity: 1, height: "auto" }}
+            className="flex items-center gap-2 text-success text-xs px-1"
             exit={{ opacity: 0, height: 0 }}
-            className="flex items-center gap-2 text-success text-xs"
+            initial={{ opacity: 0, height: 0 }}
           >
-            <CheckCircle2 className="w-3 h-3" />
-            Valid {validation.type} address detected
+            <CheckCircle2 className="w-3 h-3 flex-shrink-0" />
+            <span>Valid {validation.type} address detected</span>
           </motion.div>
         )}
       </AnimatePresence>
@@ -270,500 +325,729 @@ const AddressInput = ({ value, onChange, onValidation, disabled, className }) =>
   );
 };
 
-// Network selector component
-const NetworkSelector = ({ selectedNetworks, onNetworkToggle, disabled }) => {
-  const popularNetworks = SUPPORTED_NETWORKS.filter(n => n.isPopular);
-  const otherNetworks = SUPPORTED_NETWORKS.filter(n => !n.isPopular);
-  
+const NetworkSelector: React.FC<{
+  selectedNetworks: string[];
+  onNetworkToggle: (networkId: string) => void;
+  disabled?: boolean;
+}> = ({ selectedNetworks, onNetworkToggle, disabled }) => {
+  const NetworkCard: React.FC<{ network: Network; isSelected: boolean }> = ({
+    network,
+    isSelected,
+  }) => (
+    <Card
+      isPressable
+      className={`cursor-pointer transition-all duration-200 ${
+        isSelected
+          ? "bg-primary-50 dark:bg-primary-500/20 border-primary-200 dark:border-primary-800"
+          : "border border-divider hover:bg-default-50"
+      } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
+      onPress={() => !disabled && onNetworkToggle(network.id)}
+    >
+      <CardBody className="p-3">
+        <div className="flex items-center gap-3">
+          <div
+            className={`w-8 h-8 rounded-full bg-gradient-to-r ${network.color} flex items-center justify-center text-white font-bold text-sm`}
+          >
+            {network.icon}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-medium text-sm truncate">{network.name}</p>
+            <p className="text-xs text-default-500">{network.symbol}</p>
+          </div>
+          {isSelected && (
+            <CheckCircle2 className="w-4 h-4 text-primary-600 flex-shrink-0" />
+          )}
+        </div>
+      </CardBody>
+    </Card>
+  );
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h4 className="font-medium text-sm">Networks</h4>
-        <Chip size="sm" variant="flat">
+        <div>
+          <h4 className="font-medium text-sm text-default-700">
+            Select Networks
+          </h4>
+          <p className="text-xs text-default-500">
+            Choose which networks to track
+          </p>
+        </div>
+        <Chip color="primary" size="sm" variant="flat">
           {selectedNetworks.length} selected
         </Chip>
       </div>
-      
-      <div className="space-y-3">
-        <div className="space-y-2">
-          <p className="text-xs text-default-500 font-medium">Popular</p>
-          <div className="grid grid-cols-2 gap-2">
-            {popularNetworks.map(network => (
-              <NetworkCard
-                key={network.id}
-                network={network}
-                isSelected={selectedNetworks.includes(network.id)}
-                onToggle={() => onNetworkToggle(network.id)}
-                disabled={disabled}
-              />
-            ))}
-          </div>
-        </div>
-        
-        <Divider />
-        
-        <div className="space-y-2">
-          <p className="text-xs text-default-500 font-medium">Others</p>
-          <div className="grid grid-cols-2 gap-2">
-            {otherNetworks.map(network => (
-              <NetworkCard
-                key={network.id}
-                network={network}
-                isSelected={selectedNetworks.includes(network.id)}
-                onToggle={() => onNetworkToggle(network.id)}
-                disabled={disabled}
-              />
-            ))}
-          </div>
-        </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {SUPPORTED_NETWORKS.map((network) => (
+          <NetworkCard
+            key={network.id}
+            isSelected={selectedNetworks.includes(network.id)}
+            network={network}
+          />
+        ))}
       </div>
     </div>
   );
 };
 
-// Individual network card
-const NetworkCard = ({ network, isSelected, onToggle, disabled }) => (
-  <Card 
-    isPressable={!disabled}
-    onPress={onToggle}
-    className={`cursor-pointer transition-all duration-150 ${
-      isSelected 
-        ? 'ring-2 ring-primary-500 bg-primary-50 dark:bg-primary-950' 
-        : 'hover:bg-default-100'
-    } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-  >
-    <CardBody className="p-3">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div 
-            className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm"
-            style={{ backgroundColor: network.color }}
-          >
-            {network.icon}
-          </div>
-          <div>
-            <p className="font-medium text-sm">{network.name}</p>
-            <p className="text-xs text-default-500">{network.symbol}</p>
-          </div>
-        </div>
-        {isSelected && <CheckCircle2 className="w-4 h-4 text-primary-500" />}
-      </div>
-    </CardBody>
-  </Card>
-);
+const ProgressDisplay: React.FC<{ progress: ProgressState }> = ({
+  progress,
+}) => {
+  if (progress.phase === "idle") return null;
 
-// Progress tracker component
-const ProgressTracker = ({ progress }) => {
-  const getPhaseIcon = (phase) => {
+  const getPhaseIcon = (phase: string) => {
     switch (phase) {
-      case 'validating':
+      case "validating":
         return <Search className="w-4 h-4" />;
-      case 'connecting':
-        return <Link2 className="w-4 h-4" />;
-      case 'syncing':
+      case "connecting":
+        return <Globe className="w-4 h-4" />;
+      case "syncing":
         return <Database className="w-4 h-4" />;
-      case 'finalizing':
+      case "complete":
         return <CheckCircle2 className="w-4 h-4" />;
-      case 'complete':
-        return <Sparkles className="w-4 h-4" />;
-      case 'error':
-        return <AlertTriangle className="w-4 h-4" />;
+      case "error":
+        return <AlertCircle className="w-4 h-4" />;
       default:
-        return <Clock className="w-4 h-4" />;
+        return <Spinner size="sm" />;
     }
   };
 
-  const getPhaseColor = (phase) => {
+  const getPhaseColor = (phase: string) => {
     switch (phase) {
-      case 'complete':
-        return 'success';
-      case 'error':
-        return 'danger';
-      case 'syncing':
-      case 'connecting':
-      case 'validating':
-        return 'primary';
+      case "complete":
+        return "success";
+      case "error":
+        return "danger";
       default:
-        return 'default';
+        return "primary";
     }
   };
-
-  if (progress.phase === 'idle') return null;
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-4 p-4 bg-default-50 dark:bg-default-900 rounded-lg"
+      className="space-y-4 p-4 bg-gradient-to-r from-default-50 to-default-100 dark:from-default-900 dark:to-default-800 rounded-lg border border-default-200"
+      initial={{ opacity: 0, y: 10 }}
     >
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className={`p-2 rounded-lg bg-${getPhaseColor(progress.phase)}-100 dark:bg-${getPhaseColor(progress.phase)}-900`}>
+        <div className="flex items-center gap-3">
+          <div
+            className={`p-2 rounded-lg bg-${getPhaseColor(progress.phase)}-100 dark:bg-${getPhaseColor(progress.phase)}-900 text-${getPhaseColor(progress.phase)}-600`}
+          >
             {getPhaseIcon(progress.phase)}
           </div>
           <div>
-            <p className="font-medium text-sm">{progress.message}</p>
+            <p className="font-medium text-sm text-default-700">
+              {progress.message}
+            </p>
             {progress.details && (
               <p className="text-xs text-default-500">{progress.details}</p>
             )}
           </div>
         </div>
-        <Chip size="sm" variant="flat" color={getPhaseColor(progress.phase)}>
+        <Chip color={getPhaseColor(progress.phase)} size="sm" variant="flat">
           {progress.progress}%
         </Chip>
       </div>
-      
+
       <Progress
-        value={progress.progress}
+        className="w-full"
         color={getPhaseColor(progress.phase)}
         size="sm"
-        className="w-full"
+        value={progress.progress}
       />
     </motion.div>
   );
 };
 
-// Connect wallet tab (placeholder)
-const ConnectWalletTab = () => (
-  <div className="py-8 text-center space-y-6">
-    <div className="w-16 h-16 bg-gradient-to-br from-primary-100 to-primary-200 dark:from-primary-900 dark:to-primary-800 rounded-2xl flex items-center justify-center mx-auto">
-      <Link2 className="w-8 h-8 text-primary-600 dark:text-primary-400" />
-    </div>
-    
-    <div className="space-y-2">
-      <h3 className="text-lg font-semibold">Connect Wallet</h3>
-      <p className="text-default-600 text-sm max-w-sm mx-auto">
-        Connect directly with supported wallet providers
-      </p>
-    </div>
-    
+const WalletSettingsSection: React.FC<{
+  formData: WalletFormData;
+  setFormData: React.Dispatch<React.SetStateAction<WalletFormData>>;
+  disabled: boolean;
+}> = ({ formData, setFormData, disabled }) => (
+  <div className="space-y-4">
+    <h4 className="font-medium text-sm text-default-700 flex items-center gap-2">
+      <Settings className="w-4 h-4" />
+      Wallet Settings
+    </h4>
+
     <div className="space-y-3">
-      <Button
-        color="primary"
-        size="lg"
-        startContent={<Wallet className="w-4 h-4" />}
-        onPress={() => toast.info('MetaMask connection coming soon')}
-        className="w-full"
-      >
-        MetaMask
-      </Button>
-      <Button
-        color="secondary"
-        size="lg"
-        startContent={<Wallet className="w-4 h-4" />}
-        onPress={() => toast.info('WalletConnect coming soon')}
-        className="w-full"
-      >
-        WalletConnect
-      </Button>
-    </div>
-  </div>
-);
+      <div className="flex items-center justify-between p-3 border border-divider rounded-xl">
+        <div className="space-y-1">
+          <p className="font-medium text-sm">Watch-Only Mode</p>
+          <p className="text-xs text-default-500">
+            Track balances without private keys
+          </p>
+        </div>
+        <Switch
+          color="success"
+          isDisabled={disabled}
+          isSelected={formData.isWatchOnly}
+          size="sm"
+          onValueChange={(value) =>
+            setFormData((prev) => ({ ...prev, isWatchOnly: value }))
+          }
+        />
+      </div>
 
-// Import tab (placeholder)
-const ImportTab = () => (
-  <div className="py-8 text-center space-y-6">
-    <div className="w-16 h-16 bg-gradient-to-br from-secondary-100 to-secondary-200 dark:from-secondary-900 dark:to-secondary-800 rounded-2xl flex items-center justify-center mx-auto">
-      <Upload className="w-8 h-8 text-secondary-600 dark:text-secondary-400" />
-    </div>
-    
-    <div className="space-y-2">
-      <h3 className="text-lg font-semibold">Import Wallets</h3>
-      <p className="text-default-600 text-sm max-w-sm mx-auto">
-        Import multiple wallets from CSV or other platforms
-      </p>
-    </div>
-    
-    <Button
-      color="secondary"
-      size="lg"
-      startContent={<Upload className="w-4 h-4" />}
-      onPress={() => toast.info('File import coming soon')}
-    >
-      Choose File
-    </Button>
+      <div className="flex items-center justify-between p-3 border border-divider rounded-xl">
+        <div className="space-y-1">
+          <p className="font-medium text-sm">Auto-Sync Data</p>
+          <p className="text-xs text-default-500">
+            Refresh data every 15 minutes
+          </p>
+        </div>
+        <Switch
+          color="success"
+          isDisabled={disabled}
+          isSelected={formData.autoSync}
+          size="sm"
+          onValueChange={(value) =>
+            setFormData((prev) => ({ ...prev, autoSync: value }))
+          }
+        />
+      </div>
 
-    <div className="text-xs text-default-500">
-      <p className="mb-2">Supported formats:</p>
-      <div className="flex gap-2 justify-center">
-        <Chip size="sm" variant="flat">CSV</Chip>
-        <Chip size="sm" variant="flat">JSON</Chip>
+      <div className="flex items-center justify-between p-3 border border-divider rounded-xl">
+        <div className="space-y-1">
+          <p className="font-medium text-sm">Enable Notifications</p>
+          <p className="text-xs text-default-500">Get alerts for changes</p>
+        </div>
+        <Switch
+          color="success"
+          isDisabled={disabled}
+          isSelected={formData.enableNotifications}
+          size="sm"
+          onValueChange={(value) =>
+            setFormData((prev) => ({ ...prev, enableNotifications: value }))
+          }
+        />
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="flex items-center justify-between p-3 border border-divider rounded-xl">
+          <div>
+            <p className="font-medium text-sm">Include NFTs</p>
+            <p className="text-xs text-default-500">Track NFT collections</p>
+          </div>
+          <Checkbox
+            color="success"
+            isDisabled={disabled}
+            isSelected={formData.includeNFTs}
+            onValueChange={(value) =>
+              setFormData((prev) => ({ ...prev, includeNFTs: value }))
+            }
+          />
+        </div>
+
+        <div className="flex items-center justify-between p-3 border border-divider rounded-xl">
+          <div>
+            <p className="font-medium text-sm">Track History</p>
+            <p className="text-xs text-default-500">Import transactions</p>
+          </div>
+          <Checkbox
+            color="success"
+            isDisabled={disabled}
+            isSelected={formData.trackTransactions}
+            onValueChange={(value) =>
+              setFormData((prev) => ({ ...prev, trackTransactions: value }))
+            }
+          />
+        </div>
       </div>
     </div>
   </div>
 );
 
-// Main modal component
-const AddWalletModal = ({ isOpen, onOpenChange }) => {
-  const [activeTab, setActiveTab] = useState('manual');
-  const [formData, setFormData] = useState({
-    address: '',
-    name: '',
-    networks: ['ethereum'],
-    isWatchOnly: true,
-    autoSync: true
-  });
-  const [validation, setValidation] = useState({ isValid: false });
-  
+const ConnectWalletTab: React.FC = () => {
+  const toast = useToast();
+
+  const walletProviders = [
+    { name: "MetaMask", icon: "🦊", color: "from-orange-500 to-yellow-500" },
+    { name: "WalletConnect", icon: "🔗", color: "from-blue-500 to-purple-500" },
+    { name: "Coinbase", icon: "🟦", color: "from-blue-600 to-blue-700" },
+    { name: "Rainbow", icon: "🌈", color: "from-pink-500 to-purple-600" },
+  ];
+
+  const handleWalletConnect = (walletName: string) => {
+    toast.info(`${walletName} Connection`, {
+      description: "Web3 wallet connection coming soon!",
+    });
+  };
+
+  return (
+    <div className="py-8 space-y-6">
+      <div className="text-center space-y-4">
+        <div className="w-20 h-20 bg-gradient-to-br from-primary-100 to-primary-200 dark:from-primary-900 dark:to-primary-800 rounded-2xl flex items-center justify-center mx-auto">
+          <Link2 className="w-8 h-8 text-primary-600" />
+        </div>
+        <div>
+          <h3 className="text-xl font-bold text-default-700">
+            Connect Your Wallet
+          </h3>
+          <p className="text-sm text-default-500 mt-2">
+            Securely connect your existing wallet to start tracking
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {walletProviders.map((wallet) => (
+          <motion.div
+            key={wallet.name}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <Card
+              isPressable
+              className="cursor-pointer hover:bg-default-100 dark:hover:bg-default-800 transition-colors"
+              onPress={() => handleWalletConnect(wallet.name)}
+            >
+              <CardBody className="p-4">
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`w-12 h-12 rounded-xl bg-gradient-to-r ${wallet.color} flex items-center justify-center text-2xl`}
+                  >
+                    {wallet.icon}
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium">{wallet.name}</p>
+                    <p className="text-xs text-default-500">
+                      Connect via extension
+                    </p>
+                  </div>
+                  <ArrowRight className="w-4 h-4 text-default-400" />
+                </div>
+              </CardBody>
+            </Card>
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const ImportTab: React.FC = () => {
+  const toast = useToast();
+
+  return (
+    <div className="py-8 space-y-6">
+      <div className="text-center space-y-4">
+        <div className="w-20 h-20 bg-gradient-to-br from-secondary-100 to-secondary-200 dark:from-secondary-900 dark:to-secondary-800 rounded-2xl flex items-center justify-center mx-auto">
+          <Upload className="w-8 h-8 text-secondary-600" />
+        </div>
+        <div>
+          <h3 className="text-xl font-bold text-default-700">
+            Import Wallet Data
+          </h3>
+          <p className="text-sm text-default-500 mt-2">
+            Upload transaction history or portfolio data
+          </p>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <Button
+          className="w-full"
+          color="secondary"
+          size="lg"
+          startContent={<Upload className="w-4 h-4" />}
+          onPress={() =>
+            toast.warning("File Import", {
+              description: "CSV and JSON import functionality coming soon!",
+            })
+          }
+        >
+          Choose File to Import
+        </Button>
+
+        <div className="text-center text-xs text-default-500 space-y-2">
+          <p>Supported formats:</p>
+          <div className="flex gap-2 justify-center">
+            <Chip size="sm" variant="flat">
+              CSV
+            </Chip>
+            <Chip size="sm" variant="flat">
+              JSON
+            </Chip>
+            <Chip size="sm" variant="flat">
+              Excel
+            </Chip>
+          </div>
+          <p className="mt-2">Maximum file size: 10MB</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const TabNavigation: React.FC<{
+  activeTab: string;
+  onTabChange: (tab: string) => void;
+  disabled?: boolean;
+}> = ({ activeTab, onTabChange, disabled }) => {
+  const tabs = [
+    { id: "manual", label: "Manual Entry", icon: Wallet },
+    { id: "connect", label: "Connect", icon: Link2 },
+    { id: "import", label: "Import", icon: Upload },
+  ];
+
+  return (
+    <div className="flex rounded-xl border border-divider bg-default-50 dark:bg-default-900 p-1">
+      {tabs.map((tab) => {
+        const Icon = tab.icon;
+        const isActive = activeTab === tab.id;
+
+        return (
+          <button
+            key={tab.id}
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              isActive
+                ? "bg-white dark:bg-default-700 text-primary-600 shadow-sm"
+                : "text-default-500 hover:text-default-700"
+            } ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+            disabled={disabled}
+            onClick={() => !disabled && onTabChange(tab.id)}
+          >
+            <Icon className="w-4 h-4" />
+            <span className="hidden sm:inline">{tab.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+};
+
+// Main Modal Component
+const AddWalletModal: React.FC<{
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+}> = ({ isOpen, onOpenChange }) => {
+  const toast = useToast();
   const { addWallet } = useWalletAnalytics();
   const { progress, updateProgress, resetProgress } = useProgressTracker();
 
-  const handleOpenChange = useCallback((open) => {
-    if (!open) {
-      setFormData({
-        address: '',
-        name: '',
-        networks: ['ethereum'],
-        isWatchOnly: true,
-        autoSync: true
-      });
-      setValidation({ isValid: false });
-      setActiveTab('manual');
-      resetProgress();
-    }
-    onOpenChange(open);
-  }, [onOpenChange, resetProgress]);
+  const [activeTab, setActiveTab] = useState("manual");
+  const [formData, setFormData] = useState<WalletFormData>({
+    address: "",
+    name: "",
+    networks: ["ethereum"],
+    isWatchOnly: true,
+    autoSync: true,
+    enableNotifications: true,
+    includeNFTs: false,
+    trackTransactions: true,
+  });
+  const [validation, setValidation] = useState<ValidationResult>({
+    isValid: false,
+  });
 
-  const handleNetworkToggle = useCallback((networkId) => {
-    setFormData(prev => ({
+  const isProcessing =
+    progress.phase !== "idle" && progress.phase !== "complete";
+  const isManualTab = activeTab === "manual";
+  const canSubmit =
+    isManualTab && validation.isValid && formData.networks.length > 0;
+
+  const handleOpenChange = useCallback(
+    (open: boolean) => {
+      if (!open && !isProcessing) {
+        setFormData({
+          address: "",
+          name: "",
+          networks: ["ethereum"],
+          isWatchOnly: true,
+          autoSync: true,
+          enableNotifications: true,
+          includeNFTs: false,
+          trackTransactions: true,
+        });
+        setValidation({ isValid: false });
+        setActiveTab("manual");
+        resetProgress();
+      }
+      onOpenChange(open);
+    },
+    [onOpenChange, resetProgress, isProcessing],
+  );
+
+  const handleNetworkToggle = useCallback((networkId: string) => {
+    setFormData((prev) => ({
       ...prev,
       networks: prev.networks.includes(networkId)
-        ? prev.networks.filter(id => id !== networkId)
-        : [...prev.networks, networkId]
+        ? prev.networks.filter((id) => id !== networkId)
+        : [...prev.networks, networkId],
     }));
   }, []);
 
   const handleSubmit = useCallback(async () => {
-    if (!validation.isValid || !formData.address) {
-      toast.error('Please enter a valid wallet address');
-      return;
-    }
-
-    if (formData.networks.length === 0) {
-      toast.error('Please select at least one network');
-      return;
-    }
+    if (!canSubmit || isProcessing) return;
 
     try {
       // Phase 1: Validation
-      updateProgress('validating', 10, 'Validating wallet address...', 'Checking address format and network compatibility');
-      await new Promise(resolve => setTimeout(resolve, 800));
+      updateProgress({
+        phase: "validating",
+        message: "Validating wallet address",
+        details: "Checking address format and network compatibility",
+        progress: 20,
+      });
+      await new Promise((resolve) => setTimeout(resolve, 400));
 
       // Phase 2: Connecting
-      updateProgress('connecting', 35, 'Connecting to blockchain...', 'Establishing secure connection to network');
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      updateProgress({
+        phase: "connecting",
+        message: "Connecting to blockchain",
+        details: `Establishing connection to ${formData.networks.length} network(s)`,
+        progress: 50,
+      });
+      await new Promise((resolve) => setTimeout(resolve, 400));
 
       // Phase 3: Syncing
-      updateProgress('syncing', 60, 'Syncing wallet data...', 'Fetching portfolio and transaction history');
-      await new Promise(resolve => setTimeout(resolve, 1200));
+      updateProgress({
+        phase: "syncing",
+        message: "Syncing wallet data",
+        details: "Fetching balances and transaction history",
+        progress: 80,
+      });
+      await new Promise((resolve) => setTimeout(resolve, 400));
 
-      // Phase 4: Finalizing
-      updateProgress('finalizing', 85, 'Finalizing setup...', 'Saving wallet configuration and preferences');
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Determine chain type based on primary network
+      const primaryNetwork = formData.networks[0] || "ethereum";
+      const chainType = getChainTypeFromNetwork(primaryNetwork);
 
-      // Add wallet using the analytics hook
-      await addWallet(formData.address.trim(), formData.name.trim() || undefined);
+      // Add wallet using analytics hook
+      const success = await addWallet(
+        formData.address.trim(),
+        formData.name.trim() || undefined,
+        chainType,
+      );
 
-      // Phase 5: Complete
-      updateProgress('complete', 100, 'Wallet added successfully!', 'Ready to track your portfolio');
-      
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      toast.success('Wallet added successfully!');
-      handleOpenChange(false);
-      
+      if (success) {
+        updateProgress({
+          phase: "complete",
+          message: "Wallet added successfully!",
+          details: "Your wallet is now ready to track",
+          progress: 100,
+        });
+
+        setTimeout(() => {
+          handleOpenChange(false);
+        }, 1500);
+      } else {
+        throw new Error("Failed to add wallet");
+      }
     } catch (error) {
-      updateProgress('error', 100, 'Failed to add wallet', error.message);
-      toast.error(error instanceof Error ? error.message : 'Failed to add wallet');
+      const errorMessage =
+        error instanceof Error ? error.message : "An unexpected error occurred";
+
+      updateProgress({
+        phase: "error",
+        message: "Failed to add wallet",
+        details: errorMessage,
+        progress: 100,
+      });
+
+      toast.error("Failed to Add Wallet", {
+        description: errorMessage,
+        duration: 5000,
+      });
     }
-  }, [validation, formData, addWallet, updateProgress, handleOpenChange]);
+  }, [
+    canSubmit,
+    isProcessing,
+    formData,
+    addWallet,
+    updateProgress,
+    handleOpenChange,
+    toast,
+  ]);
 
-  const isSubmitDisabled = useMemo(() => 
-    activeTab === 'manual' && (
-      !validation.isValid || 
-      !formData.address || 
-      formData.networks.length === 0 ||
-      progress.phase !== 'idle'
-    ),
-    [activeTab, validation.isValid, formData.address, formData.networks.length, progress.phase]
-  );
+  const handleCancel = useCallback(() => {
+    if (isProcessing) {
+      toast.warning("Process in Progress", {
+        description: "Please wait for the current operation to complete",
+      });
 
-  const isProcessing = progress.phase !== 'idle' && progress.phase !== 'complete';
+      return;
+    }
+    handleOpenChange(false);
+  }, [isProcessing, handleOpenChange, toast]);
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case "manual":
+        return (
+          <div className="space-y-6 mt-4">
+            <AddressInput
+              disabled={isProcessing}
+              value={formData.address}
+              onChange={(value) =>
+                setFormData((prev) => ({ ...prev, address: value }))
+              }
+              onValidation={setValidation}
+            />
+
+            <Input
+              description="Give your wallet a memorable name"
+              isDisabled={isProcessing}
+              label="Wallet Name (Optional)"
+              placeholder="My Portfolio Wallet"
+              startContent={<Wallet className="w-4 h-4 text-default-500" />}
+              value={formData.name}
+              onValueChange={(value) =>
+                setFormData((prev) => ({ ...prev, name: value }))
+              }
+            />
+
+            <NetworkSelector
+              disabled={isProcessing}
+              selectedNetworks={formData.networks}
+              onNetworkToggle={handleNetworkToggle}
+            />
+
+            <WalletSettingsSection
+              disabled={isProcessing}
+              formData={formData}
+              setFormData={setFormData}
+            />
+          </div>
+        );
+
+      case "connect":
+        return <ConnectWalletTab />;
+
+      case "import":
+        return <ImportTab />;
+
+      default:
+        return null;
+    }
+  };
 
   return (
     <Modal
-      isOpen={isOpen}
-      onOpenChange={handleOpenChange}
-      size="2xl"
-      scrollBehavior="inside"
-      isDismissable={!isProcessing}
-      hideCloseButton={isProcessing}
+      backdrop="blur"
       classNames={{
-        base: "bg-content1",
-        header: "border-b border-divider",
-        body: "py-4",
-        footer: "border-t border-divider"
+        backdrop: "backdrop-opacity-20",
+        base: "border border-divider",
+        header: "border-b-[1px] border-divider",
+        footer: "border-t-[1px] border-divider",
+        closeButton: "",
       }}
+      hideCloseButton={isProcessing}
+      isDismissable={!isProcessing}
+      isOpen={isOpen}
+      motionProps={{
+        variants: {
+          enter: {
+            y: 0,
+            opacity: 1,
+            transition: {
+              duration: 0.3,
+              ease: "easeOut",
+            },
+          },
+          exit: {
+            y: -20,
+            opacity: 0,
+            transition: {
+              duration: 0.2,
+              ease: "easeIn",
+            },
+          },
+        },
+      }}
+      placement="center"
+      scrollBehavior="inside"
+      size="2xl"
+      onOpenChange={handleOpenChange}
     >
       <ModalContent>
         {(onClose) => (
           <>
-            <ModalHeader className="flex items-center gap-3 pb-4">
-              <div className="p-2 bg-gradient-to-br from-primary-100 to-primary-200 dark:from-primary-900 dark:to-primary-800 rounded-lg">
-                <Plus className="w-5 h-5 text-primary-600 dark:text-primary-400" />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold">Add Wallet</h2>
-                <p className="text-sm text-default-500 font-normal">
-                  Track your crypto portfolio across networks
-                </p>
+            <ModalHeader className="flex flex-col gap-1">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-primary-100 dark:bg-primary-900 rounded-lg">
+                  <Plus className="w-5 h-5 text-primary-600" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-default-700">
+                    Add New Wallet
+                  </h2>
+                  <p className="text-sm font-normal text-default-500">
+                    Connect or import a wallet to track your crypto portfolio
+                  </p>
+                </div>
               </div>
             </ModalHeader>
 
-            <ModalBody className="px-6">
-              <div className="space-y-6">
-                <ProgressTracker progress={progress} />
-                
-                <Tabs
-                  selectedKey={activeTab}
-                  onSelectionChange={setActiveTab}
-                  className="w-full"
-                  isDisabled={isProcessing}
-                  classNames={{
-                    tabList: "grid w-full grid-cols-3",
-                    cursor: "w-full",
-                    tab: "h-10",
-                    tabContent: "group-data-[selected=true]:text-primary-600"
-                  }}
-                >
-                  <Tab
-                    key="manual"
-                    title={
-                      <div className="flex items-center gap-2">
-                        <Wallet className="w-4 h-4" />
-                        <span className="hidden sm:inline">Manual</span>
-                      </div>
-                    }
-                  >
-                    <div className="space-y-6 mt-4">
-                      <AddressInput
-                        value={formData.address}
-                        onChange={(value) => setFormData(prev => ({ ...prev, address: value }))}
-                        onValidation={setValidation}
-                        disabled={isProcessing}
-                      />
+            <ModalBody className="py-4">
+              {/* Progress Display */}
+              <AnimatePresence>
+                {progress.phase !== "idle" && (
+                  <ProgressDisplay progress={progress} />
+                )}
+              </AnimatePresence>
 
-                      <Input
-                        label="Wallet Name (Optional)"
-                        placeholder="My Portfolio"
-                        value={formData.name}
-                        onValueChange={(value) => setFormData(prev => ({ ...prev, name: value }))}
-                        isDisabled={isProcessing}
-                        description="Give your wallet a memorable name"
-                      />
+              {/* Tab Navigation */}
+              <div className="w-full">
+                <TabNavigation
+                  activeTab={activeTab}
+                  disabled={isProcessing}
+                  onTabChange={setActiveTab}
+                />
 
-                      <NetworkSelector
-                        selectedNetworks={formData.networks}
-                        onNetworkToggle={handleNetworkToggle}
-                        disabled={isProcessing}
-                      />
-
-                      <div className="space-y-3">
-                        <h4 className="font-medium text-sm">Settings</h4>
-                        <div className="space-y-3">
-                          <div className="flex items-center justify-between p-3 bg-default-50 dark:bg-default-900 rounded-lg">
-                            <div className="flex items-center gap-3">
-                              <Eye className="w-4 h-4 text-default-500" />
-                              <div>
-                                <p className="font-medium text-sm">Watch-Only Mode</p>
-                                <p className="text-xs text-default-500">Track portfolio without private keys</p>
-                              </div>
-                            </div>
-                            <Switch
-                              isSelected={formData.isWatchOnly}
-                              onValueChange={(value) => setFormData(prev => ({ ...prev, isWatchOnly: value }))}
-                              isDisabled={isProcessing}
-                              size="sm"
-                            />
-                          </div>
-                          
-                          <div className="flex items-center justify-between p-3 bg-default-50 dark:bg-default-900 rounded-lg">
-                            <div className="flex items-center gap-3">
-                              <Zap className="w-4 h-4 text-default-500" />
-                              <div>
-                                <p className="font-medium text-sm">Auto Sync</p>
-                                <p className="text-xs text-default-500">Automatically update portfolio data</p>
-                              </div>
-                            </div>
-                            <Switch
-                              isSelected={formData.autoSync}
-                              onValueChange={(value) => setFormData(prev => ({ ...prev, autoSync: value }))}
-                              isDisabled={isProcessing}
-                              size="sm"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </Tab>
-
-                  <Tab
-                    key="connect"
-                    title={
-                      <div className="flex items-center gap-2">
-                        <Link2 className="w-4 h-4" />
-                        <span className="hidden sm:inline">Connect</span>
-                      </div>
-                    }
-                  >
-                    <ConnectWalletTab />
-                  </Tab>
-
-                  <Tab
-                    key="import"
-                    title={
-                      <div className="flex items-center gap-2">
-                        <Upload className="w-4 h-4" />
-                        <span className="hidden sm:inline">Import</span>
-                      </div>
-                    }
-                  >
-                    <ImportTab />
-                  </Tab>
-                </Tabs>
+                {/* Tab Content */}
+                <div className="min-h-[400px]">{renderTabContent()}</div>
               </div>
             </ModalBody>
 
             <ModalFooter>
               <div className="flex items-center justify-between w-full">
+                {/* Security Notice */}
                 <div className="flex items-center gap-2 text-xs text-default-500">
-                  <Shield className="w-3 h-3" />
-                  <span>Data encrypted & secure</span>
-                  {progress.phase !== 'idle' && (
+                  <Shield className="w-3 h-3 flex-shrink-0" />
+                  <span className="hidden sm:inline">
+                    Data encrypted & secure
+                  </span>
+                  <span className="sm:hidden">Secure</span>
+                  {isProcessing && (
                     <>
-                      <Divider orientation="vertical" className="h-3" />
-                      <span>Please don't close this window</span>
+                      <Divider className="h-3 mx-1" orientation="vertical" />
+                      <span className="text-warning-600">
+                        Don't close window
+                      </span>
                     </>
                   )}
                 </div>
-                
-                <div className="flex gap-2">
+
+                {/* Action Buttons */}
+                <div className="flex gap-3">
                   <Button
-                    variant="flat"
-                    onPress={onClose}
+                    className="font-medium text-sm"
                     isDisabled={isProcessing}
+                    size="sm"
+                    variant="faded"
+                    onPress={handleCancel}
                   >
                     Cancel
                   </Button>
-                  <Button
-                    color="primary"
-                    onPress={handleSubmit}
-                    isDisabled={isSubmitDisabled}
-                    isLoading={isProcessing}
-                    startContent={!isProcessing ? <Plus className="w-4 h-4" /> : null}
-                  >
-                    {isProcessing ? 'Adding Wallet...' : 'Add Wallet'}
-                  </Button>
+
+                  {isManualTab && (
+                    <Button
+                      className="bg-gradient-to-br from-orange-400/90 via-orange-600/90 to-pink-400/90 text-white shadow-md hover:shadow-lg font-medium text-sm"
+                      color="primary"
+                      isDisabled={!canSubmit}
+                      isLoading={isProcessing}
+                      size="sm"
+                      startContent={
+                        !isProcessing ? <Plus className="w-4 h-4" /> : undefined
+                      }
+                      onPress={handleSubmit}
+                    >
+                      {isProcessing ? "Adding Wallet..." : "Add Wallet"}
+                    </Button>
+                  )}
                 </div>
               </div>
             </ModalFooter>
@@ -774,5 +1058,9 @@ const AddWalletModal = ({ isOpen, onOpenChange }) => {
   );
 };
 
-
+// Export component and utilities
 export default AddWalletModal;
+
+export type { WalletFormData, ValidationResult, ProgressState, Network };
+
+export { validateWalletAddress, SUPPORTED_NETWORKS, getChainTypeFromNetwork };

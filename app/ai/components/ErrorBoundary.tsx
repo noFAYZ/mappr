@@ -1,8 +1,8 @@
 "use client";
 
-import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { Card, CardBody, Button } from '@heroui/react';
-import { AlertTriangle, RefreshCw, Bug } from 'lucide-react';
+import React, { Component, ErrorInfo, ReactNode } from "react";
+import { Card, CardBody, Button } from "@heroui/react";
+import { AlertTriangle, RefreshCw, Bug } from "lucide-react";
 
 interface Props {
   children: ReactNode;
@@ -19,26 +19,26 @@ interface State {
 export class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = { 
-      hasError: false, 
-      errorId: Math.random().toString(36).substr(2, 9)
+    this.state = {
+      hasError: false,
+      errorId: Math.random().toString(36).substr(2, 9),
     };
   }
 
   static getDerivedStateFromError(error: Error): State {
-    return { 
-      hasError: true, 
+    return {
+      hasError: true,
       error,
-      errorId: Math.random().toString(36).substr(2, 9)
+      errorId: Math.random().toString(36).substr(2, 9),
     };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
-    
+    console.error("ErrorBoundary caught an error:", error, errorInfo);
+
     // Log error to monitoring service
     this.logErrorToService(error, errorInfo);
-    
+
     // Call optional error handler
     this.props.onError?.(error, errorInfo);
   }
@@ -46,22 +46,23 @@ export class ErrorBoundary extends Component<Props, State> {
   private logErrorToService = (error: Error, errorInfo: ErrorInfo) => {
     // In a real app, you'd send this to your error monitoring service
     console.group(`🚨 Error ${this.state.errorId}`);
-    console.error('Error:', error);
-    console.error('Component Stack:', errorInfo.componentStack);
-    console.error('Error Stack:', error.stack);
+    console.error("Error:", error);
+    console.error("Component Stack:", errorInfo.componentStack);
+    console.error("Error Stack:", error.stack);
     console.groupEnd();
   };
 
   private handleRetry = () => {
-    this.setState({ 
-      hasError: false, 
+    this.setState({
+      hasError: false,
       error: undefined,
-      errorId: Math.random().toString(36).substr(2, 9)
+      errorId: Math.random().toString(36).substr(2, 9),
     });
   };
 
   private handleReportError = () => {
     const { error } = this.state;
+
     if (!error) return;
 
     // Create error report
@@ -70,12 +71,12 @@ export class ErrorBoundary extends Component<Props, State> {
       stack: error.stack,
       userAgent: navigator.userAgent,
       timestamp: new Date().toISOString(),
-      errorId: this.state.errorId
+      errorId: this.state.errorId,
     };
 
     // Copy to clipboard
     navigator.clipboard.writeText(JSON.stringify(errorReport, null, 2));
-    alert('Error report copied to clipboard');
+    alert("Error report copied to clipboard");
   };
 
   render() {
@@ -91,15 +92,16 @@ export class ErrorBoundary extends Component<Props, State> {
               <div className="w-16 h-16 rounded-full bg-danger-100 dark:bg-danger-900/30 flex items-center justify-center">
                 <AlertTriangle className="w-8 h-8 text-danger-500" />
               </div>
-              
+
               <div>
                 <h3 className="text-lg font-semibold text-danger-800 dark:text-danger-200 mb-2">
                   Something went wrong
                 </h3>
                 <p className="text-sm text-danger-600 dark:text-danger-400 mb-4">
-                  We encountered an unexpected error while rendering this content.
+                  We encountered an unexpected error while rendering this
+                  content.
                 </p>
-                
+
                 {this.state.error && (
                   <details className="text-left bg-danger-100 dark:bg-danger-900/20 p-3 rounded-lg mb-4">
                     <summary className="cursor-pointer text-sm font-medium text-danger-700 dark:text-danger-300">
@@ -111,27 +113,27 @@ export class ErrorBoundary extends Component<Props, State> {
                   </details>
                 )}
               </div>
-              
+
               <div className="flex gap-2">
                 <Button
                   color="danger"
-                  variant="solid"
                   startContent={<RefreshCw className="w-4 h-4" />}
+                  variant="solid"
                   onPress={this.handleRetry}
                 >
                   Try Again
                 </Button>
-                
+
                 <Button
                   color="danger"
-                  variant="light"
                   startContent={<Bug className="w-4 h-4" />}
+                  variant="light"
                   onPress={this.handleReportError}
                 >
                   Report Error
                 </Button>
               </div>
-              
+
               <p className="text-xs text-danger-500 dark:text-danger-400">
                 Error ID: {this.state.errorId}
               </p>

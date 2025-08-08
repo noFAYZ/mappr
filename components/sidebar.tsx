@@ -5,14 +5,16 @@ import { usePathname } from "next/navigation";
 import { Button } from "@heroui/button";
 import { Badge } from "@heroui/badge";
 import { Avatar } from "@heroui/avatar";
-import { Input } from "@heroui/input";
 import { Chip } from "@heroui/chip";
-import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@heroui/dropdown";
-import { Divider } from "@heroui/divider";
+import {
+  Dropdown,
+  DropdownTrigger,
+  DropdownMenu,
+  DropdownItem,
+} from "@heroui/dropdown";
 import NextLink from "next/link";
 import clsx from "clsx";
-import { 
-  LayoutDashboard,
+import {
   Puzzle,
   PieChart,
   Bot,
@@ -22,33 +24,27 @@ import {
   CreditCard,
   HelpCircle,
   LogOut,
-  ChevronRight,
   ChevronDown,
   Plus,
-  Search,
   Crown,
   Shield,
   Star,
-  Zap,
   TrendingUp,
   Wallet,
   Building2,
   FileText,
-  Activity,
-  Users,
   Bell,
-  Sparkles,
-  Monitor,
   ChevronLeft,
   ChevronUp,
   Home,
-  Compass
+  Compass,
 } from "lucide-react";
+
+import { LogoMappr } from "./icons";
+import { RadixIconsDashboard } from "./icons/icons";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigationContext } from "@/contexts/NavigationContext";
-import { LogoMappr } from "./icons";
-import { RadixIconsDashboard, SiDashboardCustomizeLine } from "./icons/icons";
 
 interface SidebarProps {
   className?: string;
@@ -100,24 +96,24 @@ const navigationItems: MenuItem[] = [
     badge: "8",
     accent: "from-purple-500 to-pink-500",
     submenu: [
-      { 
-        label: "Browse All", 
-        href: "/extensions", 
-        icon: <Compass className="w-4 h-4" /> 
+      {
+        label: "Browse All",
+        href: "/extensions",
+        icon: <Compass className="w-4 h-4" />,
       },
-      { 
-        label: "Connected", 
-        href: "/extensions/connected", 
+      {
+        label: "Connected",
+        href: "/extensions/connected",
         icon: <Shield className="w-4 h-4" />,
-        badge: "3"
+        badge: "3",
       },
-      { 
-        label: "Add New", 
-        href: "/extensions/add", 
+      {
+        label: "Add New",
+        href: "/extensions/add",
         icon: <Plus className="w-4 h-4" />,
-        isNew: true
+        isNew: true,
       },
-    ]
+    ],
   },
   {
     label: "Portfolios",
@@ -125,27 +121,27 @@ const navigationItems: MenuItem[] = [
     icon: <PieChart className="w-5 h-5" />,
     accent: "from-emerald-500 to-teal-500",
     submenu: [
-      { 
-        label: "Overview", 
-        href: "/portfolios", 
-        icon: <Home className="w-4 h-4" /> 
+      {
+        label: "Overview",
+        href: "/portfolios",
+        icon: <Home className="w-4 h-4" />,
       },
-      { 
-        label: "Performance", 
-        href: "/portfolios/performance", 
-        icon: <TrendingUp className="w-4 h-4" /> 
+      {
+        label: "Performance",
+        href: "/portfolios/performance",
+        icon: <TrendingUp className="w-4 h-4" />,
       },
-      { 
-        label: "Analytics", 
-        href: "/portfolios/analytics", 
-        icon: <BarChart3 className="w-4 h-4" /> 
+      {
+        label: "Analytics",
+        href: "/portfolios/analytics",
+        icon: <BarChart3 className="w-4 h-4" />,
       },
-      { 
-        label: "Create New", 
-        href: "/portfolios/create", 
-        icon: <Plus className="w-4 h-4" /> 
+      {
+        label: "Create New",
+        href: "/portfolios/create",
+        icon: <Plus className="w-4 h-4" />,
       },
-    ]
+    ],
   },
   {
     label: "Data Sources",
@@ -153,27 +149,27 @@ const navigationItems: MenuItem[] = [
     icon: <Database className="w-5 h-5" />,
     accent: "from-orange-500 to-red-500",
     submenu: [
-      { 
-        label: "All Data", 
-        href: "/data", 
-        icon: <Database className="w-4 h-4" /> 
+      {
+        label: "All Data",
+        href: "/data",
+        icon: <Database className="w-4 h-4" />,
       },
-      { 
-        label: "Crypto", 
-        href: "/data/crypto", 
-        icon: <Wallet className="w-4 h-4" /> 
+      {
+        label: "Crypto",
+        href: "/data/crypto",
+        icon: <Wallet className="w-4 h-4" />,
       },
-      { 
-        label: "Banking", 
-        href: "/data/banking", 
-        icon: <Building2 className="w-4 h-4" /> 
+      {
+        label: "Banking",
+        href: "/data/banking",
+        icon: <Building2 className="w-4 h-4" />,
       },
-      { 
-        label: "Business", 
-        href: "/data/business", 
-        icon: <FileText className="w-4 h-4" /> 
+      {
+        label: "Business",
+        href: "/data/business",
+        icon: <FileText className="w-4 h-4" />,
       },
-    ]
+    ],
   },
   {
     label: "AI Assistant",
@@ -209,21 +205,21 @@ const settingsItems: MenuItem[] = [
   },
 ];
 
-export function Sidebar({ 
-  className, 
+export function Sidebar({
+  className,
   organizationData,
   notificationCount = 0,
-  showQuickSearch = true 
+  showQuickSearch = true,
 }: SidebarProps) {
   const pathname = usePathname();
   const { user, profile, signOut } = useAuth();
-  const { 
-    isSidebarVisible, 
-    isSidebarCollapsed, 
+  const {
+    isSidebarVisible,
+    isSidebarCollapsed,
     toggleSidebar,
-    setSidebarCollapsed 
+    setSidebarCollapsed,
   } = useNavigationContext();
-  
+
   const [expandedMenus, setExpandedMenus] = useState<Set<string>>(new Set());
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -234,23 +230,30 @@ export function Sidebar({
   useEffect(() => {
     const handleResize = () => {
       const mobile = window.innerWidth < 768;
+
       setIsMobile(mobile);
-      
+
       if (mobile && isSidebarVisible) {
         // Auto-collapse on mobile
       }
     };
 
     handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+
+    return () => window.removeEventListener("resize", handleResize);
   }, [isSidebarVisible]);
 
   // Auto-expand menu if current path is in submenu
   useEffect(() => {
     const newExpanded = new Set<string>();
-    navigationItems.forEach(item => {
-      if (item.submenu?.some(sub => pathname === sub.href || pathname.startsWith(sub.href + '/'))) {
+
+    navigationItems.forEach((item) => {
+      if (
+        item.submenu?.some(
+          (sub) => pathname === sub.href || pathname.startsWith(sub.href + "/"),
+        )
+      ) {
         newExpanded.add(item.href);
       }
     });
@@ -258,30 +261,36 @@ export function Sidebar({
   }, [pathname]);
 
   const toggleMenu = useCallback((href: string) => {
-    setExpandedMenus(prev => {
+    setExpandedMenus((prev) => {
       const newSet = new Set(prev);
+
       if (newSet.has(href)) {
         newSet.delete(href);
       } else {
         newSet.add(href);
       }
+
       return newSet;
     });
   }, []);
 
-  const isActive = useCallback((href: string) => {
-    if (href === '/dashboard') {
-      return pathname === '/dashboard' || pathname === '/';
-    }
-    return pathname === href || pathname.startsWith(href + '/');
-  }, [pathname]);
+  const isActive = useCallback(
+    (href: string) => {
+      if (href === "/dashboard") {
+        return pathname === "/dashboard" || pathname === "/";
+      }
+
+      return pathname === href || pathname.startsWith(href + "/");
+    },
+    [pathname],
+  );
 
   const getTierBadge = (tier: string) => {
     switch (tier?.toLowerCase()) {
-      case 'enterprise':
+      case "enterprise":
         return <Crown className="w-3 h-3 text-amber-500" />;
-      case 'pro':
-      case 'premium':
+      case "pro":
+      case "premium":
         return <Shield className="w-3 h-3 text-purple-500" />;
       default:
         return <Star className="w-3 h-3 text-blue-500" />;
@@ -290,9 +299,11 @@ export function Sidebar({
 
   const getUsageColor = (current: number, limit: number) => {
     const percentage = (current / limit) * 100;
-    if (percentage >= 90) return 'danger';
-    if (percentage >= 75) return 'warning';
-    return 'success';
+
+    if (percentage >= 90) return "danger";
+    if (percentage >= 75) return "warning";
+
+    return "success";
   };
 
   if (!isSidebarVisible && !isMobile) return null;
@@ -301,32 +312,37 @@ export function Sidebar({
     <>
       {/* Mobile Overlay */}
       {isMobile && isSidebarVisible && (
-        <div 
+        <div
           className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
           onClick={() => setSidebarCollapsed(true)}
         />
       )}
 
       {/* Sidebar */}
-      <aside className={clsx(
-        "fixed md:sticky top-0 h-screen z-50 flex flex-col transition-all duration-200 bg-content1 backdrop-blur-xl border-r border-default-200/50",
-        isMobile ? [
-          "fixed inset-y-0 left-0 shadow-2xl",
-          isSidebarVisible ? "translate-x-0" : "-translate-x-full"
-        ] : [
-          "relative",
-          isSidebarCollapsed ? "w-16" : "w-52"
-        ],
-        className
-      )}>
-        
+      <aside
+        className={clsx(
+          "fixed md:sticky top-0 h-screen z-50 flex flex-col transition-all duration-200 bg-content1 backdrop-blur-xl border-r border-default-200/50",
+          isMobile
+            ? [
+                "fixed inset-y-0 left-0 shadow-2xl",
+                isSidebarVisible ? "translate-x-0" : "-translate-x-full",
+              ]
+            : ["relative", isSidebarCollapsed ? "w-16" : "w-52"],
+          className,
+        )}
+      >
         {/* Header Section */}
-        <header className={clsx(
-          "flex items-center justify-between h-16 px-4 ",
-          isSidebarCollapsed && !isMobile && "px-2"
-        )}>
+        <header
+          className={clsx(
+            "flex items-center justify-between h-16 px-4 ",
+            isSidebarCollapsed && !isMobile && "px-2",
+          )}
+        >
           {!isSidebarCollapsed || isMobile ? (
-            <NextLink href="/dashboard" className="flex items-center gap-3 group">
+            <NextLink
+              className="flex items-center gap-3 group"
+              href="/dashboard"
+            >
               <div className="relative">
                 <div className="w-9 h-9  flex items-center justify-center">
                   <LogoMappr />
@@ -339,8 +355,12 @@ export function Sidebar({
                 </span>
                 {organizationData && (
                   <div className="flex items-center gap-1 -mt-1">
-                    <span className="text-xs text-default-500">{organizationData.name}</span>
-                    {getTierBadge(organizationData.tier || organizationData.plan)}
+                    <span className="text-xs text-default-500">
+                      {organizationData.name}
+                    </span>
+                    {getTierBadge(
+                      organizationData.tier || organizationData.plan,
+                    )}
                   </div>
                 )}
               </div>
@@ -348,26 +368,22 @@ export function Sidebar({
           ) : (
             <Button
               isIconOnly
-              variant="flat"
-              size="sm"
-              className="w-9 h-9 bg-transparent"
               as={NextLink}
+              className="w-9 h-9 bg-transparent"
               href="/dashboard"
+              size="sm"
+              variant="flat"
             >
-                 
-                  <LogoMappr />
-             
+              <LogoMappr />
             </Button>
           )}
-
- 
 
           {/* Close Button - Mobile */}
           {isMobile && (
             <Button
               isIconOnly
-              variant="flat"
               size="sm"
+              variant="flat"
               onPress={() => setSidebarCollapsed(true)}
             >
               <ChevronLeft className="w-4 h-4" />
@@ -397,7 +413,9 @@ export function Sidebar({
         {/* Usage Stats (when not collapsed) */}
         {organizationData?.usage && (!isSidebarCollapsed || isMobile) && (
           <div className="p-3 border-b border-default-200/50">
-            <div className="text-xs text-default-500 mb-2">Usage this month</div>
+            <div className="text-xs text-default-500 mb-2">
+              Usage this month
+            </div>
             <div className="flex items-center justify-between mb-1">
               <span className="text-sm font-medium">
                 {organizationData.usage.current.toLocaleString()}
@@ -407,17 +425,23 @@ export function Sidebar({
               </span>
             </div>
             <div className="w-full bg-default-200 rounded-full h-1.5">
-              <div 
+              <div
                 className={clsx(
                   "h-1.5 rounded-full transition-all",
-                  getUsageColor(organizationData.usage.current, organizationData.usage.limit) === 'danger' 
-                    ? "bg-danger" 
-                    : getUsageColor(organizationData.usage.current, organizationData.usage.limit) === 'warning'
-                    ? "bg-warning"
-                    : "bg-success"
+                  getUsageColor(
+                    organizationData.usage.current,
+                    organizationData.usage.limit,
+                  ) === "danger"
+                    ? "bg-danger"
+                    : getUsageColor(
+                          organizationData.usage.current,
+                          organizationData.usage.limit,
+                        ) === "warning"
+                      ? "bg-warning"
+                      : "bg-success",
                 )}
-                style={{ 
-                  width: `${Math.min((organizationData.usage.current / organizationData.usage.limit) * 100, 100)}%` 
+                style={{
+                  width: `${Math.min((organizationData.usage.current / organizationData.usage.limit) * 100, 100)}%`,
                 }}
               />
             </div>
@@ -427,7 +451,6 @@ export function Sidebar({
         {/* Main Navigation */}
         <nav className="flex-1 px-3 py-4  scrollbar-none">
           <div className="space-y-6">
-            
             {/* Main Navigation */}
             <div>
               {(!isSidebarCollapsed || isMobile) && (
@@ -439,99 +462,132 @@ export function Sidebar({
                 {navigationItems.map((item) => (
                   <div key={item.href}>
                     {/* Main Menu Item */}
-                    <div 
+                    <div
                       className="relative"
-                      onMouseEnter={() => isSidebarCollapsed && !isMobile && setHoveredItem(item.href)}
+                      onMouseEnter={() =>
+                        isSidebarCollapsed &&
+                        !isMobile &&
+                        setHoveredItem(item.href)
+                      }
                       onMouseLeave={() => setHoveredItem(null)}
                     >
                       {/* Tooltip for collapsed mode */}
-                      {isSidebarCollapsed && !isMobile && hoveredItem === item.href && (
-                        <div className="absolute left-full top-0 ml-3 z-50 px-2 py-2 bg-background border border-default-200 shadow-lg rounded-lg text-sm font-medium whitespace-nowrap">
-                          {item.label}
-                          {item.submenu && (
-                            <div className="mt-2 pt-2 border-t border-default-200">
-                              {item.submenu.map(sub => (
-                                <div key={sub.href} className="py-1 text-xs text-default-600">
-                                  {sub.label}
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                          <div className="absolute right-full top-2 border-4 border-transparent border-r-background" />
-                        </div>
-                      )}
+                      {isSidebarCollapsed &&
+                        !isMobile &&
+                        hoveredItem === item.href && (
+                          <div className="absolute left-full top-0 ml-3 z-50 px-2 py-2 bg-background border border-default-200 shadow-lg rounded-lg text-sm font-medium whitespace-nowrap">
+                            {item.label}
+                            {item.submenu && (
+                              <div className="mt-2 pt-2 border-t border-default-200">
+                                {item.submenu.map((sub) => (
+                                  <div
+                                    key={sub.href}
+                                    className="py-1 text-xs text-default-600"
+                                  >
+                                    {sub.label}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            <div className="absolute right-full top-2 border-4 border-transparent border-r-background" />
+                          </div>
+                        )}
 
                       {item.submenu && (!isSidebarCollapsed || isMobile) ? (
                         <Button
-                          variant="flat"
-                     
                           className={clsx(
                             "w-full justify-start  p-2 h-auto bg-transparent group",
                             isActive(item.href)
-                            
-                            ? " text-primary-600 border-primary-500/20 shadow-sm"
-                            : " hover:border-primary-500/20 hover:text-primary-600 "
+                              ? " text-primary-600 border-primary-500/20 shadow-sm"
+                              : " hover:border-primary-500/20 hover:text-primary-600 ",
                           )}
+                          variant="flat"
                           onPress={() => toggleMenu(item.href)}
                         >
                           <div className="flex items-center gap-3 flex-1">
-                            <span className={clsx(
-                              "transition-colors",
-                              isActive(item.href) ? "text-primary-600 hover:text-primary-600" : " hover:text-primary-600"
-                            )}>
+                            <span
+                              className={clsx(
+                                "transition-colors",
+                                isActive(item.href)
+                                  ? "text-primary-600 hover:text-primary-600"
+                                  : " hover:text-primary-600",
+                              )}
+                            >
                               {item.icon}
                             </span>
-                            <span className="text-xs font-medium">{item.label}</span>
+                            <span className="text-xs font-medium">
+                              {item.label}
+                            </span>
                             {item.badge && (
-                              <Chip size="sm" color="primary" variant="flat" className="text-[10px] h-5 bg-primary-500/20 rounded-md px-0.5">
+                              <Chip
+                                className="text-[10px] h-5 bg-primary-500/20 rounded-md px-0.5"
+                                color="primary"
+                                size="sm"
+                                variant="flat"
+                              >
                                 {item.badge}
                               </Chip>
                             )}
-                           
                           </div>
-                          <ChevronDown 
+                          <ChevronDown
                             className={clsx(
                               "w-4 h-4 transition-transform",
-                              expandedMenus.has(item.href) ? "rotate-180" : ""
+                              expandedMenus.has(item.href) ? "rotate-180" : "",
                             )}
                           />
                         </Button>
                       ) : (
                         <Button
                           as={NextLink}
-                          href={item.href}
-                          size="sm"
-                          isIconOnly={isSidebarCollapsed && !isMobile}
-                          variant="flat"
-                          radius="md"
                           className={clsx(
                             "w-full h-auto transition-all duration-100 group nav-item bg-transparent  ",
-                            isSidebarCollapsed && !isMobile ? "justify-center p-2" : "justify-start p-2",
+                            isSidebarCollapsed && !isMobile
+                              ? "justify-center p-2"
+                              : "justify-start p-2",
                             isActive(item.href)
                               ? " text-primary-600 border-primary-500/20 shadow-sm"
-                              : " hover:border-primary-500/20 hover:text-primary-600 "
+                              : " hover:border-primary-500/20 hover:text-primary-600 ",
                           )}
+                          href={item.href}
+                          isIconOnly={isSidebarCollapsed && !isMobile}
+                          radius="md"
+                          size="sm"
+                          variant="flat"
                         >
-                          <div className={clsx(
-                            "flex items-center gap-3",
-                            isSidebarCollapsed && !isMobile ? "justify-center" : "flex-1"
-                          )}>
-                            <span className={clsx(
-                              "transition-colors",
-                              isActive(item.href) ? "text-primary-600" : "text-default-500 group-hover:text-primary-600"
-                            )}>
+                          <div
+                            className={clsx(
+                              "flex items-center gap-3",
+                              isSidebarCollapsed && !isMobile
+                                ? "justify-center"
+                                : "flex-1",
+                            )}
+                          >
+                            <span
+                              className={clsx(
+                                "transition-colors",
+                                isActive(item.href)
+                                  ? "text-primary-600"
+                                  : "text-default-500 group-hover:text-primary-600",
+                              )}
+                            >
                               {item.icon}
                             </span>
                             {(!isSidebarCollapsed || isMobile) && (
                               <>
-                                <span className="text-xs font-medium">{item.label}</span>
+                                <span className="text-xs font-medium">
+                                  {item.label}
+                                </span>
                                 <div className="flex items-center gap-2 ml-auto">
                                   {item.badge && (
-                                    <Chip size="sm" color="primary" variant="flat" className="text-[10px] h-5 bg-primary-500/20 rounded-md px-0.5">
+                                    <Chip
+                                      className="text-[10px] h-5 bg-primary-500/20 rounded-md px-0.5"
+                                      color="primary"
+                                      size="sm"
+                                      variant="flat"
+                                    >
                                       {item.badge}
                                     </Chip>
                                   )}
-                                 
                                 </div>
                               </>
                             )}
@@ -541,42 +597,54 @@ export function Sidebar({
                     </div>
 
                     {/* Submenu */}
-                    {item.submenu && expandedMenus.has(item.href) && (!isSidebarCollapsed || isMobile) && (
-                      <div className="ml-4 mt-1 space-y-1 border-l border-default-200/50 pl-4">
-                        {item.submenu.map((subItem) => (
-                          <Button
-                            key={subItem.href}
-                            as={NextLink}
-                            href={subItem.href}
-                            variant="light"
-                            size="sm"
-                            className={clsx(
-                              "w-full justify-start p-2 h-auto transition-all duration-200",
-                              pathname === subItem.href
-                                ? "bg-primary-500/10 text-primary-600"
-                                : "hover:bg-default-100/30 text-default-500"
-                            )}
-                          >
-                            <div className="flex items-center gap-2 flex-1">
-                              {subItem.icon}
-                              <span className="text-xs">{subItem.label}</span>
-                              <div className="flex items-center gap-1 ml-auto">
-                                {subItem.badge && (
-                                  <Chip size="sm" color="primary" variant="flat" className="text-[10px] h-5 bg-primary-500/20 rounded-md px-0.5">
-                                    {subItem.badge}
-                                  </Chip>
-                                )}
-                                {subItem.isNew && (
-                                  <Chip size="sm" color="success" variant="flat" className="text-[10px] h-5 bg-lime-500/25 rounded-md px-0.5">
-                                    New
-                                  </Chip>
-                                )}
+                    {item.submenu &&
+                      expandedMenus.has(item.href) &&
+                      (!isSidebarCollapsed || isMobile) && (
+                        <div className="ml-4 mt-1 space-y-1 border-l border-default-200/50 pl-4">
+                          {item.submenu.map((subItem) => (
+                            <Button
+                              key={subItem.href}
+                              as={NextLink}
+                              className={clsx(
+                                "w-full justify-start p-2 h-auto transition-all duration-200",
+                                pathname === subItem.href
+                                  ? "bg-primary-500/10 text-primary-600"
+                                  : "hover:bg-default-100/30 text-default-500",
+                              )}
+                              href={subItem.href}
+                              size="sm"
+                              variant="light"
+                            >
+                              <div className="flex items-center gap-2 flex-1">
+                                {subItem.icon}
+                                <span className="text-xs">{subItem.label}</span>
+                                <div className="flex items-center gap-1 ml-auto">
+                                  {subItem.badge && (
+                                    <Chip
+                                      className="text-[10px] h-5 bg-primary-500/20 rounded-md px-0.5"
+                                      color="primary"
+                                      size="sm"
+                                      variant="flat"
+                                    >
+                                      {subItem.badge}
+                                    </Chip>
+                                  )}
+                                  {subItem.isNew && (
+                                    <Chip
+                                      className="text-[10px] h-5 bg-lime-500/25 rounded-md px-0.5"
+                                      color="success"
+                                      size="sm"
+                                      variant="flat"
+                                    >
+                                      New
+                                    </Chip>
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                          </Button>
-                        ))}
-                      </div>
-                    )}
+                            </Button>
+                          ))}
+                        </div>
+                      )}
                   </div>
                 ))}
               </div>
@@ -639,7 +707,6 @@ export function Sidebar({
                 ))}
               </div>
             </div> */}
-
           </div>
         </nav>
 
@@ -649,34 +716,40 @@ export function Sidebar({
             <Dropdown placement="top-start">
               <DropdownTrigger>
                 <Button
-                  variant="light"
-                  isIconOnly={isSidebarCollapsed && !isMobile}
                   className={clsx(
                     " hover:bg-default-100/50 transition-colors",
-                    isSidebarCollapsed && !isMobile ? "justify-center w-8 h-8 rounded-full" : "justify-start w-full h-auto p-2 rounded-2xl"
+                    isSidebarCollapsed && !isMobile
+                      ? "justify-center w-8 h-8 rounded-full"
+                      : "justify-start w-full h-auto p-2 rounded-2xl",
                   )}
+                  isIconOnly={isSidebarCollapsed && !isMobile}
+                  variant="light"
                 >
                   {isSidebarCollapsed && !isMobile ? (
                     <Avatar
-                      src={profile.avatar_url || undefined}
+                      className="w-8 h-8"
                       name={profile.full_name || profile.email}
                       size="sm"
-                      className="w-8 h-8"
+                      src={profile.avatar_url || undefined}
                     />
                   ) : (
                     <div className="flex items-center gap-3 w-full">
                       <Avatar
-                        src={profile.avatar_url || undefined}
+                        className="w-8 h-8"
                         name={profile.full_name || profile.email}
                         size="sm"
-                        className="w-8 h-8"
+                        src={profile.avatar_url || undefined}
                       />
                       <div className="flex-1 text-left">
                         <div className="text-sm font-medium flex items-center gap-2">
-                          {profile.full_name || 'User'}
+                          {profile.full_name || "User"}
                           {getTierBadge(profile.tier)}
                           {notificationCount > 0 && (
-                            <Badge content={notificationCount} color="danger" size="sm" />
+                            <Badge
+                              color="danger"
+                              content={notificationCount}
+                              size="sm"
+                            />
                           )}
                         </div>
                         <div className="text-xs text-default-500 capitalize">
@@ -689,39 +762,45 @@ export function Sidebar({
                 </Button>
               </DropdownTrigger>
               <DropdownMenu aria-label="User menu">
-                <DropdownItem 
-                  key="profile" 
+                <DropdownItem
+                  key="profile"
                   href="/profile"
                   startContent={<Settings className="w-4 h-4" />}
                 >
                   Profile Settings
                 </DropdownItem>
-                <DropdownItem 
-                  key="billing" 
+                <DropdownItem
+                  key="billing"
                   href="/billing"
                   startContent={getTierBadge(profile.tier)}
                 >
                   Billing & Usage
                 </DropdownItem>
-                <DropdownItem 
-                  key="notifications" 
+                <DropdownItem
+                  key="notifications"
+                  endContent={
+                    notificationCount > 0 && (
+                      <Badge
+                        color="danger"
+                        content={notificationCount}
+                        size="sm"
+                      />
+                    )
+                  }
                   href="/notifications"
                   startContent={<Bell className="w-4 h-4" />}
-                  endContent={notificationCount > 0 && (
-                    <Badge content={notificationCount} color="danger" size="sm" />
-                  )}
                 >
                   Notifications
                 </DropdownItem>
-                <DropdownItem 
-                  key="help" 
+                <DropdownItem
+                  key="help"
                   href="/help"
                   startContent={<HelpCircle className="w-4 h-4" />}
                 >
                   Help & Support
                 </DropdownItem>
-                <DropdownItem 
-                  key="logout" 
+                <DropdownItem
+                  key="logout"
                   color="danger"
                   startContent={<LogOut className="w-4 h-4" />}
                   onPress={signOut}
@@ -732,7 +811,6 @@ export function Sidebar({
             </Dropdown>
           </footer>
         )}
-
       </aside>
     </>
   );

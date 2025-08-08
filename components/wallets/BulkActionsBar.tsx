@@ -1,5 +1,5 @@
-import React from 'react';
-import { RefreshCw, Trash2, X } from 'lucide-react';
+import React from "react";
+import { RefreshCw, Trash2, X } from "lucide-react";
 
 interface BulkActionsBarProps {
   selectedCount: number;
@@ -10,7 +10,7 @@ interface BulkActionsBarProps {
 const BulkActionsBar: React.FC<BulkActionsBarProps> = ({
   selectedCount,
   onAction,
-  onClear
+  onClear,
 }) => {
   if (selectedCount === 0) return null;
 
@@ -21,30 +21,30 @@ const BulkActionsBar: React.FC<BulkActionsBarProps> = ({
           {selectedCount}
         </div>
         <span className="text-sm text-blue-700 dark:text-blue-300 font-medium">
-          {selectedCount} wallet{selectedCount > 1 ? 's' : ''} selected
+          {selectedCount} wallet{selectedCount > 1 ? "s" : ""} selected
         </span>
       </div>
-      
+
       <div className="flex items-center gap-2">
         <button
-          onClick={() => onAction('sync')}
           className="flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+          onClick={() => onAction("sync")}
         >
           <RefreshCw className="h-3 w-3" />
           Sync All
         </button>
-        
+
         <button
-          onClick={() => onAction('delete')}
           className="flex items-center gap-1 px-3 py-1.5 text-sm bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+          onClick={() => onAction("delete")}
         >
           <Trash2 className="h-3 w-3" />
           Remove All
         </button>
-        
+
         <button
-          onClick={onClear}
           className="flex items-center gap-1 px-3 py-1.5 text-sm bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
+          onClick={onClear}
         >
           <X className="h-3 w-3" />
           Clear

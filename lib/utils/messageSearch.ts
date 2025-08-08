@@ -2,12 +2,11 @@
 
 import { Message } from "@/app/ai/components/types";
 
-
 export interface SearchOptions {
   caseSensitive?: boolean;
   wholeWords?: boolean;
   includeMetadata?: boolean;
-  roles?: Array<'user' | 'assistant' | 'system'>;
+  roles?: Array<"user" | "assistant" | "system">;
   dateRange?: {
     start: Date;
     end: Date;
@@ -32,9 +31,9 @@ export class MessageSearch {
    * Search messages with advanced options
    */
   static search(
-    messages: Message[], 
-    query: string, 
-    options: SearchOptions = {}
+    messages: Message[],
+    query: string,
+    options: SearchOptions = {},
   ): SearchResult[] {
     if (!query.trim()) return [];
 
@@ -43,46 +42,56 @@ export class MessageSearch {
       wholeWords = false,
       includeMetadata = false,
       roles,
-      dateRange
+      dateRange,
     } = options;
 
     // Filter messages by criteria
     let filteredMessages = messages;
 
     if (roles?.length) {
-      filteredMessages = filteredMessages.filter(msg => roles.includes(msg.role));
+      filteredMessages = filteredMessages.filter((msg) =>
+        roles.includes(msg.role),
+      );
     }
 
     if (dateRange) {
-      filteredMessages = filteredMessages.filter(msg => {
+      filteredMessages = filteredMessages.filter((msg) => {
         const msgDate = new Date(msg.timestamp);
+
         return msgDate >= dateRange.start && msgDate <= dateRange.end;
       });
     }
 
     // Prepare search query
     const searchQuery = caseSensitive ? query : query.toLowerCase();
-    const regex = wholeWords 
-      ? new RegExp(`\\b${this.escapeRegex(searchQuery)}\\b`, caseSensitive ? 'g' : 'gi')
-      : new RegExp(this.escapeRegex(searchQuery), caseSensitive ? 'g' : 'gi');
+    const regex = wholeWords
+      ? new RegExp(
+          `\\b${this.escapeRegex(searchQuery)}\\b`,
+          caseSensitive ? "g" : "gi",
+        )
+      : new RegExp(this.escapeRegex(searchQuery), caseSensitive ? "g" : "gi");
 
     // Search through messages
     const results: SearchResult[] = [];
 
-    filteredMessages.forEach(message => {
-      const matches: Array<{ text: string; index: number; length: number }> = [];
+    filteredMessages.forEach((message) => {
+      const matches: Array<{ text: string; index: number; length: number }> =
+        [];
       let score = 0;
 
       // Search in content
-      const content = caseSensitive ? message.content : message.content.toLowerCase();
+      const content = caseSensitive
+        ? message.content
+        : message.content.toLowerCase();
       let match;
+
       regex.lastIndex = 0;
-      
+
       while ((match = regex.exec(content)) !== null) {
         matches.push({
           text: match[0],
           index: match.index,
-          length: match[0].length
+          length: match[0].length,
         });
         score += 1;
       }
@@ -90,14 +99,16 @@ export class MessageSearch {
       // Search in metadata if enabled
       if (includeMetadata && message.metadata) {
         const metadataStr = JSON.stringify(message.metadata);
-        const metadataContent = caseSensitive ? metadataStr : metadataStr.toLowerCase();
-        
+        const metadataContent = caseSensitive
+          ? metadataStr
+          : metadataStr.toLowerCase();
+
         regex.lastIndex = 0;
         while ((match = regex.exec(metadataContent)) !== null) {
           matches.push({
             text: match[0],
             index: match.index + message.content.length, // Offset for metadata
-            length: match[0].length
+            length: match[0].length,
           });
           score += 0.5; // Lower score for metadata matches
         }
@@ -116,14 +127,14 @@ export class MessageSearch {
         }
 
         // Boost score for assistant messages (usually more informative)
-        if (message.role === 'assistant') {
+        if (message.role === "assistant") {
           score += 0.5;
         }
 
         results.push({
           message,
           matches,
-          score
+          score,
         });
       }
     });
@@ -136,9 +147,9 @@ export class MessageSearch {
    * Highlight search matches in text
    */
   static highlightMatches(
-    text: string, 
+    text: string,
     matches: Array<{ index: number; length: number }>,
-    className: string = 'bg-yellow-200 dark:bg-yellow-800'
+    className: string = "bg-yellow-200 dark:bg-yellow-800",
   ): string {
     if (!matches.length) return text;
 
@@ -146,13 +157,14 @@ export class MessageSearch {
     const sortedMatches = [...matches].sort((a, b) => b.index - a.index);
 
     let result = text;
-    
-    sortedMatches.forEach(match => {
+
+    sortedMatches.forEach((match) => {
       const before = result.slice(0, match.index);
       const matchText = result.slice(match.index, match.index + match.length);
       const after = result.slice(match.index + match.length);
-      
-      result = before + `<mark class="${className}">${matchText}</mark>` + after;
+
+      result =
+        before + `<mark class="${className}">${matchText}</mark>` + after;
     });
 
     return result;
@@ -167,13 +179,13 @@ export class MessageSearch {
     const suggestions = new Set<string>();
     const query = partialQuery.toLowerCase();
 
-    messages.forEach(message => {
+    messages.forEach((message) => {
       const words = message.content.toLowerCase().split(/\s+/);
-      
-      words.forEach(word => {
+
+      words.forEach((word) => {
         // Clean word (remove punctuation)
-        const cleanWord = word.replace(/[^\w]/g, '');
-        
+        const cleanWord = word.replace(/[^\w]/g, "");
+
         if (cleanWord.length >= 3 && cleanWord.startsWith(query)) {
           suggestions.add(cleanWord);
         }
@@ -187,6 +199,6 @@ export class MessageSearch {
    * Escape special regex characters
    */
   private static escapeRegex(string: string): string {
-    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\    return');
+    return string.replace(/[.*+?^${}()|[\]\\]/g, "\\    return");
   }
 }

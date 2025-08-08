@@ -1,36 +1,43 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
-import { Database } from '@/types/supabase';
+import { NextRequest, NextResponse } from "next/server";
+import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+import { cookies } from "next/headers";
+
+import { Database } from "@/types/supabase";
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   try {
     const cookieStore = await cookies();
-    const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
-    
-    const { data: { session }, error: authError } = await supabase.auth.getSession();
+    const supabase = createRouteHandlerClient<Database>({
+      cookies: () => cookieStore,
+    });
+
+    const {
+      data: { session },
+      error: authError,
+    } = await supabase.auth.getSession();
+
     if (authError || !session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { data: profile } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('user_id', session.user.id)
+      .from("profiles")
+      .select("id")
+      .eq("user_id", session.user.id)
       .single();
 
     if (!profile) {
-      return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
+      return NextResponse.json({ error: "Profile not found" }, { status: 404 });
     }
 
     const conversationId = params.id;
     const updateData = await request.json();
 
     const updateFields: any = {
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     };
 
     if (updateData.title !== undefined) {
@@ -40,10 +47,12 @@ export async function PUT(
     if (updateData.messages !== undefined) {
       updateFields.messages = updateData.messages;
       updateFields.message_count = updateData.messages.length;
-      
+
       if (updateData.messages.length > 0) {
         const lastMessage = updateData.messages[updateData.messages.length - 1];
-        updateFields.last_message_at = lastMessage.timestamp || new Date().toISOString();
+
+        updateFields.last_message_at =
+          lastMessage.timestamp || new Date().toISOString();
       }
     }
 
@@ -56,31 +65,32 @@ export async function PUT(
     }
 
     const { data: updatedConversation, error: updateError } = await supabase
-      .from('ai_conversations')
+      .from("ai_conversations")
       .update(updateFields)
-      .eq('id', conversationId)
-      .eq('user_id', profile.id)
+      .eq("id", conversationId)
+      .eq("user_id", profile.id)
       .select()
       .single();
 
     if (updateError) {
-      console.error('Update conversation error:', updateError);
+      console.error("Update conversation error:", updateError);
+
       return NextResponse.json(
-        { error: 'Failed to update conversation' },
-        { status: 500 }
+        { error: "Failed to update conversation" },
+        { status: 500 },
       );
     }
 
-    return NextResponse.json({ 
-      success: true, 
-      conversation: updatedConversation 
+    return NextResponse.json({
+      success: true,
+      conversation: updatedConversation,
     });
-
   } catch (error) {
-    console.error('Update conversation API error:', error);
+    console.error("Update conversation API error:", error);
+
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+      { error: "Internal server error" },
+      { status: 500 },
     );
   }
 }

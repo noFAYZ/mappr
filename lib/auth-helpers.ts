@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { supabase } from "@/lib/supabase";
 
 export const authHelpers = {
   /**
@@ -9,15 +9,20 @@ export const authHelpers = {
       email,
       password,
     });
-    
+
     if (error) throw error;
+
     return data;
   },
 
   /**
    * Sign up with email and password
    */
-  async signUp(email: string, password: string, metadata?: Record<string, any>) {
+  async signUp(
+    email: string,
+    password: string,
+    metadata?: Record<string, any>,
+  ) {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -25,23 +30,25 @@ export const authHelpers = {
         data: metadata,
       },
     });
-    
+
     if (error) throw error;
+
     return data;
   },
 
   /**
    * Sign in with OAuth provider
    */
-  async signInWithOAuth(provider: 'google' | 'github', redirectTo?: string) {
+  async signInWithOAuth(provider: "google" | "github", redirectTo?: string) {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
         redirectTo: redirectTo || `${window.location.origin}/auth/callback`,
       },
     });
-    
+
     if (error) throw error;
+
     return data;
   },
 
@@ -52,11 +59,13 @@ export const authHelpers = {
     const { data, error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: redirectTo || `${window.location.origin}/auth/callback`,
+        emailRedirectTo:
+          redirectTo || `${window.location.origin}/auth/callback`,
       },
     });
-    
+
     if (error) throw error;
+
     return data;
   },
 
@@ -67,8 +76,9 @@ export const authHelpers = {
     const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/auth/reset-password`,
     });
-    
+
     if (error) throw error;
+
     return data;
   },
 
@@ -79,8 +89,9 @@ export const authHelpers = {
     const { data, error } = await supabase.auth.updateUser({
       password,
     });
-    
+
     if (error) throw error;
+
     return data;
   },
 
@@ -91,37 +102,41 @@ export const authHelpers = {
     try {
       // First try normal sign out
       const { error } = await supabase.auth.signOut();
-      
-      if (error && !error.message.includes('Auth session missing!')) {
-        console.error('Sign out error:', error);
+
+      if (error && !error.message.includes("Auth session missing!")) {
+        console.error("Sign out error:", error);
       }
     } catch (error: any) {
       // Ignore session missing errors
-      if (!error.message?.includes('Auth session missing!')) {
-        console.error('Sign out error:', error);
+      if (!error.message?.includes("Auth session missing!")) {
+        console.error("Sign out error:", error);
       }
     }
-    
+
     // Always clear local storage regardless of API success
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       try {
-        Object.keys(localStorage).forEach(key => {
-          if (key.startsWith('supabase.auth.token') || 
-              key.startsWith('sb-') ||
-              key.includes('supabase')) {
+        Object.keys(localStorage).forEach((key) => {
+          if (
+            key.startsWith("supabase.auth.token") ||
+            key.startsWith("sb-") ||
+            key.includes("supabase")
+          ) {
             localStorage.removeItem(key);
           }
         });
-        
-        Object.keys(sessionStorage).forEach(key => {
-          if (key.startsWith('supabase.auth.token') || 
-              key.startsWith('sb-') ||
-              key.includes('supabase')) {
+
+        Object.keys(sessionStorage).forEach((key) => {
+          if (
+            key.startsWith("supabase.auth.token") ||
+            key.startsWith("sb-") ||
+            key.includes("supabase")
+          ) {
             sessionStorage.removeItem(key);
           }
         });
       } catch (storageError) {
-        console.error('Error clearing storage:', storageError);
+        console.error("Error clearing storage:", storageError);
       }
     }
   },
@@ -132,15 +147,17 @@ export const authHelpers = {
   async getSession() {
     try {
       const { data, error } = await supabase.auth.getSession();
-      
+
       if (error) {
-        console.error('Get session error:', error);
+        console.error("Get session error:", error);
+
         return { session: null, error };
       }
-      
+
       return { session: data.session, error: null };
     } catch (error) {
-      console.error('Get session error:', error);
+      console.error("Get session error:", error);
+
       return { session: null, error };
     }
   },
@@ -151,9 +168,11 @@ export const authHelpers = {
   async isAuthenticated(): Promise<boolean> {
     try {
       const { session } = await this.getSession();
+
       return !!session?.user;
     } catch (error) {
-      console.error('Auth check error:', error);
+      console.error("Auth check error:", error);
+
       return false;
     }
   },

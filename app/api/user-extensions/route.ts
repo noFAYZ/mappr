@@ -1,34 +1,42 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
-import type { Database } from '@/types/supabase';
+import type { Database } from "@/types/supabase";
+
+import { NextRequest, NextResponse } from "next/server";
+import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+import { cookies } from "next/headers";
 
 export async function GET(request: NextRequest) {
   try {
     const cookieStore = cookies();
-    const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
-    
+    const supabase = createRouteHandlerClient<Database>({
+      cookies: () => cookieStore,
+    });
+
     // Get current user
-    const { data: { session }, error: authError } = await supabase.auth.getSession();
+    const {
+      data: { session },
+      error: authError,
+    } = await supabase.auth.getSession();
+
     if (authError || !session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // Get user profile
     const { data: profile } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('user_id', session.user.id)
+      .from("profiles")
+      .select("id")
+      .eq("user_id", session.user.id)
       .single();
 
     if (!profile) {
-      return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
+      return NextResponse.json({ error: "Profile not found" }, { status: 404 });
     }
 
     // Get user extensions with extension details
     const { data: userExtensions, error } = await supabase
-      .from('user_extensions')
-      .select(`
+      .from("user_extensions")
+      .select(
+        `
         *,
         extensions (
           id,
@@ -43,9 +51,10 @@ export async function GET(request: NextRequest) {
           is_active,
           is_featured
         )
-      `)
-      .eq('user_id', profile.id)
-      .order('created_at', { ascending: false });
+      `,
+      )
+      .eq("user_id", profile.id)
+      .order("created_at", { ascending: false });
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
@@ -53,78 +62,110 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ data: userExtensions });
   } catch (error) {
-    console.error('Error fetching user extensions:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error("Error fetching user extensions:", error);
+
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
     const cookieStore = cookies();
-    const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
-    
+    const supabase = createRouteHandlerClient<Database>({
+      cookies: () => cookieStore,
+    });
+
     // Get current user
-    const { data: { session }, error: authError } = await supabase.auth.getSession();
+    const {
+      data: { session },
+      error: authError,
+    } = await supabase.auth.getSession();
+
     if (authError || !session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { extensionId, connectionName, credentials, configuration = {} } = await request.json();
+    const {
+      extensionId,
+      connectionName,
+      credentials,
+      configuration = {},
+    } = await request.json();
 
     if (!extensionId || !connectionName || !credentials) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 },
+      );
     }
 
     // Get user profile
     const { data: profile } = await supabase
-      .from('profiles')
-      .select('id, tier')
-      .eq('user_id', session.user.id)
+      .from("profiles")
+      .select("id, tier")
+      .eq("user_id", session.user.id)
       .single();
 
     if (!profile) {
-      return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
+      return NextResponse.json({ error: "Profile not found" }, { status: 404 });
     }
 
     // Get extension details and check tier restrictions
     const { data: extension } = await supabase
-      .from('extensions')
-      .select('*')
-      .eq('id', extensionId)
+      .from("extensions")
+      .select("*")
+      .eq("id", extensionId)
       .single();
 
     if (!extension) {
-      return NextResponse.json({ error: 'Extension not found' }, { status: 404 });
+      return NextResponse.json(
+        { error: "Extension not found" },
+        { status: 404 },
+      );
     }
 
     // Check tier restrictions
-    const tierRestrictions = extension.tier_restrictions as Record<string, boolean>;
+    const tierRestrictions = extension.tier_restrictions as Record<
+      string,
+      boolean
+    >;
+
     if (tierRestrictions[profile.tier] !== true) {
-      return NextResponse.json({ 
-        error: 'Upgrade required',
-        message: `This extension requires ${Object.keys(tierRestrictions).find(tier => tierRestrictions[tier] === true)} tier or higher`
-      }, { status: 403 });
+      return NextResponse.json(
+        {
+          error: "Upgrade required",
+          message: `This extension requires ${Object.keys(tierRestrictions).find((tier) => tierRestrictions[tier] === true)} tier or higher`,
+        },
+        { status: 403 },
+      );
     }
 
     // Check if connection already exists
     const { data: existingConnection } = await supabase
-      .from('user_extensions')
-      .select('id')
-      .eq('user_id', profile.id)
-      .eq('extension_id', extensionId)
-      .eq('connection_name', connectionName)
+      .from("user_extensions")
+      .select("id")
+      .eq("user_id", profile.id)
+      .eq("extension_id", extensionId)
+      .eq("connection_name", connectionName)
       .single();
 
     if (existingConnection) {
-      return NextResponse.json({ 
-        error: 'Connection already exists',
-        message: 'A connection with this name already exists for this extension'
-      }, { status: 409 });
+      return NextResponse.json(
+        {
+          error: "Connection already exists",
+          message:
+            "A connection with this name already exists for this extension",
+        },
+        { status: 409 },
+      );
     }
 
     // Create user extension connection
     const { data: userExtension, error } = await supabase
-      .from('user_extensions')
+      .from("user_extensions")
       .insert({
         user_id: profile.id,
         extension_id: extensionId,
@@ -132,9 +173,10 @@ export async function POST(request: NextRequest) {
         credentials: credentials, // Should be encrypted in production
         configuration,
         is_enabled: true,
-        sync_status: 'pending'
+        sync_status: "pending",
       })
-      .select(`
+      .select(
+        `
         *,
         extensions (
           id,
@@ -149,7 +191,8 @@ export async function POST(request: NextRequest) {
           is_active,
           is_featured
         )
-      `)
+      `,
+      )
       .single();
 
     if (error) {
@@ -161,7 +204,11 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ data: userExtension });
   } catch (error) {
-    console.error('Error creating user extension:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error("Error creating user extension:", error);
+
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }

@@ -1,60 +1,83 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
-import type { Database } from '@/types/supabase';
-import { EncryptionService } from '@/lib/encryption';
+import type { Database } from "@/types/supabase";
+
+import { NextRequest, NextResponse } from "next/server";
+import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+import { cookies } from "next/headers";
+
+import { EncryptionService } from "@/lib/encryption";
 
 export async function POST(request: NextRequest) {
   try {
     const cookieStore = cookies();
-    const supabase = createRouteHandlerClient<Database>({ cookies: () => cookieStore });
-    
+    const supabase = createRouteHandlerClient<Database>({
+      cookies: () => cookieStore,
+    });
+
     // Get current user
-    const { data: { session }, error: authError } = await supabase.auth.getSession();
+    const {
+      data: { session },
+      error: authError,
+    } = await supabase.auth.getSession();
+
     if (authError || !session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { extensionId, connectionName, credentials } = await request.json();
 
     if (!extensionId || !connectionName || !credentials) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 },
+      );
     }
 
     // Get user profile
     const { data: profile } = await supabase
-      .from('profiles')
-      .select('id, tier')
-      .eq('user_id', session.user.id)
+      .from("profiles")
+      .select("id, tier")
+      .eq("user_id", session.user.id)
       .single();
 
     if (!profile) {
-      return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
+      return NextResponse.json({ error: "Profile not found" }, { status: 404 });
     }
 
     // Get extension details
     const { data: extension } = await supabase
-      .from('extensions')
-      .select('*')
-      .eq('id', extensionId)
+      .from("extensions")
+      .select("*")
+      .eq("id", extensionId)
       .single();
 
     if (!extension) {
-      return NextResponse.json({ error: 'Extension not found' }, { status: 404 });
+      return NextResponse.json(
+        { error: "Extension not found" },
+        { status: 404 },
+      );
     }
 
     // Check tier restrictions
-    const tierRestrictions = extension.tier_restrictions as Record<string, boolean>;
+    const tierRestrictions = extension.tier_restrictions as Record<
+      string,
+      boolean
+    >;
+
     if (tierRestrictions[profile.tier] !== true) {
-      return NextResponse.json({ error: 'Upgrade required for this extension' }, { status: 403 });
+      return NextResponse.json(
+        { error: "Upgrade required for this extension" },
+        { status: 403 },
+      );
     }
 
     // Encrypt credentials
-    const encryptedCredentials = EncryptionService.encrypt(JSON.stringify(credentials));
+    const encryptedCredentials = EncryptionService.encrypt(
+      JSON.stringify(credentials),
+    );
 
     // Create user extension connection
     const { data: userExtension, error } = await supabase
-      .from('user_extensions')
+      .from("user_extensions")
       .insert({
         user_id: profile.id,
         extension_id: extensionId,
@@ -62,7 +85,7 @@ export async function POST(request: NextRequest) {
         credentials: encryptedCredentials,
         configuration: {},
         is_enabled: true,
-        sync_status: 'pending'
+        sync_status: "pending",
       })
       .select()
       .single();
@@ -76,7 +99,11 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ data: userExtension });
   } catch (error) {
-    console.error('Error connecting extension:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error("Error connecting extension:", error);
+
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }

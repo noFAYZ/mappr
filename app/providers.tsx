@@ -4,6 +4,7 @@ import * as React from "react";
 import { HeroUIProvider } from "@heroui/react";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
 import { ErrorBoundary } from "@/components/layout/ErrorBoundary";
 
 const queryClient = new QueryClient({
@@ -30,13 +31,12 @@ export function Providers({ children }: ProvidersProps) {
       <QueryClientProvider client={queryClient}>
         <HeroUIProvider>
           <NextThemesProvider
+            disableTransitionOnChange
+            enableSystem
             attribute="class"
             defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
           >
             {children}
-           
           </NextThemesProvider>
         </HeroUIProvider>
       </QueryClientProvider>

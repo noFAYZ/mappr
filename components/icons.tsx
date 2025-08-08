@@ -1,72 +1,70 @@
-
 import * as React from "react";
 
-import { IconSvgProps } from "@/types";
 interface LogoLoaderProps extends React.SVGProps<SVGSVGElement> {
-    size?: number;
-    width?: number;
-    height?: number;
-  }
-  
-export function LogoLoader({ 
-    size = 24, 
-    width, 
-    height, 
-    ...props 
-  }: LogoLoaderProps) {
-    const svgWidth = size || width || 48;
-    const svgHeight = size || height || 48;
-    
-    return (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        width={svgWidth}
-        height={svgHeight}
-        preserveAspectRatio="xMidYMid meet"
-        {...props}
-      >
-        <defs>
-          <filter
-            id="gooey"
-            filterUnits="userSpaceOnUse"
-            x="-50%"
-            y="-50%"
-            width="200%"
-            height="200%"
-          >
-            <feGaussianBlur in="SourceGraphic" stdDeviation="1.5" result="blur" />
-            <feColorMatrix
-              in="blur"
-              mode="matrix"
-              values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7"
-              result="gooey"
-            />
-          </filter>
-          <filter
-            id="shadow"
-            filterUnits="userSpaceOnUse"
-            x="-50%"
-            y="-50%"
-            width="200%"
-            height="200%"
-          >
-            <feDropShadow
-              dx={0}
-              dy={0}
-              stdDeviation="0.5"
-              floodColor="#f97316"
-              floodOpacity="0.5"
-            />
-          </filter>
-          <linearGradient id="orangeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#ff9736" />
-            <stop offset="100%" stopColor="#f05d14" />
-          </linearGradient>
-        </defs>
-        <style
-          dangerouslySetInnerHTML={{
-            __html: `
+  size?: number;
+  width?: number;
+  height?: number;
+}
+
+export function LogoLoader({
+  size = 24,
+  width,
+  height,
+  ...props
+}: LogoLoaderProps) {
+  const svgWidth = size || width || 48;
+  const svgHeight = size || height || 48;
+
+  return (
+    <svg
+      height={svgHeight}
+      preserveAspectRatio="xMidYMid meet"
+      viewBox="0 0 24 24"
+      width={svgWidth}
+      xmlns="http://www.w3.org/2000/svg"
+      {...props}
+    >
+      <defs>
+        <filter
+          filterUnits="userSpaceOnUse"
+          height="200%"
+          id="gooey"
+          width="200%"
+          x="-50%"
+          y="-50%"
+        >
+          <feGaussianBlur in="SourceGraphic" result="blur" stdDeviation="1.5" />
+          <feColorMatrix
+            in="blur"
+            mode="matrix"
+            result="gooey"
+            values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7"
+          />
+        </filter>
+        <filter
+          filterUnits="userSpaceOnUse"
+          height="200%"
+          id="shadow"
+          width="200%"
+          x="-50%"
+          y="-50%"
+        >
+          <feDropShadow
+            dx={0}
+            dy={0}
+            floodColor="#f97316"
+            floodOpacity="0.5"
+            stdDeviation="0.5"
+          />
+        </filter>
+        <linearGradient id="orangeGradient" x1="0%" x2="100%" y1="0%" y2="100%">
+          <stop offset="0%" stopColor="#ff9736" />
+          <stop offset="100%" stopColor="#f05d14" />
+        </linearGradient>
+      </defs>
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
               @keyframes morphSquare {
                 0%, 5% { d: path('M7,7 h10 v10 h-10 z'); }
                 15%, 20% { d: path('M7,7 h10 v10 h-10 z'); transform: rotate(45deg) scale(0.9); }
@@ -168,122 +166,126 @@ export function LogoLoader({
                 transform-origin: 12px 12px;
                 animation: finalRotateAndSplash var(--animation-duration) cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
               }
-            `
-          }}
-        />
-        {/* Main container with gooey filter */}
-        <g className="container">
-          {/* Morphing square */}
-          <path className="square" d="M7,7 h10 v10 h-10 z" />
-          {/* Liquid blobs appearing as corners */}
-          <g id="finalShape">
-            <path id="blob1" className="blob" d="M8 5a3 3 0 1 0-3 3h3v-3z">
-              <animate
-                attributeName="d"
-                dur="2.2s"
-                repeatCount="indefinite"
-                values="M8 5a3 3 0 1 0-3 3h3v-3z;
+            `,
+        }}
+      />
+      {/* Main container with gooey filter */}
+      <g className="container">
+        {/* Morphing square */}
+        <path className="square" d="M7,7 h10 v10 h-10 z" />
+        {/* Liquid blobs appearing as corners */}
+        <g id="finalShape">
+          <path className="blob" d="M8 5a3 3 0 1 0-3 3h3v-3z" id="blob1">
+            <animate
+              attributeName="d"
+              calcMode="spline"
+              dur="2.2s"
+              keySplines="0.4 0 0.2 1; 0.4 0 0.2 1"
+              repeatCount="indefinite"
+              values="M8 5a3 3 0 1 0-3 3h3v-3z;
                        M8 5a3 3 0 1 0-3 3h3c0.5,-1 0,-2 0,-3z;
                        M8 5a3 3 0 1 0-3 3h3v-3z"
-                calcMode="spline"
-                keySplines="0.4 0 0.2 1; 0.4 0 0.2 1"
-              />
-            </path>
-            <path id="blob2" className="blob" d="M16 8h3a3 3 0 1 0-3-3v3z">
-              <animate
-                attributeName="d"
-                dur="2.2s"
-                repeatCount="indefinite"
-                values="M16 8h3a3 3 0 1 0-3-3v3z;
+            />
+          </path>
+          <path className="blob" d="M16 8h3a3 3 0 1 0-3-3v3z" id="blob2">
+            <animate
+              attributeName="d"
+              calcMode="spline"
+              dur="2.2s"
+              keySplines="0.4 0 0.2 1; 0.4 0 0.2 1"
+              repeatCount="indefinite"
+              values="M16 8h3a3 3 0 1 0-3-3v3z;
                        M16 8h3a3 3 0 1 0-3-3c-1,0.5 -2,0 -3,0 h3z;
                        M16 8h3a3 3 0 1 0-3-3v3z"
-                calcMode="spline"
-                keySplines="0.4 0 0.2 1; 0.4 0 0.2 1"
-              />
-            </path>
-            <path id="blob3" className="blob" d="M16 16h3a3 3 0 1 1-3 3v-3z">
-              <animate
-                attributeName="d"
-                dur="2.2s"
-                repeatCount="indefinite"
-                values="M16 16h3a3 3 0 1 1-3 3v-3z;
+            />
+          </path>
+          <path className="blob" d="M16 16h3a3 3 0 1 1-3 3v-3z" id="blob3">
+            <animate
+              attributeName="d"
+              calcMode="spline"
+              dur="2.2s"
+              keySplines="0.4 0 0.2 1; 0.4 0 0.2 1"
+              repeatCount="indefinite"
+              values="M16 16h3a3 3 0 1 1-3 3v-3z;
                        M16 16h3a3 3 0 1 1-3 3c-1,-0.5 -2,0 -3,0 h3z;
                        M16 16h3a3 3 0 1 1-3 3v-3z"
-                calcMode="spline"
-                keySplines="0.4 0 0.2 1; 0.4 0 0.2 1"
-              />
-            </path>
-            <path id="blob4" className="blob" d="M5 16a3 3 0 1 0 3 3v-3H5z">
-              <animate
-                attributeName="d"
-                dur="2.2s"
-                repeatCount="indefinite"
-                values="M5 16a3 3 0 1 0 3 3v-3H5z;
+            />
+          </path>
+          <path className="blob" d="M5 16a3 3 0 1 0 3 3v-3H5z" id="blob4">
+            <animate
+              attributeName="d"
+              calcMode="spline"
+              dur="2.2s"
+              keySplines="0.4 0 0.2 1; 0.4 0 0.2 1"
+              repeatCount="indefinite"
+              values="M5 16a3 3 0 1 0 3 3v-3H5z;
                        M5 16a3 3 0 1 0 3 3c0.5,-1 0,-2 0,-3H5z;
                        M5 16a3 3 0 1 0 3 3v-3H5z"
-                calcMode="spline"
-                keySplines="0.4 0 0.2 1; 0.4 0 0.2 1"
-              />
-            </path>
-          </g>
+            />
+          </path>
         </g>
-      </svg>
-    );
-  }
-  
-  
-  
-  export function SuccessLoader(props) {
-    return (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        width="100%"
-        height="100%"
-        preserveAspectRatio="xMidYMid meet"
-        {...props}
-      >
-        <defs>
-          <filter
-            id="gooey-check"
-            filterUnits="userSpaceOnUse"
-            x="-50%"
-            y="-50%"
-            width="200%"
-            height="200%"
-          >
-            <feGaussianBlur in="SourceGraphic" stdDeviation="1.5" result="blur" />
-            <feColorMatrix
-              in="blur"
-              mode="matrix"
-              values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7"
-              result="gooey"
-            />
-          </filter>
-          <filter
-            id="shadow-check"
-            filterUnits="userSpaceOnUse"
-            x="-50%"
-            y="-50%"
-            width="200%"
-            height="200%"
-          >
-            <feDropShadow
-              dx={0}
-              dy={0}
-              stdDeviation="0.5"
-              floodColor="#f97316"
-              floodOpacity="0.5"
-            />
-          </filter>
-          <linearGradient id="orangeGradient-check" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#ff9736" />
-            <stop offset="100%" stopColor="#f05d14" />
-          </linearGradient>
-        </defs>
-        <style
-          dangerouslySetInnerHTML={{
-            __html: `
+      </g>
+    </svg>
+  );
+}
+
+export function SuccessLoader(props) {
+  return (
+    <svg
+      height="100%"
+      preserveAspectRatio="xMidYMid meet"
+      viewBox="0 0 24 24"
+      width="100%"
+      xmlns="http://www.w3.org/2000/svg"
+      {...props}
+    >
+      <defs>
+        <filter
+          filterUnits="userSpaceOnUse"
+          height="200%"
+          id="gooey-check"
+          width="200%"
+          x="-50%"
+          y="-50%"
+        >
+          <feGaussianBlur in="SourceGraphic" result="blur" stdDeviation="1.5" />
+          <feColorMatrix
+            in="blur"
+            mode="matrix"
+            result="gooey"
+            values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7"
+          />
+        </filter>
+        <filter
+          filterUnits="userSpaceOnUse"
+          height="200%"
+          id="shadow-check"
+          width="200%"
+          x="-50%"
+          y="-50%"
+        >
+          <feDropShadow
+            dx={0}
+            dy={0}
+            floodColor="#f97316"
+            floodOpacity="0.5"
+            stdDeviation="0.5"
+          />
+        </filter>
+        <linearGradient
+          id="orangeGradient-check"
+          x1="0%"
+          x2="100%"
+          y1="0%"
+          y2="100%"
+        >
+          <stop offset="0%" stopColor="#ff9736" />
+          <stop offset="100%" stopColor="#f05d14" />
+        </linearGradient>
+      </defs>
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
           @keyframes morphToCheck {
             0%, 5% { d: path('M7,7 h10 v10 h-10 z'); }
             15%, 20% { d: path('M7,7 h10 v10 h-10 z'); transform: rotate(45deg) scale(0.9); }
@@ -352,164 +354,172 @@ export function LogoLoader({
             fill: url(#orangeGradient-check);
             filter: url(#shadow-check);
           }
-        `
-          }}
-        />
-        {/* Container with gooey filter */}
-        <g className="container-check">
-          <g id="check-finalShape">
-            {/* Morphing square to check */}
-            <path className="checkmark" d="M7,7 h10 v10 h-10 z" />
-            
-            {/* Small blob effects that appear briefly during the animation */}
-            <circle className="blob-effect" cx="7" cy="7" r="0">
-              <animate
-                attributeName="r"
-                begin="0s"
-                dur="2.2s"
-                values="0;1.5;1;0.5;0"
-                keyTimes="0;0.3;0.4;0.5;0.6"
-                calcMode="spline"
-                keySplines="0.4 0 0.2 1; 0.4 0 0.2 1; 0.4 0 0.2 1; 0.4 0 0.2 1"
-                fill="freeze"
-              />
-              <animate
-                attributeName="opacity"
-                begin="0s"
-                dur="2.2s"
-                values="0;0.2;0.4;0.6;0"
-                keyTimes="0;0.3;0.4;0.5;0.6"
-                calcMode="spline"
-                keySplines="0.4 0 0.2 1; 0.4 0 0.2 1; 0.4 0 0.2 1; 0.4 0 0.2 1"
-                fill="freeze"
-              />
-            </circle>
-            
-            <circle className="blob-effect" cx="17" cy="7" r="0">
-              <animate
-                attributeName="r"
-                begin="0.1s"
-                dur="2.2s"
-                values="0;1.5;1;0.5;0"
-                keyTimes="0;0.3;0.4;0.5;0.6"
-                calcMode="spline"
-                keySplines="0.4 0 0.2 1; 0.4 0 0.2 1; 0.4 0 0.2 1; 0.4 0 0.2 1"
-                fill="freeze"
-              />
-              <animate
-                attributeName="opacity"
-                begin="0.1s"
-                dur="2.2s"
-                values="0;0.2;0.4;0.6;0"
-                keyTimes="0;0.3;0.4;0.5;0.6"
-                calcMode="spline" 
-                keySplines="0.4 0 0.2 1; 0.4 0 0.2 1; 0.4 0 0.2 1; 0.4 0 0.2 1"
-                fill="freeze"
-              />
-            </circle>
-            
-            <circle className="blob-effect" cx="17" cy="17" r="0">
-              <animate
-                attributeName="r"
-                begin="0.2s"
-                dur="2.2s"
-                values="0;1.5;1;0.5;0"
-                keyTimes="0;0.3;0.4;0.5;0.6"
-                calcMode="spline"
-                keySplines="0.4 0 0.2 1; 0.4 0 0.2 1; 0.4 0 0.2 1; 0.4 0 0.2 1"
-                fill="freeze"
-              />
-              <animate
-                attributeName="opacity"
-                begin="0.2s"
-                dur="2.2s"
-                values="0;0.2;0.4;0.6;0"
-                keyTimes="0;0.3;0.4;0.5;0.6"
-                calcMode="spline"
-                keySplines="0.4 0 0.2 1; 0.4 0 0.2 1; 0.4 0 0.2 1; 0.4 0 0.2 1"
-                fill="freeze"
-              />
-            </circle>
-            
-            <circle className="blob-effect" cx="7" cy="17" r="0">
-              <animate
-                attributeName="r"
-                begin="0.3s"
-                dur="2.2s"
-                values="0;1.5;1;0.5;0"
-                keyTimes="0;0.3;0.4;0.5;0.6"
-                calcMode="spline"
-                keySplines="0.4 0 0.2 1; 0.4 0 0.2 1; 0.4 0 0.2 1; 0.4 0 0.2 1"
-                fill="freeze"
-              />
-              <animate
-                attributeName="opacity"
-                begin="0.3s"
-                dur="2.2s"
-                values="0;0.2;0.4;0.6;0"
-                keyTimes="0;0.3;0.4;0.5;0.6"
-                calcMode="spline"
-                keySplines="0.4 0 0.2 1; 0.4 0 0.2 1; 0.4 0 0.2 1; 0.4 0 0.2 1"
-                fill="freeze"
-              />
-            </circle>
-          </g>
+        `,
+        }}
+      />
+      {/* Container with gooey filter */}
+      <g className="container-check">
+        <g id="check-finalShape">
+          {/* Morphing square to check */}
+          <path className="checkmark" d="M7,7 h10 v10 h-10 z" />
+
+          {/* Small blob effects that appear briefly during the animation */}
+          <circle className="blob-effect" cx="7" cy="7" r="0">
+            <animate
+              attributeName="r"
+              begin="0s"
+              calcMode="spline"
+              dur="2.2s"
+              fill="freeze"
+              keySplines="0.4 0 0.2 1; 0.4 0 0.2 1; 0.4 0 0.2 1; 0.4 0 0.2 1"
+              keyTimes="0;0.3;0.4;0.5;0.6"
+              values="0;1.5;1;0.5;0"
+            />
+            <animate
+              attributeName="opacity"
+              begin="0s"
+              calcMode="spline"
+              dur="2.2s"
+              fill="freeze"
+              keySplines="0.4 0 0.2 1; 0.4 0 0.2 1; 0.4 0 0.2 1; 0.4 0 0.2 1"
+              keyTimes="0;0.3;0.4;0.5;0.6"
+              values="0;0.2;0.4;0.6;0"
+            />
+          </circle>
+
+          <circle className="blob-effect" cx="17" cy="7" r="0">
+            <animate
+              attributeName="r"
+              begin="0.1s"
+              calcMode="spline"
+              dur="2.2s"
+              fill="freeze"
+              keySplines="0.4 0 0.2 1; 0.4 0 0.2 1; 0.4 0 0.2 1; 0.4 0 0.2 1"
+              keyTimes="0;0.3;0.4;0.5;0.6"
+              values="0;1.5;1;0.5;0"
+            />
+            <animate
+              attributeName="opacity"
+              begin="0.1s"
+              calcMode="spline"
+              dur="2.2s"
+              fill="freeze"
+              keySplines="0.4 0 0.2 1; 0.4 0 0.2 1; 0.4 0 0.2 1; 0.4 0 0.2 1"
+              keyTimes="0;0.3;0.4;0.5;0.6"
+              values="0;0.2;0.4;0.6;0"
+            />
+          </circle>
+
+          <circle className="blob-effect" cx="17" cy="17" r="0">
+            <animate
+              attributeName="r"
+              begin="0.2s"
+              calcMode="spline"
+              dur="2.2s"
+              fill="freeze"
+              keySplines="0.4 0 0.2 1; 0.4 0 0.2 1; 0.4 0 0.2 1; 0.4 0 0.2 1"
+              keyTimes="0;0.3;0.4;0.5;0.6"
+              values="0;1.5;1;0.5;0"
+            />
+            <animate
+              attributeName="opacity"
+              begin="0.2s"
+              calcMode="spline"
+              dur="2.2s"
+              fill="freeze"
+              keySplines="0.4 0 0.2 1; 0.4 0 0.2 1; 0.4 0 0.2 1; 0.4 0 0.2 1"
+              keyTimes="0;0.3;0.4;0.5;0.6"
+              values="0;0.2;0.4;0.6;0"
+            />
+          </circle>
+
+          <circle className="blob-effect" cx="7" cy="17" r="0">
+            <animate
+              attributeName="r"
+              begin="0.3s"
+              calcMode="spline"
+              dur="2.2s"
+              fill="freeze"
+              keySplines="0.4 0 0.2 1; 0.4 0 0.2 1; 0.4 0 0.2 1; 0.4 0 0.2 1"
+              keyTimes="0;0.3;0.4;0.5;0.6"
+              values="0;1.5;1;0.5;0"
+            />
+            <animate
+              attributeName="opacity"
+              begin="0.3s"
+              calcMode="spline"
+              dur="2.2s"
+              fill="freeze"
+              keySplines="0.4 0 0.2 1; 0.4 0 0.2 1; 0.4 0 0.2 1; 0.4 0 0.2 1"
+              keyTimes="0;0.3;0.4;0.5;0.6"
+              values="0;0.2;0.4;0.6;0"
+            />
+          </circle>
         </g>
-      </svg>
-    );
-  }
-  
-  export function FailLoader(props: JSX.IntrinsicAttributes & React.SVGProps<SVGSVGElement>) {
-    return (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        width="100%"
-        height="100%"
-        preserveAspectRatio="xMidYMid meet"
-        {...props}
-      >
-        <defs>
-          <filter
-            id="gooey-fail"
-            filterUnits="userSpaceOnUse"
-            x="-50%"
-            y="-50%"
-            width="200%"
-            height="200%"
-          >
-            <feGaussianBlur in="SourceGraphic" stdDeviation="1.5" result="blur" />
-            <feColorMatrix
-              in="blur"
-              mode="matrix"
-              values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7"
-              result="gooey"
-            />
-          </filter>
-          <filter
-            id="shadow-fail"
-            filterUnits="userSpaceOnUse"
-            x="-50%"
-            y="-50%"
-            width="200%"
-            height="200%"
-          >
-            <feDropShadow
-              dx={0}
-              dy={0}
-              stdDeviation="0.5"
-              floodColor="#f97316"
-              floodOpacity="0.5"
-            />
-          </filter>
-          <linearGradient id="orangeGradient-fail" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#ff9736" />
-            <stop offset="100%" stopColor="#f05d14" />
-          </linearGradient>
-        </defs>
-        <style
-          dangerouslySetInnerHTML={{
-            __html: `
+      </g>
+    </svg>
+  );
+}
+
+export function FailLoader(
+  props: JSX.IntrinsicAttributes & React.SVGProps<SVGSVGElement>,
+) {
+  return (
+    <svg
+      height="100%"
+      preserveAspectRatio="xMidYMid meet"
+      viewBox="0 0 24 24"
+      width="100%"
+      xmlns="http://www.w3.org/2000/svg"
+      {...props}
+    >
+      <defs>
+        <filter
+          filterUnits="userSpaceOnUse"
+          height="200%"
+          id="gooey-fail"
+          width="200%"
+          x="-50%"
+          y="-50%"
+        >
+          <feGaussianBlur in="SourceGraphic" result="blur" stdDeviation="1.5" />
+          <feColorMatrix
+            in="blur"
+            mode="matrix"
+            result="gooey"
+            values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7"
+          />
+        </filter>
+        <filter
+          filterUnits="userSpaceOnUse"
+          height="200%"
+          id="shadow-fail"
+          width="200%"
+          x="-50%"
+          y="-50%"
+        >
+          <feDropShadow
+            dx={0}
+            dy={0}
+            floodColor="#f97316"
+            floodOpacity="0.5"
+            stdDeviation="0.5"
+          />
+        </filter>
+        <linearGradient
+          id="orangeGradient-fail"
+          x1="0%"
+          x2="100%"
+          y1="0%"
+          y2="100%"
+        >
+          <stop offset="0%" stopColor="#ff9736" />
+          <stop offset="100%" stopColor="#f05d14" />
+        </linearGradient>
+      </defs>
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
           @keyframes morphToX {
             0%, 5% { d: path('M7,7 h10 v10 h-10 z'); }
             15%, 20% { d: path('M7,7 h10 v10 h-10 z'); transform: rotate(45deg) scale(0.9); }
@@ -630,144 +640,151 @@ export function LogoLoader({
             transform-origin: 12px 12px;
             animation: finalShake var(--animation-duration) cubic-bezier(0.45, 0.05, 0.55, 0.95) forwards;
           }
-        `
-          }}
-        />
-        {/* Main container with gooey filter */}
-        <g className="container-fail">
-          {/* Morphing square to X */}
-          <path className="xmark" d="M7,7 h10 v10 h-10 z" />
-          {/* Liquid blobs appearing as corners */}
-          <g id="fail-finalShape">
-            <path id="fail-blob1" className="blob-fail" d="M8 5a3 3 0 1 0-3 3h3v-3z">
-              <animate
-                attributeName="d"
-                dur="2.2s"
-                fill="freeze"
-                values="M8 5a3 3 0 1 0-3 3h3v-3z;
+        `,
+        }}
+      />
+      {/* Main container with gooey filter */}
+      <g className="container-fail">
+        {/* Morphing square to X */}
+        <path className="xmark" d="M7,7 h10 v10 h-10 z" />
+        {/* Liquid blobs appearing as corners */}
+        <g id="fail-finalShape">
+          <path
+            className="blob-fail"
+            d="M8 5a3 3 0 1 0-3 3h3v-3z"
+            id="fail-blob1"
+          >
+            <animate
+              attributeName="d"
+              calcMode="spline"
+              dur="2.2s"
+              fill="freeze"
+              keySplines="0.4 0 0.2 1; 0.4 0 0.2 1"
+              values="M8 5a3 3 0 1 0-3 3h3v-3z;
                        M8 5a3 3 0 1 0-3 3h3c0.5,-1 0,-2 0,-3z;
                        M8 5a3 3 0 1 0-3 3h3v-3z"
-                calcMode="spline"
-                keySplines="0.4 0 0.2 1; 0.4 0 0.2 1"
-              />
-            </path>
-            <path id="fail-blob2" className="blob-fail" d="M16 8h3a3 3 0 1 0-3-3v3z">
-              <animate
-                attributeName="d"
-                dur="2.2s"
-                repeatCount="indefinite"
-                values="M16 8h3a3 3 0 1 0-3-3v3z;
+            />
+          </path>
+          <path
+            className="blob-fail"
+            d="M16 8h3a3 3 0 1 0-3-3v3z"
+            id="fail-blob2"
+          >
+            <animate
+              attributeName="d"
+              calcMode="spline"
+              dur="2.2s"
+              keySplines="0.4 0 0.2 1; 0.4 0 0.2 1"
+              repeatCount="indefinite"
+              values="M16 8h3a3 3 0 1 0-3-3v3z;
                        M16 8h3a3 3 0 1 0-3-3c-1,0.5 -2,0 -3,0 h3z;
                        M16 8h3a3 3 0 1 0-3-3v3z"
-                calcMode="spline"
-                keySplines="0.4 0 0.2 1; 0.4 0 0.2 1"
-              />
-            </path>
-            <path id="fail-blob3" className="blob-fail" d="M16 16h3a3 3 0 1 1-3 3v-3z">
-              <animate
-                attributeName="d"
-                dur="2.2s"
-                repeatCount="indefinite"
-                values="M16 16h3a3 3 0 1 1-3 3v-3z;
+            />
+          </path>
+          <path
+            className="blob-fail"
+            d="M16 16h3a3 3 0 1 1-3 3v-3z"
+            id="fail-blob3"
+          >
+            <animate
+              attributeName="d"
+              calcMode="spline"
+              dur="2.2s"
+              keySplines="0.4 0 0.2 1; 0.4 0 0.2 1"
+              repeatCount="indefinite"
+              values="M16 16h3a3 3 0 1 1-3 3v-3z;
                        M16 16h3a3 3 0 1 1-3 3c-1,-0.5 -2,0 -3,0 h3z;
                        M16 16h3a3 3 0 1 1-3 3v-3z"
-                calcMode="spline"
-                keySplines="0.4 0 0.2 1; 0.4 0 0.2 1"
-              />
-            </path>
-            <path id="fail-blob4" className="blob-fail" d="M5 16a3 3 0 1 0 3 3v-3H5z">
-              <animate
-                attributeName="d"
-                dur="2.2s"
-                repeatCount="indefinite"
-                values="M5 16a3 3 0 1 0 3 3v-3H5z;
+            />
+          </path>
+          <path
+            className="blob-fail"
+            d="M5 16a3 3 0 1 0 3 3v-3H5z"
+            id="fail-blob4"
+          >
+            <animate
+              attributeName="d"
+              calcMode="spline"
+              dur="2.2s"
+              keySplines="0.4 0 0.2 1; 0.4 0 0.2 1"
+              repeatCount="indefinite"
+              values="M5 16a3 3 0 1 0 3 3v-3H5z;
                        M5 16a3 3 0 1 0 3 3c0.5,-1 0,-2 0,-3H5z;
                        M5 16a3 3 0 1 0 3 3v-3H5z"
-                calcMode="spline"
-                keySplines="0.4 0 0.2 1; 0.4 0 0.2 1"
-              />
-            </path>
-          </g>
-        </g>
-      </svg>
-    );
-  }
-  
-  
-  export function LogoMappr(props: React.SVGProps<SVGSVGElement>) {
-    return (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        width="100%"
-        height="100%"
-        preserveAspectRatio="xMidYMid meet"
-        {...props}
-      >
-        <defs>
-          <filter
-            id="gooey"
-            filterUnits="userSpaceOnUse"
-            x="-50%"
-            y="-50%"
-            width="200%"
-            height="200%"
-          >
-            <feGaussianBlur in="SourceGraphic" stdDeviation="1.5" result="blur" />
-            <feColorMatrix
-              in="blur"
-              mode="matrix"
-              values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7"
-              result="gooey"
             />
-          </filter>
-          <filter
-            id="shadow"
-            filterUnits="userSpaceOnUse"
-            x="-50%"
-            y="-50%"
-            width="200%"
-            height="200%"
-          >
-            <feDropShadow
-              dx={0}
-              dy={0}
-              stdDeviation="0.5"
-              floodColor="#f97316"
-              floodOpacity="0.5"
-            />
-          </filter>
-          <linearGradient id="orangeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#ff9736" />
-            <stop offset="100%" stopColor="#f05d14" />
-          </linearGradient>
-        </defs>
-        <style
-          dangerouslySetInnerHTML={{
-            __html:
-              "\n    @keyframes morphSquare {\n      0%, 5% { d: path('M7,7 h10 v10 h-10 z'); }\n      15%, 20% { d: path('M7,7 h10 v10 h-10 z'); transform: rotate(45deg) scale(0.9); }\n      30% { d: path('M7,7 h10 v10 h-10 z'); transform: rotate(90deg) scale(1.1); }\n      40%, 100% { d: path('M7,7 h10 v10 h-10 z'); transform: rotate(90deg) scale(1); }\n    }\n    \n    @keyframes blob1Appear {\n      0%, 30% { transform: translate(0, 0) scale(0); opacity: 0; }\n      40% { transform: translate(-2px, -2px) scale(0.7); opacity: 1; filter: blur(1px); }\n      50% { transform: translate(-1px, -1px) scale(1.2); opacity: 1; filter: blur(0); }\n      60%, 100% { transform: translate(0, 0) scale(1); opacity: 1; }\n    }\n    \n    @keyframes blob2Appear {\n      0%, 35% { transform: translate(0, 0) scale(0); opacity: 0; }\n      45% { transform: translate(2px, -2px) scale(0.7); opacity: 1; filter: blur(1px); }\n      55% { transform: translate(1px, -1px) scale(1.2); opacity: 1; filter: blur(0); }\n      65%, 100% { transform: translate(0, 0) scale(1); opacity: 1; }\n    }\n    \n    @keyframes blob3Appear {\n      0%, 40% { transform: translate(0, 0) scale(0); opacity: 0; }\n      50% { transform: translate(2px, 2px) scale(0.7); opacity: 1; filter: blur(1px); }\n      60% { transform: translate(1px, 1px) scale(1.2); opacity: 1; filter: blur(0); }\n      70%, 100% { transform: translate(0, 0) scale(1); opacity: 1; }\n    }\n    \n    @keyframes blob4Appear {\n      0%, 45% { transform: translate(0, 0) scale(0); opacity: 0; }\n      55% { transform: translate(-2px, 2px) scale(0.7); opacity: 1; filter: blur(1px); }\n      65% { transform: translate(-1px, 1px) scale(1.2); opacity: 1; filter: blur(0); }\n      75%, 100% { transform: translate(0, 0) scale(1); opacity: 1; }\n    }\n    \n    @keyframes finalRotateAndSplash {\n      0%, 70% { transform: rotate(0deg) scale(1); }\n      75% { transform: rotate(90deg) scale(1.05); }\n      80% { transform: rotate(180deg) scale(0.95); }\n      85% { transform: rotate(270deg) scale(1.02); }\n      90%, 100% { transform: rotate(360deg) scale(1); }\n    }\n    \n    @keyframes pulse {\n      0%, 100% { filter: brightness(1); }\n      50% { filter: brightness(1.2); }\n    }\n    \n    @keyframes restart {\n      0%, 95% { opacity: 1; }\n      97.5% { opacity: 0.7; }\n      100% { opacity: 1; }\n    }\n    \n    :root {\n       }\n        .container {\n           filter: url(#gooey);\n    }\n      .square {\n      fill: url(#orangeGradient);\n      transform-origin: 12px 12px;\n   }\n     .blob {\n      fill: url(#orangeGradient);\n      transform-origin: 12px 12px;\n      filter: url(#shadow);\n    }  "
-          }}
-        />
-        {/* Main container with gooey filter */}
-        <g className="container">
-          {/* Morphing square */}
-          <path className="square" d="M7,7 h10 v10 h-10 z" />
-          {/* Liquid blobs appearing as corners */}
-          <g id="finalShape">
-            <path id="blob1" className="blob" d="M8 5a3 3 0 1 0-3 3h3v-3z">
-             
-            </path>
-            <path id="blob2" className="blob" d="M16 8h3a3 3 0 1 0-3-3v3z">
-         
-            </path>
-            <path id="blob3" className="blob" d="M16 16h3a3 3 0 1 1-3 3v-3z">
-         
-            </path>
-            <path id="blob4" className="blob" d="M5 16a3 3 0 1 0 3 3v-3H5z">
-        
-            </path>
-          </g>
+          </path>
         </g>
-      </svg>
-    );
-  }
+      </g>
+    </svg>
+  );
+}
+
+export function LogoMappr(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      height="100%"
+      preserveAspectRatio="xMidYMid meet"
+      viewBox="0 0 24 24"
+      width="100%"
+      xmlns="http://www.w3.org/2000/svg"
+      {...props}
+    >
+      <defs>
+        <filter
+          filterUnits="userSpaceOnUse"
+          height="200%"
+          id="gooey"
+          width="200%"
+          x="-50%"
+          y="-50%"
+        >
+          <feGaussianBlur in="SourceGraphic" result="blur" stdDeviation="1.5" />
+          <feColorMatrix
+            in="blur"
+            mode="matrix"
+            result="gooey"
+            values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7"
+          />
+        </filter>
+        <filter
+          filterUnits="userSpaceOnUse"
+          height="200%"
+          id="shadow"
+          width="200%"
+          x="-50%"
+          y="-50%"
+        >
+          <feDropShadow
+            dx={0}
+            dy={0}
+            floodColor="#f97316"
+            floodOpacity="0.5"
+            stdDeviation="0.5"
+          />
+        </filter>
+        <linearGradient id="orangeGradient" x1="0%" x2="100%" y1="0%" y2="100%">
+          <stop offset="0%" stopColor="#ff9736" />
+          <stop offset="100%" stopColor="#f05d14" />
+        </linearGradient>
+      </defs>
+      <style
+        dangerouslySetInnerHTML={{
+          __html:
+            "\n    @keyframes morphSquare {\n      0%, 5% { d: path('M7,7 h10 v10 h-10 z'); }\n      15%, 20% { d: path('M7,7 h10 v10 h-10 z'); transform: rotate(45deg) scale(0.9); }\n      30% { d: path('M7,7 h10 v10 h-10 z'); transform: rotate(90deg) scale(1.1); }\n      40%, 100% { d: path('M7,7 h10 v10 h-10 z'); transform: rotate(90deg) scale(1); }\n    }\n    \n    @keyframes blob1Appear {\n      0%, 30% { transform: translate(0, 0) scale(0); opacity: 0; }\n      40% { transform: translate(-2px, -2px) scale(0.7); opacity: 1; filter: blur(1px); }\n      50% { transform: translate(-1px, -1px) scale(1.2); opacity: 1; filter: blur(0); }\n      60%, 100% { transform: translate(0, 0) scale(1); opacity: 1; }\n    }\n    \n    @keyframes blob2Appear {\n      0%, 35% { transform: translate(0, 0) scale(0); opacity: 0; }\n      45% { transform: translate(2px, -2px) scale(0.7); opacity: 1; filter: blur(1px); }\n      55% { transform: translate(1px, -1px) scale(1.2); opacity: 1; filter: blur(0); }\n      65%, 100% { transform: translate(0, 0) scale(1); opacity: 1; }\n    }\n    \n    @keyframes blob3Appear {\n      0%, 40% { transform: translate(0, 0) scale(0); opacity: 0; }\n      50% { transform: translate(2px, 2px) scale(0.7); opacity: 1; filter: blur(1px); }\n      60% { transform: translate(1px, 1px) scale(1.2); opacity: 1; filter: blur(0); }\n      70%, 100% { transform: translate(0, 0) scale(1); opacity: 1; }\n    }\n    \n    @keyframes blob4Appear {\n      0%, 45% { transform: translate(0, 0) scale(0); opacity: 0; }\n      55% { transform: translate(-2px, 2px) scale(0.7); opacity: 1; filter: blur(1px); }\n      65% { transform: translate(-1px, 1px) scale(1.2); opacity: 1; filter: blur(0); }\n      75%, 100% { transform: translate(0, 0) scale(1); opacity: 1; }\n    }\n    \n    @keyframes finalRotateAndSplash {\n      0%, 70% { transform: rotate(0deg) scale(1); }\n      75% { transform: rotate(90deg) scale(1.05); }\n      80% { transform: rotate(180deg) scale(0.95); }\n      85% { transform: rotate(270deg) scale(1.02); }\n      90%, 100% { transform: rotate(360deg) scale(1); }\n    }\n    \n    @keyframes pulse {\n      0%, 100% { filter: brightness(1); }\n      50% { filter: brightness(1.2); }\n    }\n    \n    @keyframes restart {\n      0%, 95% { opacity: 1; }\n      97.5% { opacity: 0.7; }\n      100% { opacity: 1; }\n    }\n    \n    :root {\n       }\n        .container {\n           filter: url(#gooey);\n    }\n      .square {\n      fill: url(#orangeGradient);\n      transform-origin: 12px 12px;\n   }\n     .blob {\n      fill: url(#orangeGradient);\n      transform-origin: 12px 12px;\n      filter: url(#shadow);\n    }  ",
+        }}
+      />
+      {/* Main container with gooey filter */}
+      <g className="container">
+        {/* Morphing square */}
+        <path className="square" d="M7,7 h10 v10 h-10 z" />
+        {/* Liquid blobs appearing as corners */}
+        <g id="finalShape">
+          <path className="blob" d="M8 5a3 3 0 1 0-3 3h3v-3z" id="blob1" />
+          <path className="blob" d="M16 8h3a3 3 0 1 0-3-3v3z" id="blob2" />
+          <path className="blob" d="M16 16h3a3 3 0 1 1-3 3v-3z" id="blob3" />
+          <path className="blob" d="M5 16a3 3 0 1 0 3 3v-3H5z" id="blob4" />
+        </g>
+      </g>
+    </svg>
+  );
+}

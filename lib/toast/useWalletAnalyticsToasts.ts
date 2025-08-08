@@ -1,5 +1,5 @@
 // lib/toast/useWalletAnalyticsToasts.ts
-import { useToastManager } from './useToastManager';
+import { useToastManager } from "./useToastManager";
 
 // Wallet Analytics Integration Hook
 export const useWalletAnalyticsToasts = () => {
@@ -11,15 +11,22 @@ export const useWalletAnalyticsToasts = () => {
       return toast.walletSync.started(walletName, walletAddress);
     },
 
-    onSyncComplete: (walletName: string, data: { 
-      totalValue?: number; 
-      change?: number; 
-      changePercent?: number;
-      transactionCount?: number;
-    }) => {
+    onSyncComplete: (
+      walletName: string,
+      data: {
+        totalValue?: number;
+        change?: number;
+        changePercent?: number;
+        transactionCount?: number;
+      },
+    ) => {
       // Show success toast
-      const toastId = toast.walletSync.completed(walletName, data.totalValue, data.change);
-      
+      const toastId = toast.walletSync.completed(
+        walletName,
+        data.totalValue,
+        data.change,
+      );
+
       // Show performance alert if significant change
       if (data.changePercent && Math.abs(data.changePercent) >= 5) {
         setTimeout(() => {
@@ -44,15 +51,30 @@ export const useWalletAnalyticsToasts = () => {
     },
 
     // Transaction notifications
-    onTransaction: (type: 'sent' | 'received', amount: number, token: string, hash: string) => {
+    onTransaction: (
+      type: "sent" | "received",
+      amount: number,
+      token: string,
+      hash: string,
+    ) => {
       return toast.transaction.detected(type, amount, token, hash);
     },
 
-    onTransactionConfirmed: (type: 'sent' | 'received', amount: number, token: string, confirmations: number) => {
+    onTransactionConfirmed: (
+      type: "sent" | "received",
+      amount: number,
+      token: string,
+      confirmations: number,
+    ) => {
       return toast.transaction.confirmed(type, amount, token, confirmations);
     },
 
-    onTransactionPending: (type: 'sent' | 'received', amount: number, token: string, hash: string) => {
+    onTransactionPending: (
+      type: "sent" | "received",
+      amount: number,
+      token: string,
+      hash: string,
+    ) => {
       return toast.transaction.pending(type, amount, token, hash);
     },
 
@@ -66,26 +88,39 @@ export const useWalletAnalyticsToasts = () => {
     },
 
     // Security alerts
-    onSecurityAlert: (message: string, severity: 'low' | 'medium' | 'high' = 'medium') => {
+    onSecurityAlert: (
+      message: string,
+      severity: "low" | "medium" | "high" = "medium",
+    ) => {
       return toast.system.securityAlert(message, severity);
     },
 
     // Achievement unlocks
-    onAchievement: (achievement: string, rarity: 'common' | 'rare' | 'legendary' = 'common') => {
+    onAchievement: (
+      achievement: string,
+      rarity: "common" | "rare" | "legendary" = "common",
+    ) => {
       return toast.social.achievement(achievement, rarity);
     },
 
     // Risk warnings
-    onRiskWarning: (walletName: string, riskLevel: 'low' | 'medium' | 'high', details: string) => {
+    onRiskWarning: (
+      walletName: string,
+      riskLevel: "low" | "medium" | "high",
+      details: string,
+    ) => {
       return toast.performance.riskWarning(walletName, riskLevel, details);
     },
 
     // Data operations
-    onDataExportStart: (type: 'portfolio' | 'transactions' | 'tax') => {
+    onDataExportStart: (type: "portfolio" | "transactions" | "tax") => {
       return toast.data.exportStarted(type);
     },
 
-    onDataExportComplete: (type: 'portfolio' | 'transactions' | 'tax', downloadUrl: string) => {
+    onDataExportComplete: (
+      type: "portfolio" | "transactions" | "tax",
+      downloadUrl: string,
+    ) => {
       return toast.data.exportComplete(type, downloadUrl);
     },
 
@@ -175,7 +210,11 @@ export const useWalletAnalyticsToasts = () => {
       return toast.showDelayed(delay, toastData);
     },
 
-    showRetryableAction: (toastData: any, retryFn: () => Promise<boolean>, maxRetries: number = 3) => {
+    showRetryableAction: (
+      toastData: any,
+      retryFn: () => Promise<boolean>,
+      maxRetries: number = 3,
+    ) => {
       return toast.showWithRetry(toastData, retryFn, maxRetries);
     },
 
@@ -195,7 +234,7 @@ export const useWalletAnalyticsToasts = () => {
 
     updateToast: (id: string, updates: any) => {
       return toast.updateToast(id, updates);
-    }
+    },
   };
 };
 

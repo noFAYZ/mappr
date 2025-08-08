@@ -1,6 +1,7 @@
-import { useAuth } from '@/contexts/AuthContext';
-import { authDebugger } from '@/lib/utils/auth/auth-debug';
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
+
+import { useAuth } from "@/contexts/AuthContext";
+import { authDebugger } from "@/lib/utils/auth/auth-debug";
 
 export function useAuthWithDebug() {
   const auth = useAuth();
@@ -8,9 +9,10 @@ export function useAuthWithDebug() {
 
   useEffect(() => {
     // Only run debug info collection in development
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === "development") {
       const updateDebugInfo = async () => {
         const info = await authDebugger.getCurrentAuthInfo();
+
         setDebugInfo(info);
       };
 
@@ -25,6 +27,6 @@ export function useAuthWithDebug() {
 
   return {
     ...auth,
-    debugInfo: process.env.NODE_ENV === 'development' ? debugInfo : null,
+    debugInfo: process.env.NODE_ENV === "development" ? debugInfo : null,
   };
 }

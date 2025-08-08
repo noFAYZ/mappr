@@ -1,8 +1,10 @@
 // lib/toast/useToastManager.ts
-import { useModernToast, Toast, ToastAction } from '@/components/ui/Toaster';
-import { useUIStore } from '@/stores/ui';
-import { ToastManager } from './toastManager';
-import { RefreshCw, Zap } from 'lucide-react';
+import { RefreshCw, Zap } from "lucide-react";
+
+import { ToastManager } from "./toastManager";
+
+import { useModernToast, Toast } from "@/components/ui/Toaster";
+import { useUIStore } from "@/stores/ui";
 
 // Hook for the enhanced toast manager
 export const useToastManager = () => {
@@ -16,23 +18,23 @@ export const useToastManager = () => {
     dismissToast,
     dismissAll,
     updateToast,
-    
+
     // Batch operations
-    showMultiple: (toasts: Array<Omit<Toast, 'id' | 'createdAt'>>) => {
-      return toasts.map(toast => addToast(toast));
+    showMultiple: (toasts: Array<Omit<Toast, "id" | "createdAt">>) => {
+      return toasts.map((toast) => addToast(toast));
     },
-    
+
     // Progress toast that can be updated
     showProgress: (title: string, initialProgress: number = 0) => {
       const id = addToast({
-        variant: 'loading',
+        variant: "loading",
         title,
         persistent: true,
         progress: {
           current: initialProgress,
           total: 100,
-          label: 'Progress'
-        }
+          label: "Progress",
+        },
       });
 
       return {
@@ -43,70 +45,78 @@ export const useToastManager = () => {
             progress: {
               current: progress,
               total: 100,
-              label: 'Progress'
-            }
+              label: "Progress",
+            },
           });
         },
         complete: (successTitle: string, successDescription?: string) => {
           dismissToast(id);
+
           return addToast({
-            variant: 'success',
+            variant: "success",
             title: successTitle,
-            description: successDescription
+            description: successDescription,
           });
         },
         fail: (errorTitle: string, errorDescription?: string) => {
           dismissToast(id);
+
           return addToast({
-            variant: 'error',
+            variant: "error",
             title: errorTitle,
-            description: errorDescription
+            description: errorDescription,
           });
-        }
+        },
       };
     },
-    
+
     // Conditional toasts (only show if condition is met)
-    showIf: (condition: boolean, toast: Omit<Toast, 'id' | 'createdAt'>) => {
+    showIf: (condition: boolean, toast: Omit<Toast, "id" | "createdAt">) => {
       return condition ? addToast(toast) : null;
     },
-    
+
     // Delayed toast
-    showDelayed: (delay: number, toast: Omit<Toast, 'id' | 'createdAt'>) => {
+    showDelayed: (delay: number, toast: Omit<Toast, "id" | "createdAt">) => {
       return setTimeout(() => addToast(toast), delay);
     },
-    
+
     // Toast with auto-retry functionality
     showWithRetry: (
-      toast: Omit<Toast, 'id' | 'createdAt'>, 
+      toast: Omit<Toast, "id" | "createdAt">,
       retryFn: () => Promise<boolean>,
-      maxRetries: number = 3
+      maxRetries: number = 3,
     ) => {
       let retryCount = 0;
-      
+
       const attemptAction = async () => {
         try {
           const success = await retryFn();
+
           if (success) {
-            manager.success('Action Completed', 'Operation completed successfully');
+            manager.success(
+              "Action Completed",
+              "Operation completed successfully",
+            );
           } else {
-            throw new Error('Action failed');
+            throw new Error("Action failed");
           }
         } catch (error) {
           retryCount++;
           if (retryCount < maxRetries) {
             manager.warning(
-              'Action Failed', 
+              "Action Failed",
               `Attempt ${retryCount}/${maxRetries} failed. Retrying...`,
-              [{
-                label: 'Retry Now',
-                handler: attemptAction,
-                variant: 'primary',
-                icon: <RefreshCw className="w-3 h-3" />
-              }]
+              [
+                {
+                  label: "Retry Now",
+                  handler: attemptAction,
+                  variant: "primary",
+                  icon: <RefreshCw className="w-3 h-3" />,
+                },
+              ],
             );
           } else {
-            manager.error('Action Failed', 'Maximum retry attempts reached');
+            manager.error("Action Failed", "Maximum retry attempts reached");
           }
         }
       };
@@ -116,14 +126,14 @@ export const useToastManager = () => {
         actions: [
           ...(toast.actions || []),
           {
-            label: 'Start',
+            label: "Start",
             handler: attemptAction,
-            variant: 'primary',
-            icon: <Zap className="w-3 h-3" />
-          }
-        ]
+            variant: "primary",
+            icon: <Zap className="w-3 h-3" />,
+          },
+        ],
       });
-    }
+    },
   };
 };
 
