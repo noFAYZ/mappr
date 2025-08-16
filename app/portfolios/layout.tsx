@@ -1,6 +1,6 @@
+import { AuthGuard } from "@/components/auth/AuthGuard";
 import React from "react";
 
-import { AuthGuard } from "@/components/shared/AuthGuard";
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return <AuthGuard>{children} </AuthGuard>;

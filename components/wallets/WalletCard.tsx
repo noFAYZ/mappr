@@ -412,7 +412,7 @@ const GridView: React.FC<WalletCardProps> = ({
   const chainsCount = wallet?.wallet_portfolio_summary?.chains_count || 0;
   const nftsCount = wallet?.wallet_portfolio_summary?.nft_count || 0;
   const lastSyncAt = wallet?.wallet_portfolio_summary?.last_sync_at;
-  const networks = wallet?.wallet_portfolio_summary?.networks || ["ethereum"];
+  const networks = wallet?.wallet_portfolio_summary || ["ethereum"];
 
   const avatarGradient = useMemo(() => {
     const gradients = [

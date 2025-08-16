@@ -41,7 +41,7 @@ import {
 } from "lucide-react";
 
 import { LogoMappr } from "./icons";
-import { RadixIconsDashboard } from "./icons/icons";
+import { DuoIconsBank, DuoIconsChartPie, FluentBrain28Filled, GameIconsBrainFreeze, HugeiconsAiBrain01, IonExtensionPuzzle, MageDashboard, MageFile2Fill, MingcutePlugin2Line, PhStackDuotone, RadixIconsDashboard, SolarDatabaseBoldDuotone, SolarPieChart2BoldDuotone, SolarWalletBoldDuotone, StreamlineFlexModulePuzzle2Solid } from "./icons/icons";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigationContext } from "@/contexts/NavigationContext";
@@ -86,95 +86,62 @@ const navigationItems: MenuItem[] = [
   {
     label: "Dashboard",
     href: "/dashboard",
-    icon: <RadixIconsDashboard className="w-5 h-5" />,
+    icon: <MageDashboard className="w-6 h-6" />,
+    accent: "from-blue-500 to-cyan-500",
+  },
+  {
+    label: "Wallets",
+    href: "/wallets",
+    icon: <SolarWalletBoldDuotone className="w-6 h-6" />,
     accent: "from-blue-500 to-cyan-500",
   },
   {
     label: "Extensions",
     href: "/extensions",
-    icon: <Puzzle className="w-5 h-5" />,
-    badge: "8",
+    icon: <StreamlineFlexModulePuzzle2Solid className="w-5 h-5" />,
+
     accent: "from-purple-500 to-pink-500",
-    submenu: [
-      {
-        label: "Browse All",
-        href: "/extensions",
-        icon: <Compass className="w-4 h-4" />,
-      },
-      {
-        label: "Connected",
-        href: "/extensions/connected",
-        icon: <Shield className="w-4 h-4" />,
-        badge: "3",
-      },
-      {
-        label: "Add New",
-        href: "/extensions/add",
-        icon: <Plus className="w-4 h-4" />,
-        isNew: true,
-      },
-    ],
+   
   },
   {
     label: "Portfolios",
     href: "/portfolios",
-    icon: <PieChart className="w-5 h-5" />,
+    icon: <SolarPieChart2BoldDuotone className="w-6 h-6 " />,
     accent: "from-emerald-500 to-teal-500",
-    submenu: [
-      {
-        label: "Overview",
-        href: "/portfolios",
-        icon: <Home className="w-4 h-4" />,
-      },
-      {
-        label: "Performance",
-        href: "/portfolios/performance",
-        icon: <TrendingUp className="w-4 h-4" />,
-      },
-      {
-        label: "Analytics",
-        href: "/portfolios/analytics",
-        icon: <BarChart3 className="w-4 h-4" />,
-      },
-      {
-        label: "Create New",
-        href: "/portfolios/create",
-        icon: <Plus className="w-4 h-4" />,
-      },
-    ],
+
   },
   {
     label: "Data Sources",
     href: "/data",
-    icon: <Database className="w-5 h-5" />,
+    icon: <SolarDatabaseBoldDuotone className="w-6 h-6" />,
     accent: "from-orange-500 to-red-500",
     submenu: [
       {
         label: "All Data",
         href: "/data",
-        icon: <Database className="w-4 h-4" />,
+        icon: <PhStackDuotone className="w-4 h-4" />,
       },
       {
         label: "Crypto",
         href: "/data/crypto",
-        icon: <Wallet className="w-4 h-4" />,
+        icon: <SolarWalletBoldDuotone className="w-4 h-4" />,
       },
       {
         label: "Banking",
         href: "/data/banking",
-        icon: <Building2 className="w-4 h-4" />,
+        icon: <DuoIconsBank className="w-4 h-4" />,
       },
       {
         label: "Business",
         href: "/data/business",
-        icon: <FileText className="w-4 h-4" />,
+        icon: <MageFile2Fill className="w-4 h-4" />,
       },
     ],
   },
   {
     label: "AI Assistant",
     href: "/ai",
-    icon: <Bot className="w-5 h-5" />,
+    icon: <FluentBrain28Filled className="w-5 h-5" />,
     badge: "New",
     accent: "from-violet-500 to-purple-500",
     isNew: true,

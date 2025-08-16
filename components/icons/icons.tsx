@@ -1284,3 +1284,50 @@ export function FamiconsReturnUpBack(props: SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
+
+
+
+export function MageDashboard(props: SVGProps<SVGSVGElement>) {
+	return (<svg xmlns="http://www.w3.org/2000/svg" width={24} height={24} viewBox="0 0 24 24" {...props}><path fill="currentColor" d="M10.995 4.68v3.88A2.44 2.44 0 0 1 8.545 11h-3.86a2.38 2.38 0 0 1-1.72-.72a2.4 2.4 0 0 1-.71-1.72V4.69a2.44 2.44 0 0 1 2.43-2.44h3.87a2.42 2.42 0 0 1 1.72.72a2.4 2.4 0 0 1 .72 1.71m10.75.01v3.87a2.46 2.46 0 0 1-2.43 2.44h-3.88a2.5 2.5 0 0 1-1.73-.71a2.44 2.44 0 0 1-.71-1.73V4.69a2.4 2.4 0 0 1 .72-1.72a2.42 2.42 0 0 1 1.72-.72h3.87a2.46 2.46 0 0 1 2.44 2.44m0 10.75v3.87a2.46 2.46 0 0 1-2.43 2.44h-3.88a2.5 2.5 0 0 1-1.75-.69a2.42 2.42 0 0 1-.71-1.73v-3.87a2.4 2.4 0 0 1 .72-1.72a2.42 2.42 0 0 1 1.72-.72h3.87a2.46 2.46 0 0 1 2.44 2.44zm-10.75.01v3.87a2.46 2.46 0 0 1-2.45 2.43h-3.86a2.42 2.42 0 0 1-2.43-2.43v-3.87A2.46 2.46 0 0 1 4.685 13h3.87a2.5 2.5 0 0 1 1.73.72a2.45 2.45 0 0 1 .71 1.73" strokeWidth={0.5} stroke="currentColor"></path></svg>);
+}
+
+
+export function IonExtensionPuzzle(props: SVGProps<SVGSVGElement>) {
+	return (<svg xmlns="http://www.w3.org/2000/svg" width={512} height={512} viewBox="0 0 512 512" {...props}><path fill="currentColor" d="M345.14 480H274a18 18 0 0 1-18-18v-27.71a31.32 31.32 0 0 0-9.71-22.77c-7.78-7.59-19.08-11.8-30.89-11.51c-21.36.5-39.4 19.3-39.4 41.06V462a18 18 0 0 1-18 18H87.62A55.62 55.62 0 0 1 32 424.38V354a18 18 0 0 1 18-18h27.71c9.16 0 18.07-3.92 25.09-11a42.06 42.06 0 0 0 12.2-29.92C114.7 273.89 97.26 256 76.91 256H50a18 18 0 0 1-18-18v-70.38A55.62 55.62 0 0 1 87.62 112h55.24a8 8 0 0 0 8-8v-6.48A65.53 65.53 0 0 1 217.54 32c35.49.62 64.36 30.38 64.36 66.33V104a8 8 0 0 0 8 8h55.24A54.86 54.86 0 0 1 400 166.86v55.24a8 8 0 0 0 8 8h5.66c36.58 0 66.34 29 66.34 64.64c0 36.61-29.39 66.4-65.52 66.4H408a8 8 0 0 0-8 8v56A54.86 54.86 0 0 1 345.14 480" strokeWidth={35} stroke="currentColor"></path></svg>);
+}
+
+
+
+export function StreamlineFlexModulePuzzle2Solid(props: SVGProps<SVGSVGElement>) {
+	return (<svg xmlns="http://www.w3.org/2000/svg" width={14} height={14} viewBox="0 0 14 14" {...props}><path fill="currentColor" fillRule="evenodd" d="M5.81.5a2.116 2.116 0 0 0-2.117 2.12a1.2 1.2 0 0 0 .097.511l-1.934.171a1.183 1.183 0 0 0-1.17 1.183l.028 1.072c.01.32.171.58.381.77c.21.186.477.314.739.377c.288.07.555.215.764.425a1.616 1.616 0 0 1 0 2.285a1.6 1.6 0 0 1-.764.425c-.262.063-.53.19-.739.378c-.21.188-.373.449-.382.77l-.028.955v.008c0 .313.125.614.347.836a.3.3 0 0 0 .039.032c.202.134.478.24.792.324a9 9 0 0 0 1.093.208c.81.107 1.767.155 2.714.15a21 21 0 0 0 2.68-.176a9 9 0 0 0 1.048-.205c.295-.08.554-.179.736-.304l.035-.029c.22-.22.344-.516.346-.826l.138-1.677q.03.013.061.024c.146.054.296.079.484.079a2.117 2.117 0 0 0 2.116-2.115a2.115 2.115 0 0 0-2.116-2.114a1.35 1.35 0 0 0-.543.103l-.14-1.785a1.183 1.183 0 0 0-1.168-1.173l-1.525-.164l.019-.044a1.2 1.2 0 0 0 .084-.475A2.116 2.116 0 0 0 5.81.5" clipRule="evenodd" strokeWidth={0.5} stroke="currentColor"></path></svg>);
+}
+
+
+export function SolarDatabaseBoldDuotone(props: SVGProps<SVGSVGElement>) {
+	return (<svg xmlns="http://www.w3.org/2000/svg" width={24} height={24} viewBox="0 0 24 24" {...props}><path fill="currentColor" d="M12 10c4.418 0 8-1.79 8-4s-3.582-4-8-4s-8 1.79-8 4s3.582 4 8 4" strokeWidth={0.5} stroke="currentColor"></path><path fill="currentColor" d="M4 12v6c0 2.21 3.582 4 8 4s8-1.79 8-4v-6c0 2.21-3.582 4-8 4s-8-1.79-8-4" opacity={0.5} strokeWidth={0.5} stroke="currentColor"></path><path fill="currentColor" d="M4 6v6c0 2.21 3.582 4 8 4s8-1.79 8-4V6c0 2.21-3.582 4-8 4S4 8.21 4 6" opacity={0.7} strokeWidth={0.5} stroke="currentColor"></path></svg>);
+}
+
+
+export function DuoIconsChartPie(props: SVGProps<SVGSVGElement>) {
+	return (<svg xmlns="http://www.w3.org/2000/svg" width={24} height={24} viewBox="0 0 24 24" {...props}><path fill="currentColor" fillRule="evenodd" d="M12 2c5.523 0 10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12S6.477 2 12 2" className="duoicon-secondary-layer" opacity={0.3} strokeWidth={0.5} stroke="currentColor"></path><path fill="currentColor" fillRule="evenodd" d="M12 4v8h8a8 8 0 0 0-8-8" className="duoicon-primary-layer" strokeWidth={0.5} stroke="currentColor"></path></svg>);
+}
+
+
+export function SolarPieChart2BoldDuotone(props: SVGProps<SVGSVGElement>) {
+	return (<svg xmlns="http://www.w3.org/2000/svg" width={24} height={24} viewBox="0 0 24 24" {...props}><path fill="currentColor" d="M6.222 4.601a9.5 9.5 0 0 1 1.395-.771c1.372-.615 2.058-.922 2.97-.33c.913.59.913 1.56.913 3.5v1.5c0 1.886 0 2.828.586 3.414s1.528.586 3.414.586H17c1.94 0 2.91 0 3.5.912c.592.913.285 1.599-.33 2.97a9.5 9.5 0 0 1-10.523 5.435A9.5 9.5 0 0 1 6.222 4.601" opacity={0.5} strokeWidth={0.5} stroke="currentColor"></path><path fill="currentColor" d="M21.446 7.069a8.03 8.03 0 0 0-4.515-4.515C15.389 1.947 14 3.344 14 5v4a1 1 0 0 0 1 1h4c1.657 0 3.053-1.39 2.446-2.931" strokeWidth={0.5} stroke="currentColor"></path></svg>);
+}
+
+
+export function PhStackDuotone(props: SVGProps<SVGSVGElement>) {
+	return (<svg xmlns="http://www.w3.org/2000/svg" width={256} height={256} viewBox="0 0 256 256" {...props}><g fill="currentColor" strokeWidth={6.5} stroke="#999"><path d="m224 80l-96 56l-96-56l96-56Z" opacity={0.2}></path><path d="M230.91 172a8 8 0 0 1-2.91 10.91l-96 56a8 8 0 0 1-8.06 0l-96-56A8 8 0 0 1 36 169.09l92 53.65l92-53.65a8 8 0 0 1 10.91 2.91M220 121.09l-92 53.65l-92-53.65a8 8 0 0 0-8 13.82l96 56a8 8 0 0 0 8.06 0l96-56a8 8 0 1 0-8.06-13.82M24 80a8 8 0 0 1 4-6.91l96-56a8 8 0 0 1 8.06 0l96 56a8 8 0 0 1 0 13.82l-96 56a8 8 0 0 1-8.06 0l-96-56A8 8 0 0 1 24 80m23.88 0L128 126.74L208.12 80L128 33.26Z"></path></g></svg>);
+}
+
+export function MageFile2Fill(props: SVGProps<SVGSVGElement>) {
+	return (<svg xmlns="http://www.w3.org/2000/svg" width={24} height={24} viewBox="0 0 24 24" {...props}><path fill="currentColor" d="M20.68 7.014a3.85 3.85 0 0 0-.92-1.22l-3-2.72a4.15 4.15 0 0 0-2.39-1.07H8.21A5 5 0 0 0 3 6.864v10.3a5 5 0 0 0 3.31 4.53a4.7 4.7 0 0 0 1.92.3h7.56a5 5 0 0 0 5.21-4.86v-8.57a3.75 3.75 0 0 0-.32-1.55m-13-.4h3.26a1 1 0 0 1 0 2H7.68a1 1 0 1 1 0-2m8.7 10.71h-8.7a1 1 0 1 1 0-2h8.7a1 1 0 0 1 0 1.98zm0-4.35h-8.7a1 1 0 1 1 0-2h8.7a1 1 0 1 1 0 2m-.32-5.57a1.08 1.08 0 0 1-1.09-1.08v-2.65c.66.16 3.23 2.8 3.79 3.24a2 2 0 0 1 .42.49z" strokeWidth={0.5} stroke="currentColor"></path></svg>);
+}
+
+
+
+export function FluentBrain28Filled(props: SVGProps<SVGSVGElement>) {
+	return (<svg xmlns="http://www.w3.org/2000/svg" width={28} height={28} viewBox="0 0 28 28" {...props}><path fill="currentColor" d="M10.875 2c.895 0 1.719.304 2.375.814V25.01a4.18 4.18 0 0 1-2.706.99a4.206 4.206 0 0 1-4.112-3.325l-.04-.19a4.748 4.748 0 0 1-1.736-8.999a4.5 4.5 0 0 1 2.36-7.96A3.874 3.874 0 0 1 10.876 2m6.25 0a3.874 3.874 0 0 1 3.858 3.526a4.5 4.5 0 0 1 2.36 7.96a4.75 4.75 0 0 1-1.735 8.998l-.04.19A4.206 4.206 0 0 1 17.456 26a4.18 4.18 0 0 1-2.706-.99V2.814A3.86 3.86 0 0 1 17.125 2"></path></svg>);
+}

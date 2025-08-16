@@ -1206,7 +1206,7 @@ export default function ExtensionsPage() {
                         ...prev,
                         [field.key]: e.target.value
                       }))}
-                      }
+                      
                     />
                   ))}
                 </div>
