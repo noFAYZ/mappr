@@ -173,7 +173,7 @@ export class ZerionExtension extends BaseExtension {
       ];
 
       if (options.includeTransactions) {
-        apiCalls.push(this.sdk.wallets.getTransactions(address));
+        apiCalls.push(this.sdk.wallets.getTransactions(address,{filter:{trash: 'only_non_trash'}  }));
       }
 
       if (options.includeNFTs) {
@@ -474,12 +474,11 @@ export class WalletService {
 
       // 5. Append new transactions (if any)
       if (data.transactions?.length) {
-        const existingTxHashes =
-          await this.getExistingTransactionHashes(walletId);
+        const existingTxHashes = await this.getExistingTransactionHashes(walletId);
         const newTransactions = data.transactions.filter(
           (tx) => !existingTxHashes.has(tx.attributes.hash),
         );
-
+      
         if (newTransactions.length) {
           const transactionsToInsert = newTransactions.map((tx) => ({
             wallet_id: walletId,
@@ -487,21 +486,55 @@ export class WalletService {
             status: tx.attributes.status,
             timestamp: tx.attributes.timestamp,
             block_number: tx.attributes.blockNumber,
-            gas_used: tx.attributes.gasUsed,
-            gas_price: tx.attributes.gasPrice,
-            fee: tx.attributes.fee,
-            value: tx.attributes.value,
+            gas_used: null, // Not available in Zerion API
+            gas_price: null, // Not available in Zerion API
+            fee: tx.attributes.fee?.amount || null,
+            value: tx.attributes.value || null,
             direction: tx.attributes.direction,
             chain_id: tx.attributes.chain,
-            from_address: tx.attributes.from_address,
-            to_address: tx.attributes.to_address,
-            transaction_type: tx.type,
+            from_address: tx.attributes.sentFrom,
+            to_address: tx.attributes.sentTo,
+            transaction_type: tx.attributes.operationType,
             metadata: {
-              originalData: tx,
-              normalizedAt: new Date().toISOString(),
+              // Core transaction data
+              hash: tx.attributes.hash,
+              operationType: tx.attributes.operationType,
+              nonce: tx.attributes.nonce,
+              
+              // Fee details
+              fee: tx.attributes.fee,
+              
+              // Asset information
+              asset: tx.attributes.asset,
+              
+              // Application/DApp information
+              application: tx.attributes.application,
+              
+              // Actions performed
+              actions: tx.attributes.actions,
+              
+              // All transfers in transaction
+              transfers: tx.attributes.transfers,
+              
+              // Approvals if any
+              approvals: tx.attributes.approvals,
+              
+              // Flags
+              isTrash: tx.attributes.isTrash,
+              
+              // Relationships
+              relationships: tx.relationships,
+              
+              // Original normalization metadata
+              normalized: true,
+              normalizedAt: tx.metadata.normalizedAt,
+              originalDataInfo: tx.metadata.originalData,
+              
+              // Full original transaction for reference
+              originalTransaction: tx
             },
           }));
-
+      
           updates.push(
             supabase.from("wallet_transactions").insert(transactionsToInsert),
           );

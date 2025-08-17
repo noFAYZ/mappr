@@ -435,8 +435,8 @@ const GridView: React.FC<WalletCardProps> = ({
   }, [wallet.address]);
 
   const cardClassName = `
-    border border-divider cursor-pointer transition-all duration-75 group rounded-2xl 
-    ${isSelected ? "bg-primary-500 " : "bg-content2"}
+    cursor-pointer transition-all duration-75 group rounded-2xl 
+    ${isSelected ? "bg-primary-500 " : ""}
     ${className}
   `;
 

@@ -25,6 +25,7 @@ import ModernTabs from "./WalletDetails/ModernTabs";
 import { TokensList } from "./WalletDetails/TokensList";
 
 import { TabKey } from "@/lib/wallet-analytics/types";
+import TransactionsList from "./WalletDetails/TransactionsList";
 
 interface WalletDetailsProps {
   wallet: {
@@ -378,7 +379,7 @@ const WalletDetails: React.FC<WalletDetailsProps> = ({
     }
   }, [onRefresh, isRefreshing]);
 
-  console.log("Selected Tab:", data);
+ 
 
   return (
     <div className="space-y-6 h-full">
@@ -418,10 +419,15 @@ const WalletDetails: React.FC<WalletDetailsProps> = ({
         )}
 
         {selectedTab === "transactions" && (
-          <TransactionHistory
+          <TransactionsList
             showBalances={showBalances}
             transactions={data?.transactions}
-          />
+             walletId={wallet.id} 
+            onRefresh={handleRefresh}
+            isLoading={isLoading}
+            isRefreshing={isRefreshing}
+             
+             />
         )}
 
         {selectedTab === "analytics" && (

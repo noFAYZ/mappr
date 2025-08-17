@@ -63,16 +63,21 @@ import {
   List,
   SortAsc,
   SortDesc,
+  UploadCloud,
+  Verified,
+  VerifiedIcon,
+  Check,
 } from "lucide-react";
 
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { useExtensionStore } from '@/stores';
 import { useUIStore } from '@/stores';
+import { SolarWalletBoldDuotone } from "@/components/icons/icons";
 
 const categories = [
   { key: "all", label: "All Categories", icon: Grid3X3, color: "default" },
-  { key: "crypto", label: "Cryptocurrency", icon: Wallet, color: "warning" },
+  { key: "crypto", label: "Cryptocurrency", icon: SolarWalletBoldDuotone, color: "warning" },
   {
     key: "banking",
     label: "Banking & Finance",
@@ -86,7 +91,7 @@ const categories = [
     icon: FileText,
     color: "secondary",
   },
-  { key: "file", label: "File Processing", icon: Upload, color: "danger" },
+  { key: "file", label: "File Processing", icon: UploadCloud, color: "danger" },
   { key: "other", label: "Other", icon: Globe, color: "default" },
 ];
 
@@ -141,7 +146,7 @@ const ExtensionCard = ({
     const categoryData = categories.find((cat) => cat.key === category);
     const IconComponent = categoryData?.icon || Globe;
 
-    return <IconComponent className="w-4 h-4" />;
+    return <IconComponent className="w-3.5 h-3.5" />;
   };
 
   const getCategoryColor = (category) => {
@@ -304,47 +309,38 @@ const ExtensionCard = ({
     <motion.div
       animate={{ opacity: 1, y: 0 }}
       initial={{ opacity: 0, y: 20 }}
-      transition={{ duration: 0.3 }}
-      whileHover={{ y: -4 }}
+ 
     >
       <Card
-        className={`h-full transition-all duration-300 hover:shadow-xl border group ${
-          isConnected
-            ? "border-success-200 bg-gradient-to-br from-success-50/30 to-transparent dark:from-success-950/20"
-            : "hover:border-primary-200 dark:hover:border-primary-800"
-        }`}
+        className={`h-full hover:shadow-xl border border-divider group `}
       >
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between w-full">
             <div className="flex items-center gap-3">
               <div className="relative">
                 <Avatar
-                  className="bg-gradient-to-br from-primary-500 to-secondary-500 text-white"
+                  className="bg-gradient-to-br from-primary-500 to-secondary-500 text-white rounded-2xl"
                   fallback={extension.name.charAt(0)}
                   name={extension.name}
-                  size="lg"
+                  size="md"
                 />
                 {isConnected && (
-                  <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-success rounded-full flex items-center justify-center">
-                    <CheckCircle2 className="w-4 h-4 text-white" />
+                  <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-success rounded-full flex items-center justify-center">
+                    <Check className="w-3.5 h-3.5 text-white" />
                   </div>
                 )}
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
-                  <h3 className="font-semibold text-lg group-hover:text-primary transition-colors">
+                  <h3 className="font-semibold text-sm group-hover:text-primary transition-colors">
                     {extension.name}
                   </h3>
                   {extension.is_featured && (
-                    <Badge
-                      color="warning"
-                      variant="flat"
-                      content={<Star className="w-3 h-3" />}
-                    />
+                   <Star className="w-3 h-3 text-yellow-600" fill="yellow" /> 
                   )}
                 </div>
                 <Chip
-                  className="capitalize"
+                  className="capitalize text-[10px] h-5 rounded-md"
                   color={getCategoryColor(extension.category)}
                   size="sm"
                   startContent={getCategoryIcon(extension.category)}
@@ -384,7 +380,7 @@ const ExtensionCard = ({
         </CardHeader>
 
         <CardBody className="pt-0 flex flex-col h-full">
-          <p className="text-default-600 mb-4 text-sm leading-relaxed flex-1">
+          <p className="text-default-600 mb-4 text-xs leading-relaxed flex-1">
             {extension.description}
           </p>
 
@@ -484,8 +480,9 @@ const ExtensionCard = ({
               </div>
             ) : (
               <Button
-                className="w-full"
-                color="primary"
+                className=" w-full bg-gradient-to-br from-orange-500 to-pink-500 text-white/90"
+                variant="flat"
+               size="sm"
                 endContent={<ArrowRight className="w-4 h-4" />}
                 isDisabled={!canUse}
                 startContent={<Plus className="w-4 h-4" />}
@@ -925,10 +922,10 @@ export default function ExtensionsPage() {
       <Tabs
         className="w-full"
         classNames={{
-          tabList: "bg-default-100/50 p-1 rounded-lg",
-          cursor: "bg-white dark:bg-default-900 shadow-sm",
-          tab: "h-10",
-          tabContent: "text-sm font-medium group-data-[selected=true]:text-primary"
+          tabList: "bg-default-100 p-1 rounded-2xl border border-divider",
+          cursor: "bg-default-50 shadow-sm rounded-2xl",
+          tab: "h-9",
+          tabContent: "text-xs font-medium group-data-[selected=true]:text-primary-600"
         }}
         selectedKey={selectedTab}
         onSelectionChange={(key) => setSelectedTab(key as string)}
@@ -939,7 +936,7 @@ export default function ExtensionsPage() {
             <div className="flex items-center gap-2">
               <Grid3X3 className="w-4 h-4" />
               <span>All Extensions</span>
-              <Chip className="ml-1" size="sm" variant="flat">
+              <Chip className="ml-1 bg-primary-500/20 text-primary-700 text-[10px] h-5 px-0.5 rounded-md" size="sm" variant="flat" >
                 {processedExtensions.length}
               </Chip>
             </div>
@@ -1040,7 +1037,7 @@ export default function ExtensionsPage() {
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4" />
               <span>Connected</span>
-              <Chip className="ml-1" color="success" size="sm" variant="flat">
+              <Chip className="ml-1 text-[10px] h-5 px-0.5 rounded-md" color="success" size="sm" variant="flat">
                 {connectedExtensions.length}
               </Chip>
             </div>

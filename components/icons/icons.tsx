@@ -1331,3 +1331,18 @@ export function MageFile2Fill(props: SVGProps<SVGSVGElement>) {
 export function FluentBrain28Filled(props: SVGProps<SVGSVGElement>) {
 	return (<svg xmlns="http://www.w3.org/2000/svg" width={28} height={28} viewBox="0 0 28 28" {...props}><path fill="currentColor" d="M10.875 2c.895 0 1.719.304 2.375.814V25.01a4.18 4.18 0 0 1-2.706.99a4.206 4.206 0 0 1-4.112-3.325l-.04-.19a4.748 4.748 0 0 1-1.736-8.999a4.5 4.5 0 0 1 2.36-7.96A3.874 3.874 0 0 1 10.876 2m6.25 0a3.874 3.874 0 0 1 3.858 3.526a4.5 4.5 0 0 1 2.36 7.96a4.75 4.75 0 0 1-1.735 8.998l-.04.19A4.206 4.206 0 0 1 17.456 26a4.18 4.18 0 0 1-2.706-.99V2.814A3.86 3.86 0 0 1 17.125 2"></path></svg>);
 }
+
+
+export function MaterialSymbolsLightOrderPlayOutline(props: SVGProps<SVGSVGElement>) {
+	return (<svg xmlns="http://www.w3.org/2000/svg" width={24} height={24} viewBox="0 0 24 24" {...props}><path fill="currentColor" d="M16.904 20.058L20 18.116l-3.096-1.943zM6.769 8.73h10.462v-1H6.769zM18 22.116q-1.671 0-2.835-1.165Q14 19.787 14 18.116t1.165-2.836T18 14.116t2.836 1.164T22 18.116q0 1.67-1.164 2.835Q19.67 22.116 18 22.116M4 20.769V5.616q0-.672.472-1.144T5.616 4h12.769q.67 0 1.143.472q.472.472.472 1.144v5.944q-.244-.09-.484-.154q-.241-.064-.516-.1v-5.69q0-.231-.192-.424T18.384 5H5.616q-.231 0-.424.192T5 5.616V19.05h6.344q.068.41.176.802q.109.392.303.748l-.034.034l-1.135-.826l-1.346.961l-1.346-.961l-1.346.961l-1.347-.961zm2.77-4.5h4.709q.056-.275.138-.515t.192-.485H6.77zm0-3.769h7.31q.49-.387 1.05-.645q.56-.259 1.197-.355H6.769zM5 19.05V5z"></path></svg>);
+}
+
+
+export function UimClock(props: SVGProps<SVGSVGElement>) {
+	return (<svg xmlns="http://www.w3.org/2000/svg" width={24} height={24} viewBox="0 0 24 24" {...props}><path fill="currentColor" d="M12 6a1 1 0 0 1 1 1v4.422l2.098 1.212a1 1 0 0 1-1 1.732l-2.598-1.5A1 1 0 0 1 11 12V7a1 1 0 0 1 1-1"></path><path fill="currentColor" d="M2 12A10 10 0 1 0 12 2A10 10 0 0 0 2 12m9-5a1 1 0 0 1 2 0v4.422l2.098 1.212a1 1 0 0 1-1 1.732l-2.598-1.5A1 1 0 0 1 11 12Z" opacity={0.5}></path></svg>);
+}
+
+
+export function SolarGasStationBoldDuotone(props: SVGProps<SVGSVGElement>) {
+	return (<svg xmlns="http://www.w3.org/2000/svg" width={24} height={24} viewBox="0 0 24 24" {...props}><path fill="currentColor" fillRule="evenodd" d="M9.75 2h-1c-2.828 0-4.243 0-5.121.879C2.75 3.757 2.75 5.172 2.75 8v13.25h13V8c0-2.828 0-4.243-.879-5.121C13.993 2 12.578 2 9.75 2" clipRule="evenodd" opacity={0.5}></path><path fill="currentColor" d="M2.75 21.25h-1a.75.75 0 0 0 0 1.5h15.123a.75.75 0 0 0 0-1.5zM8 6h3c.943 0 1.414 0 1.707.293S13 7.057 13 8s0 1.414-.293 1.707S11.943 10 11 10H8c-.943 0-1.414 0-1.707-.293S6 8.943 6 8s0-1.414.293-1.707S7.057 6 8 6M7 16.25a.75.75 0 0 0 0 1.5h5a.75.75 0 0 0 0-1.5zm8.75 1.5h1.571c.375 0 .679.304.679.679v.071a2.25 2.25 0 1 0 4.5 0V7.602c0-.157 0-.265-.006-.37a3.75 3.75 0 0 0-1.24-2.582a9 9 0 0 0-.286-.236l-1.25-1a.75.75 0 1 0-.936 1.172l1.233.986c.144.116.194.156.237.195c.443.397.711.954.745 1.549a6 6 0 0 1 .003.306V8h-.75a1.5 1.5 0 0 0-1.5 1.5v2.419a1.5 1.5 0 0 0 1.026 1.423L21 13.75v4.75a.75.75 0 0 1-1.5 0v-.071a2.18 2.18 0 0 0-2.179-2.179H15.75z"></path></svg>);
+}
